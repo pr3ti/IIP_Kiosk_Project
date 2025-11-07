@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESG Centre Feedback - Republic Polytechnic</title>
+    <style>
+        :root {
+            --primary-green: #2ecc71;
+            --dark-green: #27ae60;
+            --darker-green: #1a5f23;
+            --rp-red: #E41E26;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --background: #ecf0f1;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--background) 0%, #bdc3c7 100%);
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+        
+        .screen {
+            display: none;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-width: 900px;
+            margin: 20px auto;
+            min-height: 600px;
+            position: relative;
+        }
+        
+        .active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            color: var(--darker-green);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        h2 {
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        p {
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .star {
+            font-size: 3em;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        
+        .star:hover {
+            transform: scale(1.2);
+        }
+        
+        .star.active {
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        
+        .form-group {
+            margin: 25px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 1.1em;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary-green);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .consent-box {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .consent-box:hover {
+            border-color: var(--primary-green);
+        }
+        
+        .consent-checkbox {
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .consent-checkbox input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin-top: 3px;
+            accent-color: var(--primary-green);
+        }
+        
+        .consent-text {
+            flex: 1;
+            font-size: 15px;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        .consent-title {
+            color: var(--darker-green);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary-green);
+            padding-bottom: 10px;
+        }
+        
+        .camera-container {
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        .permission-granted {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+        
+        #videoElement {
+            width: 100%;
+            max-width: 600px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        #countdown {
+            font-size: 5em;
+            text-align: center;
+            margin: 30px 0;
+            color: var(--primary-green);
+            display: none;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .photo-preview {
+            max-width: 400px;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .composite-result {
+            max-width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+            margin: 25px 0;
+            display: none;
+        }
+        
+        .processing-message {
+            padding: 30px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 15px;
+            margin: 25px 0;
+            text-align: center;
+            border-left: 5px solid #2196f3;
+        }
+        
+        .auto-process-info {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        
+        .qr-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 15px;
+            border: 2px dashed var(--primary-green);
+        }
+        
+        .confirmation-details {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border-left: 5px solid var(--primary-green);
+        }
+        
+        .thank-you-message {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .thank-you-message h1 {
+            color: var(--primary-green);
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .rp-logo {
+            max-width: 200px;
+            margin: 0 auto 30px;
+            display: block;
+        }
+        
+        small {
+            color: var(--text-light);
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .screen {
+                padding: 25px;
+                margin: 10px;
+                min-height: auto;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .btn {
+                padding: 15px 25px;
+                font-size: 16px;
+            }
+            
+            .star {
+                font-size: 2.5em;
+            }
+        }
+        
+        .name-validation {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="screen active">
+        <div style="text-align: center;">
+            <h1>🌱 Welcome to the ESG Centre</h1>
+            <p style="font-size: 1.3em; color: var(--darker-green); margin-bottom: 30px;">
+                Share your feedback and watch our digital tree grow!
+            </p>
+            
+            <div style="max-width: 400px; margin: 0 auto;">
+                <button class="btn" onclick="showScreen('consentScreen')" style="width: 100%; padding: 20px; font-size: 1.2em;">
+                    Start Your Feedback Journey
+                </button>
+            </div>
+            
+            <div class="qr-section">
+                <h3>📱 Prefer using your phone?</h3>
+                <p>Scan this QR code to access the feedback form on your mobile device:</p>
+                <img id="qrCodeImg" src="" alt="QR Code" style="max-width: 200px; margin: 15px auto; display: block; border-radius: 10px;">
+                <p><small>Make sure you're connected to the same network as this kiosk</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consent Screen -->
+    <div id="consentScreen" class="screen">
+        <h1>🔒 Privacy & Consent</h1>
+        <p>To provide you with the best experience, we need your consent for the following:</p>
+        
+        <div class="consent-box">
+            <div class="consent-title">📷 Photo Consent</div>
+            <div class="consent-checkbox">
+                <input type="checkbox" id="cameraConsent">
+                <div class="consent-text">
+                    <strong>I consent to having my photo taken</strong><br>
+                    I allow this kiosk to access the camera and take my photo. The photo will be automatically enhanced with RP branding and can be sent to my email if provided.
+                </div>
+            </div>
+        </div>
+
+        <div class="consent-box">
+            <div class="consent-title">🛡️ Data Privacy Consent</div>
+            <div class="consent-checkbox">
+                <input type="checkbox" id="dataConsent">
+                <div class="consent-text">
+                    <strong>I consent to data processing and storage</strong><br>
+                    I understand that my email and photo will be securely stored for 7 days for administrative purposes, after which they will be automatically deleted. My name and feedback will be kept for the digital tree display. My data will not be shared with third parties.
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" onclick="checkConsent()">I Consent & Continue</button>
+            <button class="btn btn-secondary" onclick="showScreen('welcomeScreen')">Back</button>
+        </div>
+    </div>
+
+    <!-- Feedback Screen -->
+    <div id="feedbackScreen" class="screen">
+        <h1>💬 Your Feedback</h1>
+        <p>How was your experience at the ESG Centre?</p>
+        
+        <div class="form-group">
+            <label>Overall Rating</label>
+            <div class="rating-stars">
+                <span class="star" onclick="setRating(1)">★</span>
+                <span class="star" onclick="setRating(2)">★</span>
+                <span class="star" onclick="setRating(3)">★</span>
+                <span class="star" onclick="setRating(4)">★</span>
+                <span class="star" onclick="setRating(5)">★</span>
+            </div>
+            <div style="text-align: center; color: var(--text-light);">
+                <small>Click stars to rate your experience</small>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Additional Comments (Optional)</label>
+            <textarea id="feedback" rows="4" placeholder="What did you enjoy most about your visit? Any suggestions for improvement?"></textarea>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn" onclick="showScreen('pledgeScreen')">Next: Make a Pledge</button>
+            <button class="btn btn-secondary" onclick="showScreen('consentScreen')">Back</button>
+        </div>
+    </div>
+
+    <!-- Pledge Screen -->
+    <div id="pledgeScreen" class="screen">
+        <h1>🤝 Make a Pledge</h1>
+        <p>Commit to a sustainable action and be part of our green community!</p>
+        
+        <div class="form-group">
+            <label>Your Sustainability Pledge</label>
+            <textarea id="pledge" rows="4" placeholder="e.g., I will reduce single-use plastics, I will recycle more, I will conserve energy..."></textarea>
+            <small>Your pledge will be displayed anonymously on our digital tree</small>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn" onclick="showScreen('detailsScreen')">Next: Your Details</button>
+            <button class="btn btn-secondary" onclick="showScreen('feedbackScreen')">Back</button>
+        </div>
+    </div>
+
+    <!-- Details Screen -->
+    <div id="detailsScreen" class="screen">
+        <h1>👤 Your Details</h1>
+        
+        <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="name" required placeholder="Enter your full name" oninput="validateName()">
+            <div class="name-validation" id="nameValidation">
+                Please enter a valid name (letters, spaces, hyphens, and apostrophes only)
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Email Address (Optional)</label>
+            <input type="email" id="email" placeholder="Enter your email address">
+            <small>If provided, we'll send your RP memory photo to this email within 1 minute!</small>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn" onclick="validateAndProceed()">Next: Photo Time! 📸</button>
+            <button class="btn btn-secondary" onclick="showScreen('pledgeScreen')">Back</button>
+        </div>
+    </div>
+
+    <!-- Photo Screen -->
+    <div id="photoScreen" class="screen">
+        <h1>📸 Photo Time!</h1>
+        <p>Get ready for your RP memory photo! We'll automatically apply the RP background and overlay.</p>
+        
+        <div class="camera-container">
+            <div id="cameraStatus" class="permission-granted" style="display: none;">
+                ✅ Camera ready - Photo will be taken automatically
+            </div>
+            
+            <video id="videoElement" autoplay playsinline></video>
+            <div id="countdown"></div>
+            <img id="photoPreview" class="photo-preview" alt="Captured photo">
+            
+            <div id="photoControls">
+                <p>Your photo will be automatically taken with a 3-second countdown</p>
+                <button class="btn" onclick="startAutoPhotoCapture()" id="startCameraBtn">
+                    Start Camera & Take Photo
+                </button>
+            </div>
+        </div>
+        
+        <!-- Auto-processed Result -->
+        <div id="processedResult" style="text-align: center; display: none;">
+            <h3>🎉 Your RP Memory Photo!</h3>
+            <div class="auto-process-info">
+                <p>✅ <strong>Automatically processed with RP theme!</strong></p>
+                <p>The RP background and overlay have been applied to your photo.</p>
+            </div>
+            
+            <img id="processedImage" class="composite-result" alt="RP Themed Photo" style="display: none;">
+            
+            <div id="processingMessage" class="processing-message">
+                <p>🔄 Applying RP background and overlay to your photo...</p>
+                <p><small>This will only take a moment</small></p>
+            </div>
+            
+            <div class="btn-group" id="processedButtons" style="display: none;">
+                <button class="btn btn-success" onclick="useThisPhoto()" style="padding: 20px 30px; font-size: 1.1em;">
+                    ✅ Use This Photo & Continue
+                </button>
+                <div class="btn-group">
+                    <button class="btn btn-warning" onclick="retakePhoto()">🔄 Retake Photo</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="goBackFromPhotoScreen()">Back</button>
+        </div>
+    </div>
+
+    <!-- Confirmation Screen -->
+    <div id="confirmationScreen" class="screen">
+        <h1>✅ Confirm Submission</h1>
+        <p>Please review your information before submitting:</p>
+        
+        <div id="confirmationDetails" class="confirmation-details"></div>
+        
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="submitFeedback()">Submit Feedback</button>
+            <button class="btn btn-secondary" onclick="showScreen('photoScreen')">Back</button>
+        </div>
+    </div>
+
+    <!-- Thank You Screen -->
+    <div id="thankYouScreen" class="screen">
+        <div class="thank-you-message">
+            <h1>Thank You! 🌟</h1>
+            <div style="font-size: 4em; margin: 30px 0;">🌳</div>
+            <p style="font-size: 1.3em; color: var(--darker-green);">
+                Your feedback has been recorded and a new leaf has been added to our digital tree!
+            </p>
+            
+            <div id="emailMessage" style="display: none; background: #d4edda; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <p style="color: #155724; margin: 0;">
+                    <strong>📧 Your RP memory photo has been sent to your email!</strong><br>
+                    <small>Please check your inbox within the next minute</small>
+                </p>
+            </div>
+            
+            <p>Thank you for contributing to our sustainability journey at Republic Polytechnic!</p>
+            
+            <div class="btn-group">
+                <button class="btn" onclick="resetForm()">Submit Another Feedback</button>
+                <button class="btn" onclick="window.open('/tree', '_blank')">View Digital Tree</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRating = 0;
+        let stream = null;
+        let capturedPhotoData = null;
+        let cameraConsentGiven = false;
+        let dataConsentGiven = false;
+        let processedPhotoUrl = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeQRCode();
+            setRating(0);
+        });
+
+        // Initialize QR code
+        async function initializeQRCode() {
+            try {
+                const response = await fetch('/api/qrcode');
+                const data = await response.json();
+                if (data.qrCode) {
+                    document.getElementById('qrCodeImg').src = data.qrCode;
+                }
+            } catch (error) {
+                console.log('QR code not available:', error);
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId === 'photoScreen') {
+                initializePhotoScreen();
+            } else if (screenId === 'confirmationScreen') {
+                updateConfirmationDetails();
+            } else if (screenId === 'thankYouScreen') {
+                const email = document.getElementById('email').value;
+                if (email && capturedPhotoData) {
+                    document.getElementById('emailMessage').style.display = 'block';
+                }
+            }
+        }
+        
+
+        function checkConsent() {
+            const cameraConsent = document.getElementById('cameraConsent').checked;
+            const dataConsent = document.getElementById('dataConsent').checked;
+            
+            if (!cameraConsent || !dataConsent) {
+                alert('Please consent to both camera usage and data privacy policy to continue.');
+                return;
+            }
+            
+            cameraConsentGiven = true;
+            dataConsentGiven = true;
+            showScreen('feedbackScreen');
+        }
+
+        function setRating(rating) {
+            currentRating = rating;
+            document.querySelectorAll('.star').forEach((star, index) => {
+                star.classList.toggle('active', index < rating);
+            });
+        }
+
+        function validateName() {
+            const nameInput = document.getElementById('name');
+            const validation = document.getElementById('nameValidation');
+            const nameRegex = /^[a-zA-Z0-9\s\-'.]{1,50}$/;
+            
+            if (nameInput.value.trim() && !nameRegex.test(nameInput.value.trim())) {
+                validation.style.display = 'block';
+                return false;
+            } else {
+                validation.style.display = 'none';
+                return true;
+            }
+        }
+
+        function validateAndProceed() {
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            if (!validateName()) {
+                alert('Please enter a valid name');
+                return;
+            }
+            
+            showScreen('photoScreen');
+        }
+
+        function goBackFromPhotoScreen() {
+            // Don't cleanup camera resources if we have a processed photo
+            if (!processedPhotoUrl) {
+                // Only cleanup if no photo was taken yet
+                if (stream) {
+                    stream.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                    stream = null;
+                }
+                
+                // Clear video element only if no photo exists
+                const videoElement = document.getElementById('videoElement');
+                videoElement.srcObject = null;
+            }
+            
+            // Go back to details screen without resetting photo data
+            showScreen('detailsScreen');
+        }
+
+        function initializePhotoScreen() {
+            // If we already have a processed photo, show it immediately
+            if (processedPhotoUrl) {
+                showProcessedPhoto();
+                return;
+            }
+            
+            // Clean up any existing stream (only if no photo exists)
+            if (stream && !processedPhotoUrl) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            // Clear video element only if no photo exists
+            if (!processedPhotoUrl) {
+                const videoElement = document.getElementById('videoElement');
+                videoElement.srcObject = null;
+            }
+            
+            // Reset UI elements only if no photo exists
+            if (!processedPhotoUrl) {
+                document.getElementById('videoElement').style.display = 'none';
+                document.getElementById('countdown').style.display = 'none';
+                document.getElementById('photoPreview').style.display = 'none';
+                document.getElementById('cameraStatus').style.display = 'none';
+                document.getElementById('processedResult').style.display = 'none';
+                document.getElementById('processedButtons').style.display = 'none';
+                document.getElementById('processingMessage').style.display = 'block';
+                document.getElementById('processedImage').style.display = 'none';
+                
+                // Reset photo controls to initial state
+                document.getElementById('photoControls').style.display = 'block';
+                document.getElementById('photoControls').innerHTML = `
+                    <p>Your photo will be automatically taken with a 3-second countdown</p>
+                    <button class="btn" onclick="startAutoPhotoCapture()" id="startCameraBtn">
+                        Start Camera & Take Photo
+                    </button>
+                `;
+            } else {
+                // If we have a processed photo, show it
+                showProcessedPhoto();
+            }
+        }
+
+        function showProcessedPhoto() {
+            // Hide all camera-related elements
+            document.getElementById('videoElement').style.display = 'none';
+            document.getElementById('countdown').style.display = 'none';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('cameraStatus').style.display = 'none';
+            document.getElementById('photoControls').style.display = 'none';
+            
+            // Show the processed result
+            document.getElementById('processedResult').style.display = 'block';
+            document.getElementById('processedImage').src = processedPhotoUrl;
+            document.getElementById('processedImage').style.display = 'block';
+            document.getElementById('processingMessage').style.display = 'none';
+            document.getElementById('processedButtons').style.display = 'flex';
+            
+            // Update the message to indicate this is the existing photo
+            document.querySelector('#processedResult h3').textContent = '📸 Your Existing RP Memory Photo';
+            document.querySelector('.auto-process-info p').innerHTML = 
+                '✅ <strong>Your previously taken photo is ready!</strong>';
+            document.querySelector('.auto-process-info p:last-child').textContent = 
+                'You can continue with this photo or retake a new one.';
+        }
+
+        async function startAutoPhotoCapture() {
+            if (!cameraConsentGiven) {
+                alert('Camera consent is required to take photos.');
+                return;
+            }
+
+            try {
+                // Clean up any existing stream first
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    } 
+                });
+                
+                document.getElementById('cameraStatus').style.display = 'block';
+                document.getElementById('cameraStatus').textContent = '✅ Camera ready - Photo will be taken automatically';
+                
+                const videoElement = document.getElementById('videoElement');
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block';
+                
+                document.getElementById('startCameraBtn').style.display = 'none';
+                document.getElementById('photoControls').innerHTML = '<p>Camera ready! Photo will be taken in 3 seconds...</p>';
+                
+                // Wait a moment for camera to initialize properly
+                setTimeout(startCountdown, 500);
+                
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Unable to access camera. Please ensure you have granted camera permissions.');
+                simulatePhotoCapture();
+            }
+        }
+        function startCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            countdownElement.style.display = 'block';
+            
+            let countdown = 3;
+            countdownElement.textContent = countdown;
+            
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                countdownElement.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.style.display = 'none';
+                    capturePhotoAutomatically();
+                }
+            }, 1000);
+        }
+
+        function capturePhotoAutomatically() {
+            const video = document.getElementById('videoElement');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob(async (blob) => {
+                capturedPhotoData = blob;
+                
+                const photoPreview = document.getElementById('photoPreview');
+                photoPreview.src = URL.createObjectURL(blob);
+                photoPreview.style.display = 'block';
+                
+                video.style.display = 'none';
+                
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                
+                document.getElementById('processedResult').style.display = 'block';
+                document.getElementById('photoControls').style.display = 'none';
+                
+                await processPhotoWithRPTheme(blob);
+                
+            }, 'image/jpeg', 0.9);
+        }
+
+        async function processPhotoWithRPTheme(photoBlob) {
+            try {
+                // Show processing message
+                document.getElementById('processingMessage').style.display = 'block';
+                document.getElementById('processedImage').style.display = 'none';
+                
+                // Process the photo on server for display (temporary)
+                const formData = new FormData();
+                formData.append('photo', photoBlob, 'user-photo.jpg');
+                formData.append('temporary', 'true');
+                // Remove userName from temporary processing since uploads don't need it
+
+                // Send to server for processing with overlay
+                const response = await fetch('/api/process-photo-temporary', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Store the original photo blob for final upload
+                    capturedPhotoData = photoBlob;
+                    processedPhotoUrl = result.temporaryUrl; // For display only
+                    
+                    // Show the processed image
+                    const processedImage = document.getElementById('processedImage');
+                    processedImage.src = processedPhotoUrl;
+                    processedImage.style.display = 'block';
+                    
+                    // Hide processing message
+                    document.getElementById('processingMessage').style.display = 'none';
+                    
+                    // Show action buttons
+                    document.getElementById('processedButtons').style.display = 'flex';
+                    
+                    console.log('✅ Photo processed and stored locally for final submission');
+                    
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                console.error('Error processing photo:', error);
+                document.getElementById('processingMessage').innerHTML = 
+                    '<p style="color: red;">❌ Failed to process photo. Please try again.</p>';
+            }
+        }
+
+        async function processPhotoLocally(photoBlob) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const img = new Image();
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    img.onload = function() {
+                        // Set canvas to image dimensions
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        // Draw the original photo
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Create RP overlay (this is a simplified client-side version)
+                        createRPOverlay(ctx, canvas.width, canvas.height);
+                        
+                        // Convert back to blob
+                        canvas.toBlob(resolve, 'image/jpeg', 0.9);
+                    };
+                    
+                    img.onerror = reject;
+                    img.src = URL.createObjectURL(photoBlob);
+                    
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        function createRPOverlay(ctx, width, height) {
+            // Create gradient overlay
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, 'rgba(26, 95, 35, 0.3)'); // Dark green
+            gradient.addColorStop(1, 'rgba(46, 204, 113, 0.2)'); // Light green
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Add RP text (simplified version)
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${Math.max(24, width * 0.03)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Add Republic Polytechnic text
+            ctx.fillText('Republic Polytechnic', width / 2, height * 0.1);
+            
+            // Add ESG Centre text
+            ctx.font = `bold ${Math.max(18, width * 0.02)}px Arial`;
+            ctx.fillText('ESG Centre', width / 2, height * 0.15);
+            
+            // Add bottom text
+            ctx.fillText('I visited the ESG Centre!', width / 2, height * 0.9);
+            
+            // Add date
+            ctx.font = `${Math.max(14, width * 0.015)}px Arial`;
+            ctx.fillText(new Date().toLocaleDateString(), width / 2, height * 0.95);
+        }
+
+        function useThisPhoto() {
+            if (!capturedPhotoData) {
+                alert('No photo data available. Please take a photo first.');
+                return;
+            }
+            
+            // Just store the photo data locally and proceed to confirmation
+            // No server upload happens here
+            console.log('✅ Photo stored locally - will be uploaded on final submission');
+            showScreen('confirmationScreen');
+        }
+
+        function retakePhoto() {
+            // Note: No need to revoke ObjectURLs since we're using data URLs from server
+            // The server already cleaned up the temporary files
+            
+            // Reset photo data
+            capturedPhotoData = null;
+            processedPhotoUrl = null;
+            
+            // Always cleanup camera when retaking
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                stream = null;
+            }
+            
+            // Reset all photo elements
+            document.getElementById('processedResult').style.display = 'none';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('videoElement').style.display = 'none';
+            document.getElementById('countdown').style.display = 'none';
+            document.getElementById('cameraStatus').style.display = 'none';
+            
+            // Clear the video element source
+            const videoElement = document.getElementById('videoElement');
+            videoElement.srcObject = null;
+            
+            // Re-initialize the photo screen properly
+            document.getElementById('photoControls').style.display = 'block';
+            document.getElementById('photoControls').innerHTML = `
+                <p>Your photo will be automatically taken with a 3-second countdown</p>
+                <button class="btn" onclick="startAutoPhotoCapture()" id="startCameraBtn">
+                    Start Camera & Take Photo
+                </button>
+            `;
+            
+            console.log('🔄 Camera reset for retake - temporary data cleaned up');
+        }
+
+
+        function simulatePhotoCapture() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = 400;
+            canvas.height = 300;
+            
+            context.fillStyle = '#4CAF50';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 24px Arial';
+            context.textAlign = 'center';
+            context.fillText('Photo Captured!', canvas.width/2, canvas.height/2 - 20);
+            context.font = '18px Arial';
+            context.fillText('Test Mode - Camera Not Available', canvas.width/2, canvas.height/2 + 20);
+            context.fillText(new Date().toLocaleTimeString(), canvas.width/2, canvas.height/2 + 50);
+            
+            canvas.toBlob(async (blob) => {
+                capturedPhotoData = blob;
+                
+                const photoPreview = document.getElementById('photoPreview');
+                photoPreview.src = URL.createObjectURL(blob);
+                photoPreview.style.display = 'block';
+                
+                document.getElementById('processedResult').style.display = 'block';
+                document.getElementById('photoControls').style.display = 'none';
+                document.getElementById('cameraStatus').style.display = 'block';
+                document.getElementById('cameraStatus').textContent = '📸 Test Mode - Camera simulation';
+                
+                await processPhotoWithRPTheme(blob);
+            }, 'image/jpeg', 0.9);
+        }
+
+        function updateConfirmationDetails() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const feedback = document.getElementById('feedback').value;
+            const pledge = document.getElementById('pledge').value;
+            
+            let html = `
+                <h3>Submission Details:</h3>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email || 'Not provided'}</p>
+                <p><strong>Rating:</strong> ${'★'.repeat(currentRating)}${'☆'.repeat(5-currentRating)} (${currentRating}/5)</p>
+                ${feedback ? `<p><strong>Feedback:</strong> ${feedback}</p>` : ''}
+                ${pledge ? `<p><strong>Pledge:</strong> ${pledge}</p>` : ''}
+                <p><strong>Photo:</strong> ${capturedPhotoData ? '✅ Ready to be uploaded with submission' : '❌ Not taken'}</p>
+                <p><strong>Email Photo:</strong> ${email && capturedPhotoData ? '✅ Will be sent to your email' : '❌ No email/photo provided'}</p>
+                <p><strong>Data Consent:</strong> ✅ Given (Personal data deleted after 7 days)</p>
+                ${capturedPhotoData ? '<p><small>💡 You can go back to retake the photo if needed</small></p>' : ''}
+            `;
+            
+            document.getElementById('confirmationDetails').innerHTML = html;
+        }
+
+        async function submitFeedback() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const feedback = document.getElementById('feedback').value;
+            const pledge = document.getElementById('pledge').value;
+            
+            if (!name || !name.trim()) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            if (!validateName()) {
+                alert('Please enter a valid name');
+                return;
+            }
+            
+            const submitBtn = document.querySelector('#confirmationScreen button');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+            
+            try {
+                let finalPhotoUrl = null;
+                
+                // Upload photo to server only if we have one
+                if (capturedPhotoData) {
+                    submitBtn.textContent = '📤 Uploading Photo...';
+                    
+                    const formData = new FormData();
+                    formData.append('photo', capturedPhotoData, 'user-photo.jpg');
+                    formData.append('userName', name.trim()); // Add user name to form data
+                    
+                    const photoResponse = await fetch('/api/upload-photo', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const photoResult = await photoResponse.json();
+                    
+                    if (!photoResult.success) {
+                        throw new Error('Failed to upload photo: ' + photoResult.error);
+                    }
+                    
+                    finalPhotoUrl = photoResult.compositeImage;
+                    console.log('✅ Photo uploaded to server');
+                }
+                
+                submitBtn.textContent = 'Saving Feedback...';
+                
+                // Submit feedback with photo URL
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        email: email ? email.trim() : '',
+                        rating: currentRating,
+                        feedback: feedback,
+                        pledge: pledge,
+                        consent: dataConsentGiven.toString(),
+                        photoUrl: finalPhotoUrl
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || `Server error: ${response.status}`);
+                }
+                
+                if (result.success) {
+                    console.log('✅ Feedback submitted successfully with photo');
+                    showScreen('thankYouScreen');
+                    
+                } else {
+                    throw new Error(result.error || 'Unknown error occurred');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error submitting feedback:', error);
+                alert('Error submitting feedback: ' + error.message);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function resetForm() {
+            // Clean up temporary object URLs
+            if (processedPhotoUrl) {
+                URL.revokeObjectURL(processedPhotoUrl);
+            }
+            
+            document.getElementById('name').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('feedback').value = '';
+            document.getElementById('pledge').value = '';
+            document.getElementById('cameraConsent').checked = false;
+            document.getElementById('dataConsent').checked = false;
+            
+            currentRating = 0;
+            setRating(0);
+            capturedPhotoData = null;
+            processedPhotoUrl = null;
+            cameraConsentGiven = false;
+            dataConsentGiven = false;
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            showScreen('welcomeScreen');
+        }
+    </script>
+</body>
+</html>

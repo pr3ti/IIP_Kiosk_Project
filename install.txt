@@ -1,0 +1,37 @@
+npm init -y
+npm install sqlite3
+
+
+-------------------------------------------
+
+Step-by-Step Instructions:
+
+1. Install Node.js (which includes npm):
+- Go to the Node.js download page: https://nodejs.org/
+- Download the LTS version (recommended for most users).
+- Run the installer. It will install both Node.js and npm.
+
+2. Verify the installation:
+- After installing Node.js, verify that Node.js and npm are installed correctly by running the following commands in your terminal:
+- "node -v"  # This shows the installed version of Node.js
+- "npm -v"   # This shows the installed version of npm
+
+
+If both commands return version numbers, you are good to go!
+
+3. Install SQLite3 using npm:
+- Now that you have Node.js and npm installed, you can install the sqlite3 package for your project.
+- Open a terminal in the root folder of your project (or create a new folder for the project).
+- Run the following command to install sqlite3:
+- "npm install sqlite3"
+
+
+This will install the SQLite3 package and add it to your project’s node_modules folder.
+
+4. Example Workflow:
+- Install Node.js (includes npm).
+- Navigate to your project folder in the terminal.
+- Run npm install sqlite3 to install SQLite3.
+- Write and run your Node.js script that uses SQLite3.
+
+That's it! You don't need to install Node.js with npm, just install Node.js first, and then you can use npm to manage packages like sqlite3.
