@@ -174,6 +174,92 @@
     </style>
 </head>
 <body>
+    
+
+    <!-- 
+    // ==================== ZAH'S DIGITAL TREE INTEGRATION SECTION ====================
+    // 🔧 ZAHEERA: You can edit tree visualization and animations here
+    // 
+    // ✅ SAFE TO EDIT IN THIS CLASS:
+    // - Tree rendering algorithms and visual styles
+    // - Leaf shapes, colors, and animations  
+    // - Branch generation and growth patterns
+    // - Season effects and visual transitions
+    // - Wind effects and environmental animations
+    // - Canvas drawing methods and visual enhancements
+    //
+    // 🚫 DO NOT MODIFY OUTSIDE THIS CLASS:
+    // - API endpoints and data fetching (/api/tree)
+    // - Database queries and visitor data structure
+    // - Authentication and admin functions
+    // - File paths and directory structures
+    //
+    // 💡 YOUR FOCUS AREAS:
+    // - enhanceTreeVisualization() - Improve tree rendering
+    // - createCustomLeafDesigns() - Design unique leaf styles
+    // - addSeasonalEffects() - Implement weather/season changes
+    // - optimizeTreePerformance() - Smooth animations
+    //
+    // =========================================================================
+    🎯 DEVELOPMENT GUIDELINES FOR FRONTEND TEAM:
+
+    ✅ SAFE TO MODIFY (DESIGN/LAYOUT):
+    - All CSS styling, colors, backgrounds, and animations
+    - Tree container styling and visual effects  
+    - Text content, labels, and information displays
+    - Control panel positioning and styling
+    - Adding decorative elements and visual enhancements
+
+    ⚠️ PRESERVE THESE FOR FUNCTIONALITY:
+    - Canvas element ID (id="treeCanvas" - THIS RENDERS THE TREE)
+    - Data display IDs (id="visitorCount", id="leavesToday", id="treeAge", id="lastUpdate")
+    - Season indicator IDs (id="seasonIcon", id="seasonText")
+    - Tooltip ID (id="leafTooltip")
+    - All control button function calls (onclick="changeSeason()", onclick="toggleAnimation()")
+    - API endpoint URLs (e.g., '/api/tree')
+
+    🔧 TECHNICAL NOTES:
+    - CSS classes can be modified for styling
+    - The canvas element must remain for tree visualization
+    - Data display elements must stay to show visitor statistics
+    - Control buttons must remain to interact with the tree
+    - Backend integration relies on preserved IDs and function calls
+
+    💡 IMPORTANT:
+    - If you remove the canvas, the tree disappears!
+    - If you remove data displays, statistics won't show!
+    - If you remove control buttons, users can't interact with the tree!
+    -->
+
+    <!-- ZAH: DON'T CHANGE CANVAS ID - TREE RENDERING SYSTEM
+        <canvas id="treeCanvas"></canvas>
+
+        // ZAH: DON'T CHANGE THESE IDs - DATA DISPLAY
+        <div id="visitorCount">0</div>
+        <div id="leavesToday">0</div>
+        <div id="treeAge">0 days</div>
+        <div id="lastUpdate">-</div>
+        <div id="seasonIcon">🌱</div>
+        <div id="seasonText">Spring</div>
+        <div id="leafTooltip"></div>
+
+        // ZAH: DON'T CHANGE THESE FUNCTION CALLS - TREE CONTROLS
+        <button class="control-btn" onclick="changeSeason(-1)">
+        <button class="control-btn" onclick="toggleAnimation()">
+        <button class="control-btn" onclick="changeSeason(1)">
+        // TEAM: DON'T CHANGE TREE CLASS - VISUALIZATION ENGINE
+        class RealisticTree { ... }
+
+        // ZAH: DON'T CHANGE THESE FUNCTION NAMES - TREE CONTROLS
+        function changeSeason(direction) { ... }
+        function toggleAnimation() { ... }
+        function fetchVisitorData() { ... }
+
+        // ZAH: DON'T CHANGE THIS API ENDPOINT - DATA SOURCE
+        fetch('/api/tree', { ... }) -->
+
+
+
     <div id="treeContainer">
         <div class="tree-title">
             <h1>🌳 ESG Digital Tree</h1>
@@ -219,12 +305,14 @@
     <script>
         class RealisticTree {
             constructor(canvas) {
+                 // ✅ SAFE TO MODIFY: Tree visualization properties
                 this.canvas = canvas;
                 this.ctx = canvas.getContext('2d');
                 this.visitors = [];
                 this.leaves = [];
                 this.branches = [];
                 this.season = 'spring';
+                    // ✅ SAFE TO MODIFY: Animation properties
                 this.animationId = null;
                 this.lastUpdate = Date.now();
                 this.isAnimating = true;
@@ -232,6 +320,7 @@
                 this.windDirection = 1;
                 this.windChangeTime = 0;
                 
+                    // ✅ SAFE TO MODIFY: Visual settings
                 this.seasons = {
                     spring: { color: '#4CAF50', icon: '🌱', leafColor: '#81C784' },
                     summer: { color: '#388E3C', icon: '☀️', leafColor: '#66BB6A' },
@@ -280,7 +369,7 @@
                     }
                 }
             }
-            
+              // ✅ SAFE TO MODIFY: All tree drawing and animation methods
             drawTree() {
                 const ctx = this.ctx;
                 
@@ -528,12 +617,13 @@
                 
                 return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
             }
-            
+              // 🚫 DO NOT MODIFY: Data integration methods
             addLeaf(visitor) {
+                    // This connects to backend data - keep structure intact
                 const suitableBranches = this.branches.filter(b => b.depth <= 3);
                 if (suitableBranches.length === 0) return;
                 
-                const branch = suitableBranches[Math.floor(Math.random() * suitableBranches.length)];
+                const branch = suitableBranches[Math.floor(Math.random() * suitableBranches.length)];    // ... data integration logic (preserve this)
                 const distance = Math.random() * branch.length;
                 const angle = branch.angle * Math.PI / 180;
                 
@@ -573,7 +663,7 @@
                     }
                 }, 8000);
             }
-            
+              // ✅ SAFE TO MODIFY: Animation and effect methods
             updateLeaves() {
                 const now = Date.now();
                 
@@ -644,10 +734,11 @@
             
             canvas.addEventListener('mousemove', handleMouseMove);
         });
-
+        // 🚫 DO NOT MODIFY: Data fetching and API integration
         async function fetchVisitorData() {
+            // This connects to backend - preserve structure
             try {
-                const response = await fetch('/api/tree');
+                const response = await fetch('/api/tree');// 🚫 Keep this 
                 const visitors = await response.json();
                 
                 document.getElementById('visitorCount').textContent = visitors.length;
@@ -665,7 +756,7 @@
                     document.getElementById('treeAge').textContent = treeAge + ' days';
                 }
                 
-                updateTreeLeaves(visitors);
+                updateTreeLeaves(visitors);//🚫 Keep this data flow
                 
             } catch (error) {
                 console.error('Error fetching visitor data:', error);

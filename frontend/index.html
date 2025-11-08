@@ -363,6 +363,104 @@
     </style>
 </head>
 <body>
+    <!--IMPORTANT DEVELOPMENT NOTES:
+
+    🎯 DEVELOPMENT GUIDELINES FOR FRONTEND TEAM:
+    
+    ✅ SAFE TO MODIFY (DESIGN/LAYOUT):
+    - All CSS styling, colors, fonts, and animations
+    - HTML structure and element positioning  
+    - Text content, labels, and messages
+    - Responsive design and breakpoints
+    - Adding decorative elements and visual enhancements
+
+    ⚠️ PRESERVE THESE FOR FUNCTIONALITY:
+    - All element IDs (e.g., id="welcomeScreen", id="name", id="email")
+    - All JavaScript function calls (e.g., onclick="submitFeedback()")
+    - All form inputs, buttons, and interactive elements (IF YOU REMOVE THE BUTTONS AND TEXTBOX THEN THE BACKEND WONT FIT TO THE FRONT)
+    - API endpoint URLs (e.g., '/api/feedback', '/api/upload-photo')
+
+    🔧 TECHNICAL NOTES:
+    - CSS classes can be modified for styling
+    - Element IDs must remain unchanged for JavaScript connectivity
+    - All functional elements must remain in the DOM (don't remove buttons/inputs)
+    - Backend integration relies on preserved IDs and function calls
+
+    // NADH: DON'T CHANGE THESE IDs - THEY CONNECT TO BACKEND 
+    <div id="welcomeScreen" class="screen active">
+    <div id="consentScreen" class="screen">
+    <div id="feedbackScreen" class="screen">
+    <div id="pledgeScreen" class="screen">
+    <div id="detailsScreen" class="screen">
+    <div id="photoScreen" class="screen">
+    <div id="confirmationScreen" class="screen">
+    <div id="thankYouScreen" class="screen">
+
+    // NADH: DON'T CHANGE THESE INPUT IDs - FORM DATA CONNECTION 
+    <input type="text" id="name">
+    <input type="email" id="email">
+    <textarea id="feedback"></textarea>
+    <textarea id="pledge"></textarea>
+    <input type="checkbox" id="cameraConsent">
+    <input type="checkbox" id="dataConsent">
+
+    // NADH: DON'T CHANGE PHOTO ELEMENT IDs - CAMERA SYSTEM 
+    <video id="videoElement"></video>
+    <div id="countdown"></div>
+    <img id="photoPreview" class="photo-preview">
+    <img id="processedImage" class="composite-result">
+    <div id="cameraStatus"></div>
+    <div id="photoControls"></div>
+    <div id="processedResult"></div>
+    <div id="processingMessage"></div>
+    <div id="processedButtons"></div>
+
+    // NADH: DON'T CHANGE THESE IDs - DATA DISPLAY 
+    <div id="confirmationDetails"></div>
+    <div id="emailMessage"></div>
+    <div id="nameValidation"></div>
+    <div id="qrCodeImg"></div>
+
+    // NADH: DON'T CHANGE THESE FUNCTION CALLS - BACKEND CONNECTION 
+    <button onclick="showScreen('consentScreen')">
+    <button onclick="checkConsent()">
+    <button onclick="setRating(1)">
+    <button onclick="validateAndProceed()">
+    <button onclick="startAutoPhotoCapture()">
+    <button onclick="useThisPhoto()">
+    <button onclick="retakePhoto()">
+    <button onclick="submitFeedback()">
+    
+    Javascript:
+    // NADH: DON'T CHANGE THESE VARIABLES - BACKEND CONNECTION
+    let currentRating = 0;
+    let stream = null;
+    let capturedPhotoData = null;
+    let cameraConsentGiven = false;
+    let dataConsentGiven = false;
+    let processedPhotoUrl = null;
+
+    // NADH: DON'T CHANGE THESE FUNCTION NAMES - BACKEND API
+    function showScreen(screenId) { ... }
+    function checkConsent() { ... }
+    function setRating(rating) { ... }
+    function validateName() { ... }
+    function validateAndProceed() { ... }
+    function startAutoPhotoCapture() { ... }
+    function capturePhotoAutomatically() { ... }
+    function useThisPhoto() { ... }
+    function retakePhoto() { ... }
+    function updateConfirmationDetails() { ... }
+    function submitFeedback() { ... }
+
+    // NADH: DON'T CHANGE THESE API ENDPOINTS - BACKEND CONNECTION
+    fetch('/api/feedback', { ... })
+    fetch('/api/upload-photo', { ... })
+    fetch('/api/process-photo-temporary', { ... })
+    fetch('/api/qrcode', { ... })  -->
+
+
+
     <!-- Welcome Screen -->
     <div id="welcomeScreen" class="screen active">
         <div style="text-align: center;">
@@ -575,11 +673,10 @@
             
             <div class="btn-group">
                 <button class="btn" onclick="resetForm()">Submit Another Feedback</button>
-                <button class="btn" onclick="window.open('/tree', '_blank')">View Digital Tree</button>
             </div>
         </div>
     </div>
-
+   <!-- dont edit anything in script except for ber -->
     <script>
         let currentRating = 0;
         let stream = null;
@@ -803,6 +900,7 @@
                 simulatePhotoCapture();
             }
         }
+        //bernissa to edit 
         function startCountdown() {
             const countdownElement = document.getElementById('countdown');
             countdownElement.style.display = 'block';
