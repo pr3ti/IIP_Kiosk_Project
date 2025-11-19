@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESG Digital Tree - Tech Theme</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: url('/assets/Tree/TechBackground.jpg') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+        }
+        
+        #treeContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #treeImage {
+            position: absolute;
+            top: 57%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2100px;
+            height: auto;
+            z-index: 1;
+        }
+
+        #treeImageLeaves {
+            position: absolute;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2700px;
+            height: auto;
+            z-index: 1;
+            opacity: 0; /* Start with 0 transparency (fully transparent) */
+            transition: opacity 1s ease-in-out; /* Smooth transition */
+        }
+        
+        .leaf {
+            position: absolute;
+            z-index: 2;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .leaf:hover {
+            transform: scale(1.1);
+            z-index: 3;
+        }
+        
+        .leaf-name {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #2d5016;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+        
+        .tree-title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 30px;
+            border-radius: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .tree-title h1 {
+            color: #2d5016;
+            font-size: 2em;
+            margin: 0;
+        }
+        
+        .tree-title p {
+            color: #666;
+            margin: 5px 0 0 0;
+            font-size: 1em;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5em;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        
+        /* Debug visualization - remove in production */
+        #ovalOverlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1900px;
+            height: 849px;
+            border: 1px dashed rgba(255, 0, 0, 0);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .transparency-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            font-size: 14px;
+        }
+
+        /* Design switcher button */
+        .design-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            cursor: pointer;
+            text-decoration: none;
+            color: #2d5016;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+
+        .design-switcher:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+    </style>
+</head>
+<body>
+    <div id="treeContainer">
+        <div class="tree-title">
+            <h1>🌳 ESG Digital Tree</h1>
+            <p>Growing with every visitor's contribution</p>
+        </div>
+
+        <!-- Design switcher button -->
+        <a href="/tree.html" class="design-switcher">
+            Switch to Design
+        </a>
+        
+        <div class="transparency-info" id="transparencyInfo">
+            Leaves Transparency: <span id="transparencyValue">0</span>%
+        </div>
+        
+        <!-- Updated to use tech images -->
+        <img id="treeImage" src="/assets/Tree/trunkTech2.png" alt="ESG Tree">
+        <img id="treeImageLeaves" src="/assets/Tree/leavespartTech.png" alt="ESG Tree">
+        
+        <!-- Debug oval overlay - remove in production -->
+        <div id="ovalOverlay"></div>
+        
+        <div id="leavesContainer"></div>
+        
+        <div class="loading" id="loadingMessage">
+            Loading tree data...
+        </div>
+    </div>
+
+    <script>
+        class TreeManager {
+            constructor() {
+                this.treeImage = document.getElementById('treeImage');
+                this.treeImageLeaves = document.getElementById('treeImageLeaves');
+                this.leavesContainer = document.getElementById('leavesContainer');
+                this.loadingMessage = document.getElementById('loadingMessage');
+                this.transparencyInfo = document.getElementById('transparencyInfo');
+                this.transparencyValue = document.getElementById('transparencyValue');
+                this.visitors = [];
+                
+                // Oval dimensions and positioning
+                this.ovalWidth = 1730;
+                this.ovalHeight = 550;
+                
+                // Individual control for top and bottom positions
+                // These values adjust the oval position relative to the tree center
+                this.ovalTopOffset = -180;    // Move oval higher (negative = up)
+                this.ovalBottomOffset = 20;   // Move bottom up (positive = up)
+                
+                // Transparency settings
+                this.transparencyStep = 0.01; // Increase by 0.05 for every 10 users
+                this.usersPerStep = 5;       // Number of users needed for each transparency increase
+                
+                this.init();
+            }
+            
+            async init() {
+                // Wait for tree image to load
+                await this.loadTreeImage();
+                
+                // Get visitor data
+                await this.fetchVisitorData();
+                
+                // Create leaves
+                this.createLeaves();
+                
+                // Update leaves transparency based on user count
+                this.updateLeavesTransparency();
+                
+                // Hide loading message
+                this.loadingMessage.style.display = 'none';
+            }
+            
+            loadTreeImage() {
+                return new Promise((resolve) => {
+                    if (this.treeImage.complete && this.treeImageLeaves.complete) {
+                        resolve();
+                    } else {
+                        let imagesLoaded = 0;
+                        const checkLoaded = () => {
+                            imagesLoaded++;
+                            if (imagesLoaded === 2) resolve();
+                        };
+                        
+                        this.treeImage.onload = checkLoaded;
+                        this.treeImageLeaves.onload = checkLoaded;
+                    }
+                });
+            }
+            
+            async fetchVisitorData() {
+                try {
+                    const response = await fetch('/api/tree');
+                    this.visitors = await response.json();
+                    console.log(`Loaded ${this.visitors.length} visitors`);
+                } catch (error) {
+                    console.error('Error fetching visitor data:', error);
+                    this.visitors = [];
+                }
+            }
+            
+            createLeaves() {
+                // Clear existing leaves
+                this.leavesContainer.innerHTML = '';
+                
+                // Get tree image position and dimensions
+                const treeRect = this.treeImage.getBoundingClientRect();
+                const containerRect = this.leavesContainer.getBoundingClientRect();
+                
+                // Calculate the oval area with individual top/bottom control
+                const ovalArea = this.calculateOvalArea(treeRect, containerRect);
+                
+                console.log('Oval area for leaves:', ovalArea);
+                
+                // Update debug overlay position
+                this.updateOvalOverlay(ovalArea);
+                
+                // Create leaves for each visitor
+                this.visitors.forEach((visitor, index) => {
+                    this.createLeaf(visitor, index, ovalArea);
+                });
+            }
+            
+            calculateOvalArea(treeRect, containerRect) {
+                // Calculate the base oval area centered on the tree
+                const baseOvalArea = {
+                    x: treeRect.left - containerRect.left + (treeRect.width - this.ovalWidth) / 2,
+                    y: treeRect.top - containerRect.top + (treeRect.height - this.ovalHeight) / 2,
+                    width: this.ovalWidth,
+                    height: this.ovalHeight
+                };
+                
+                // Apply individual top and bottom adjustments
+                // Top offset moves the entire oval up/down
+                // Bottom offset compresses/stretches from the bottom
+                const adjustedY = baseOvalArea.y + this.ovalTopOffset;
+                const adjustedHeight = this.ovalHeight - this.ovalTopOffset + this.ovalBottomOffset;
+                
+                return {
+                    x: baseOvalArea.x,
+                    y: adjustedY -80,
+                    width: this.ovalWidth,
+                    height: adjustedHeight
+                };
+            }
+            
+            updateOvalOverlay(ovalArea) {
+                let ovalOverlay = document.getElementById('ovalOverlay');
+                if (!ovalOverlay) {
+                    ovalOverlay = document.createElement('div');
+                    ovalOverlay.id = 'ovalOverlay';
+                    document.getElementById('treeContainer').appendChild(ovalOverlay);
+                }
+                
+                ovalOverlay.style.width = ovalArea.width + 'px';
+                ovalOverlay.style.height = ovalArea.height + 'px';
+                ovalOverlay.style.left = ovalArea.x + 'px';
+                ovalOverlay.style.top = ovalArea.y + 'px';
+                ovalOverlay.style.transform = 'none';
+            }
+            
+            createLeaf(visitor, index, ovalArea) {
+                const leaf = document.createElement('div');
+                leaf.className = 'leaf';
+                
+                // Randomly choose left or right tech leaf image
+                const leafType = Math.random() > 0.5 ? 'leafleftTech2.png' : 'leafrightTech2.png';
+                const leafSize = 80 + (visitor.visit_count * 5); // Size based on visit count
+                
+                leaf.style.width = leafSize + 'px';
+                leaf.style.height = leafSize + 'px';
+                
+                // Set leaf background image
+                leaf.style.backgroundImage = `url('/assets/Tree/${leafType}')`;
+                leaf.style.backgroundSize = 'contain';
+                leaf.style.backgroundRepeat = 'no-repeat';
+                leaf.style.backgroundPosition = 'center';
+                
+                // Random position within the oval - no overlap checking
+                const position = this.findRandomPositionInOval(ovalArea, leafSize);
+                
+                leaf.style.left = position.x + 'px';
+                leaf.style.top = position.y + 'px';
+                
+                // Create name element
+                const nameElement = document.createElement('div');
+                nameElement.className = 'leaf-name';
+                nameElement.textContent = visitor.name;
+                
+                // Adjust font size based on name length and leaf size
+                const fontSize = Math.max(10, Math.min(14, leafSize / 6));
+                nameElement.style.fontSize = fontSize + 'px';
+                
+                leaf.appendChild(nameElement);
+                this.leavesContainer.appendChild(leaf);
+                
+                // Add hover tooltip with visit count
+                leaf.title = `${visitor.name} - ${visitor.visit_count} visit${visitor.visit_count > 1 ? 's' : ''}`;
+            }
+            
+            findRandomPositionInOval(ovalArea, leafSize) {
+                // Generate random position within the oval
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = Math.sqrt(Math.random()); // Square root for uniform distribution
+                
+                // Calculate position in oval coordinates
+                const ovalX = ovalArea.width / 2 + distance * (ovalArea.width / 2) * Math.cos(angle);
+                const ovalY = ovalArea.height / 2 + distance * (ovalArea.height / 2) * Math.sin(angle);
+                
+                // Convert to container coordinates
+                const x = ovalArea.x + ovalX - leafSize / 2;
+                const y = ovalArea.y + ovalY - leafSize / 2;
+                
+                return { x, y };
+            }
+            
+            updateLeavesTransparency() {
+                const userCount = this.visitors.length;
+                
+                // Calculate how many transparency steps we've reached
+                const steps = Math.floor(userCount / this.usersPerStep);
+                
+                // Calculate the new transparency value
+                // Cap at 1.0 (fully opaque)
+                const newTransparency = Math.min(1.0, steps * this.transparencyStep);
+                
+                // Apply the new transparency to the leaves image
+                this.treeImageLeaves.style.opacity = newTransparency;
+                
+                // Update the transparency info display
+                const transparencyPercentage = Math.round(newTransparency * 100);
+                this.transparencyValue.textContent = transparencyPercentage;
+                
+                console.log(`User count: ${userCount}, Transparency: ${newTransparency}`);
+            }
+            
+            refreshTree() {
+                this.createLeaves();
+                this.updateLeavesTransparency();
+            }
+            
+            // Method to adjust oval positioning dynamically
+            setOvalPosition(topOffset, bottomOffset) {
+                this.ovalTopOffset = topOffset;
+                this.ovalBottomOffset = bottomOffset;
+                this.refreshTree();
+            }
+            
+            // Method to add a new visitor (for testing)
+            addVisitor(name, visitCount = 1) {
+                this.visitors.push({
+                    name: name,
+                    visit_count: visitCount
+                });
+                this.refreshTree();
+            }
+        }
+        
+        // Initialize tree when page loads
+        let treeManager;
+        
+        window.addEventListener('load', () => {
+            treeManager = new TreeManager();
+        });
+        
+        // Refresh tree data every 30 seconds
+        setInterval(() => {
+            if (treeManager) {
+                treeManager.fetchVisitorData().then(() => {
+                    treeManager.refreshTree();
+                });
+            }
+        }, 30000);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (treeManager) {
+                setTimeout(() => {
+                    treeManager.refreshTree();
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a87; }
+        #result { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Endpoint Tests</h1>
+    
+    <button onclick="testAPI()">Test /api/test</button>
+    <button onclick="testTreeAPI()">Test /api/tree</button>
+    <button onclick="testQRCode()">Test /api/qrcode</button>
+    <button onclick="testFeedback()">Test /api/feedback</button>
+    <button onclick="testAdminLogin()">Test /api/admin/login</button>
+    
+    <div id="result">Click buttons to test endpoints...</div>
+    
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+                showResult('✅ /api/test - SUCCESS', data);
+            } catch (error) {
+                showResult('❌ /api/test - ERROR: ' + error.message, null, true);
+            }
+        }
+        
+        async function testTreeAPI() {
+            try {
+                const response = await fetch('/api/tree');
+                const data = await response.json();
+                showResult('✅ /api/tree - SUCCESS', data);
+            } catch (error) {
+                showResult('❌ /api/tree - ERROR: ' + error.message, null, true);
+            }
+        }
+        
+        async function testQRCode() {
+            try {
+                const response = await fetch('/api/qrcode');
+                const data = await response.json();
+                showResult('✅ /api/qrcode - SUCCESS - QR Code generated', { 
+                    qrCodeLength: data.qrCode ? data.qrCode.length : 0 
+                });
+            } catch (error) {
+                showResult('❌ /api/qrcode - ERROR: ' + error.message, null, true);
+            }
+        }
+        
+        async function testFeedback() {
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        rating: 5,
+                        comments: 'This is a test feedback',
+                        consent: 'true'
+                    })
+                });
+                const data = await response.json();
+                showResult('✅ /api/feedback - SUCCESS', data);
+            } catch (error) {
+                showResult('❌ /api/feedback - ERROR: ' + error.message, null, true);
+            }
+        }
+        
+        async function testAdminLogin() {
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'systemadmin',
+                        password: 'SystemAdmin123!'
+                    })
+                });
+                const data = await response.json();
+                showResult('✅ /api/admin/login - SUCCESS', data);
+            } catch (error) {
+                showResult('❌ /api/admin/login - ERROR: ' + error.message, null, true);
+            }
+        }
+        
+        function showResult(message, data, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+            if (data) {
+                resultDiv.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>

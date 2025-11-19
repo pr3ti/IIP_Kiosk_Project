@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Kiosk Admin</title>
+    <style>
+        :root {
+            --system-admin: #e74c3c;
+            --it-admin: #3498db;
+            --it-staff: #2ecc71;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --background: #ecf0f1;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--background);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: var(--text-dark);
+            margin: 0;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .role-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .role-system_admin { background: var(--system-admin); }
+        .role-it_admin { background: var(--it-admin); }
+        .role-it_staff { background: var(--it-staff); }
+        
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        
+        .nav-tab:hover {
+            background: #f8f9fa;
+            color: var(--text-dark);
+        }
+        
+        .nav-tab.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--text-dark);
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary { 
+            background: #3498db; 
+            color: white; 
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger { 
+            background: #e74c3c; 
+            color: white; 
+        }
+        
+        .btn-success { 
+            background: #2ecc71; 
+            color: white; 
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 5px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: var(--text-light);
+            font-size: 1.1em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+            font-style: italic;
+            font-size: 1.1em;
+        }
+        
+        .search-box {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            width: 300px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-box:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .toolbar {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .test-accounts {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+        
+        .test-accounts h4 {
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+        
+        .access-log {
+            font-size: 0.8em;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            position: absolute;
+            right: 15px;
+            top: 15px;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .btn-edit {
+            padding: 6px 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        /* NEW: Email decryption styles */
+        .email-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .masked-email {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .decrypt-btn {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .decrypt-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        .system-admin-only {
+            border-left: 4px solid #dc3545;
+        }
+
+        .password-modal-info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        /* NEW: Audit Log Styles */
+        .audit-log-entry {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .audit-log-entry.photo { border-left-color: #28a745; }
+        .audit-log-entry.feedback { border-left-color: #ffc107; }
+        .audit-log-entry.email { border-left-color: #17a2b8; }
+        .audit-log-entry.error { border-left-color: #dc3545; }
+        .audit-log-entry.system { border-left-color: #6f42c1; }
+
+        .log-timestamp {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .log-message {
+            margin: 5px 0;
+            font-weight: 500;
+        }
+
+        .log-details {
+            font-size: 0.85em;
+            color: #495057;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .admin-tab {
+            padding: 10px 20px;
+            margin-right: 5px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+        }
+
+        .admin-tab.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .admin-tab-content {
+            display: none;
+        }
+
+        .admin-tab-content.active {
+            display: block;
+        }
+
+        .log-viewer {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="login-container">
+            <h2 style="text-align: center; margin-bottom: 30px; color: var(--text-dark);">Admin Login</h2>
+            
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password">
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="login()">
+                Login
+            </button>
+            
+            <div id="loginError" style="color: #e74c3c; margin-top: 15px; text-align: center; display: none;"></div>
+            
+            <div class="test-accounts">
+                <h4>Test Accounts:</h4>
+                <p><strong>System Admin:</strong> systemadmin / SystemAdmin123!</p>
+                <p><strong>IT Admin:</strong> admin / admin123</p>
+                <p><strong>IT Staff:</strong> staff / staff123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Admin Panel -->
+    <div id="adminPanel" class="hidden">
+        <div class="header">
+            <h1>Feedback Kiosk Admin Panel</h1>
+            <div class="user-info">
+                <div>
+                    Welcome, <strong id="username">-</strong><br>
+                    <span id="userRole" class="role-badge">-</span>
+                    <div class="access-log" id="lastLogin">-</div>
+                </div>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</div>
+            <div class="nav-tab" onclick="showTab('feedback')">💬 Feedback Data</div>
+            <div class="nav-tab system-admin-only" onclick="showTab('users')">👥 User Management</div>
+            <div class="nav-tab system-admin-only" onclick="showTab('audit')">📋 Audit Logs</div>
+            <div class="nav-tab" onclick="showTab('tree')">🌳 Digital Tree</div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <h2>System Overview</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalVisitors">0</div>
+                    <div class="stat-label">Total Visitors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="todayVisitors">0</div>
+                    <div class="stat-label">Today's Visitors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFeedback">0</div>
+                    <div class="stat-label">Feedback Submissions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgRating">0.0</div>
+                    <div class="stat-label">Average Rating</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="photoConsentRate">0%</div>
+                    <div class="stat-label">Photo Consent Rate</div>
+                </div>
+            </div>
+            
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="loadDashboard()">
+                    🔄 Refresh Data
+                </button>
+                <div class="filters">
+                    <span id="lastUpdated">Last updated: -</span>
+                </div>
+            </div>
+            
+            <div id="dashboardLoading" class="loading">
+                <div>Loading dashboard data...</div>
+            </div>
+        </div>
+
+        <!-- Feedback Data Tab -->
+        <div id="feedback" class="tab-content">
+            <h2>Visitor Feedback</h2>
+            
+            <div class="toolbar">
+                <input type="text" id="searchFeedback" placeholder="Search by name, email, or comments..." class="search-box">
+                <button class="btn btn-primary" onclick="loadFeedbackData()">
+                    🔄 Refresh Data
+                </button>
+                <div class="filters">
+                    <span id="feedbackCount">Loading...</span>
+                </div>
+            </div>
+            
+            <div id="feedbackLoading" class="loading">Loading feedback data...</div>
+            <div id="feedbackError" class="error" style="display: none;"></div>
+            
+            <div style="overflow-x: auto;">
+                <table id="feedbackTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Visits</th>
+                            <th>Rating</th>
+                            <th>Feedback</th>
+                            <th>Pledge</th>
+                            <th>Photo</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feedbackTableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="noFeedbackData" class="no-data" style="display: none;">
+                No feedback data available yet. Submit some feedback through the kiosk first.
+            </div>
+        </div>
+
+        <!-- User Management Tab -->
+        <div id="users" class="tab-content">
+            <h2>Admin User Management</h2>
+            <p style="color: var(--text-light); margin-bottom: 20px;">
+                System Administrator functions - Manage admin users and permissions
+            </p>
+            
+            <div class="toolbar">
+                <input type="text" id="searchUsers" placeholder="Search by username, name, or department..." class="search-box">
+                <button class="btn btn-primary" onclick="loadUserManagementData()">
+                    🔄 Refresh Data
+                </button>
+                <button class="btn btn-success" onclick="openAddUserModal()" id="addUserBtn" style="display: none;">
+                    ➕ Add New User
+                </button>
+                <div class="filters">
+                    <span id="usersCount">Loading...</span>
+                </div>
+            </div>
+            
+            <div id="usersLoading" class="loading">Loading user data...</div>
+            <div id="usersError" class="error" style="display: none;"></div>
+            
+            <div style="overflow-x: auto;">
+                <table id="usersTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="noUsersData" class="no-data" style="display: none;">
+                No admin users found in the database.
+            </div>
+        </div>
+
+        <!-- NEW: Audit Logs Tab -->
+        <div id="audit" class="tab-content">
+            <h2>📋 System Audit Logs</h2>
+            <p style="color: var(--text-light); margin-bottom: 20px;">
+                System Administrator functions - View system activity and security logs
+            </p>
+            
+            <div class="toolbar">
+                <input type="text" id="searchLogs" placeholder="Search logs..." style="padding: 8px; width: 300px; margin-right: 10px;">
+                <button class="btn btn-primary" onclick="loadAuditLogs()">
+                    🔄 Refresh Logs
+                </button>
+                <button class="btn btn-success" onclick="exportAuditLogs()" style="margin-left: 10px;">
+                    📤 Export CSV
+                </button>
+                <button class="btn btn-warning" onclick="triggerCleanup()">
+                    🗑️ Cleanup Now (Test)
+                </button>
+                <button class="btn btn-info" onclick="checkCleanupStatus()">
+                    🔍 Check Cleanup Status
+                </button>
+                <div class="filters">
+                    <select id="logTypeFilter" style="padding: 8px; margin-right: 10px;">
+                        <option value="all">All Logs</option>
+                        <option value="photo">Photo Uploads</option>
+                        <option value="feedback">Feedback</option>
+                        <option value="email">Email</option>
+                        <option value="error">Errors</option>
+                        <option value="system">System</option>
+                    </select>
+                    <input type="date" id="logDateFilter" style="padding: 8px;">
+                    <span id="logsCount">Loading...</span>
+                </div>
+            </div>
+            
+            <!-- Tabs for Audit Logs -->
+            <div style="margin-bottom: 20px;">
+                <button class="admin-tab active" data-tab="audit-logs" onclick="switchAuditTab('audit-logs')">Audit Logs</button>
+                <button class="admin-tab" data-tab="detailed-logs" onclick="switchAuditTab('detailed-logs')">Detailed Logs</button>
+                <button class="admin-tab" data-tab="system-info" onclick="switchAuditTab('system-info')">System Info</button>
+            </div>
+            
+            <!-- Audit Logs Content -->
+            <div id="audit-logs-tab" class="admin-tab-content active">
+                <div id="auditLogsList" style="max-height: 600px; overflow-y: auto;">
+                    <!-- Audit logs will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Detailed Logs Content -->
+            <div id="detailed-logs-tab" class="admin-tab-content">
+                <div class="toolbar">
+                    <button class="btn btn-primary" onclick="loadDetailedLogs()">
+                        Load Detailed Logs
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAuditLogs()" style="margin-left: 10px;">
+                        🗑️ Clear Logs
+                    </button>
+                </div>
+                <div id="detailedLogsView" class="log-viewer">
+                    <!-- Detailed logs will appear here -->
+                </div>
+            </div>
+            
+            <!-- System Info Content -->
+            <div id="system-info-tab" class="admin-tab-content">
+                <div id="systemInfo" style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                    <!-- System info will be populated here -->
+                </div>
+            </div>
+            
+            <div id="auditLoading" class="loading">Loading audit logs...</div>
+            <div id="auditError" class="error" style="display: none;"></div>
+        </div>
+
+        <!-- Digital Tree Tab -->
+        <div id="tree" class="tab-content">
+            <h2>Digital Tree Data</h2>
+            
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="loadTreeData()">
+                    🔄 Refresh Tree Data
+                </button>
+                <div class="filters">
+                    <span id="treeStats">Loading...</span>
+                </div>
+            </div>
+            
+            <div id="treeLoading" class="loading">Loading tree data...</div>
+            <div id="treeData">
+                <!-- Tree data will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h3>✏️ Edit Feedback Record</h3>
+            <form id="editForm">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="editName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="editEmail" name="email" readonly 
+                           style="background-color: #f8f9fa; color: #6c757d; cursor: not-allowed; border: 1px solid #ced4da; padding: 12px; border-radius: 8px; width: 100%;">
+                    <small style="color: var(--text-light); display: block; margin-top: 5px;">
+                        <i class="fas fa-lock"></i> Email cannot be edited (encrypted for privacy)
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>Rating:</label>
+                    <select id="editRating" name="rating" style="padding: 12px; border-radius: 8px; width: 100%; border: 2px solid #e0e0e0;">
+                        <option value="1">1 Star</option>
+                        <option value="2">2 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="5">5 Stars</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Feedback:</label>
+                    <textarea id="editFeedback" name="feedback" rows="4" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Pledge:</label>
+                    <textarea id="editPledge" name="pledge" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;"></textarea>
+                </div>
+                <input type="hidden" id="editRecordId">
+                <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Update Record</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteRecord()">Delete Record</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Verification Modal for Email Decryption -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePasswordModal()">&times;</span>
+            <h3>🔒 Verify Identity to View Email</h3>
+            <div class="password-modal-info">
+                <i class="fas fa-info-circle"></i>
+                For security reasons, you need to verify your identity to view the full email address.
+            </div>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label>Your Password:</label>
+                    <input type="password" id="adminPassword" placeholder="Enter your admin password" required>
+                </div>
+                <div style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+                    <i class="fas fa-shield-alt"></i>
+                    This action will be logged for security auditing.
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Verify & View Email</button>
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div id="userModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserModal()">&times;</span>
+            <h3 id="userModalTitle">👥 Add New Admin User</h3>
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="userUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="userPassword" name="password" required>
+                    <small style="color: var(--text-light);">Minimum 6 characters</small>
+                </div>
+                <div class="form-group">
+                    <label>Full Name:</label>
+                    <input type="text" id="userFullName" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Role:</label>
+                    <select id="userRole" name="role" required>
+                        <option value="">Select a role</option>
+                        <option value="system_admin">System Administrator</option>
+                        <option value="it_admin">IT Administrator</option>
+                        <option value="it_staff" selected>IT Staff</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Department:</label>
+                    <input type="text" id="userDepartment" name="department" value="IT">
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="userStatus" name="is_active">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                <input type="hidden" id="userId">
+                <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" id="userSubmitBtn">Add User</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteUser()" id="deleteUserBtn" style="display: none;">Delete User</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let currentUser = null;
+        let authToken = null;
+        let feedbackData = [];
+        let currentDecryptingUserId = null;
+        let auditLogs = [];
+        let autoRefreshInterval = null;
+
+        // IMPROVED Auto-refresh function for cleanup data
+        function startAutoRefresh() {
+            // Clear any existing interval first
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            // Refresh data every 5 seconds when on relevant tabs (more frequent for testing)
+            autoRefreshInterval = setInterval(() => {
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab) {
+                    const tabId = activeTab.id;
+                    console.log(`🔄 Auto-refreshing ${tabId} tab...`);
+                    
+                    if (tabId === 'feedback') {
+                        loadFeedbackData();
+                    } else if (tabId === 'dashboard') {
+                        loadDashboard();
+                    } else if (tabId === 'audit') {
+                        loadAuditLogs();
+                    } else if (tabId === 'users') {
+                        loadUserManagementData();
+                    }
+                }
+            }, 5000); // Refresh every 5 seconds for testing
+            
+            console.log('🔄 Auto-refresh started (5 second intervals)');
+        }
+
+        // Stop auto-refresh when logging out
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                console.log('🔄 Auto-refresh stopped');
+            }
+        }
+
+        // Modal functions - defined at global scope
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            currentDecryptingUserId = null;
+        }
+
+        // Remove automatic login - always start with login screen
+        function initializeApp() {
+            // Stop any existing auto-refresh
+            stopAutoRefresh();
+            
+            // Clear any existing authentication data
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            sessionStorage.removeItem('adminToken');
+            sessionStorage.removeItem('adminUser');
+            authToken = null;
+            currentUser = null;
+            
+            // Always show login screen on app start
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            
+            // Clear login form
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            
+            // Reset all tabs to visible for next login
+            document.querySelectorAll('.system-admin-only').forEach(el => {
+                el.style.display = 'flex';
+            });
+            
+            // Reset to default tab
+            resetToDefaultTab();
+        }
+
+        // Login function
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                showLoginError('Please enter both username and password');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    authToken = data.token;
+                    currentUser = data;
+                    
+                    // Store in sessionStorage instead of localStorage for session-only persistence
+                    sessionStorage.setItem('adminToken', authToken);
+                    sessionStorage.setItem('adminUser', JSON.stringify(currentUser));
+                    
+                    showAdminPanel();
+                } else {
+                    showLoginError(data.error || 'Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                showLoginError('Login failed: ' + error.message);
+            }
+        }
+
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Show admin panel
+        function showAdminPanel() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            
+            document.getElementById('username').textContent = currentUser.username;
+            document.getElementById('userRole').textContent = currentUser.role.replace('_', ' ').toUpperCase();
+            document.getElementById('userRole').className = `role-badge role-${currentUser.role}`;
+            
+            // Reset all tabs to visible first
+            document.querySelectorAll('.system-admin-only').forEach(el => {
+                el.style.display = 'flex';
+            });
+            
+            // Then hide system admin only tabs if user is not system_admin
+            if (currentUser.role !== 'system_admin') {
+                document.querySelectorAll('.system-admin-only').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+            
+            loadDashboard();
+            loadFeedbackData();
+            
+            // Start IMPROVED auto-refresh for cleanup data
+            startAutoRefresh();
+            
+            // Show notification about auto-refresh
+            setTimeout(() => {
+                console.log('✅ Admin panel loaded with auto-refresh enabled');
+            }, 1000);
+        }
+
+        // Tab navigation
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.nav-tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+            
+            // Immediately load data when switching tabs
+            switch(tabName) {
+                case 'dashboard': 
+                    loadDashboard(); 
+                    break;
+                case 'feedback': 
+                    loadFeedbackData(); 
+                    break;
+                case 'audit': 
+                    loadAuditLogs(); 
+                    break;
+                case 'tree': 
+                    loadTreeData(); 
+                    break;
+                case 'users':
+                    loadUserManagementData();
+                    break;
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            const loadingDiv = document.getElementById('dashboardLoading');
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    document.getElementById('totalVisitors').textContent = stats.totalVisitors.toLocaleString();
+                    document.getElementById('todayVisitors').textContent = stats.todayVisitors.toLocaleString();
+                    document.getElementById('totalFeedback').textContent = stats.totalFeedback.toLocaleString();
+                    document.getElementById('avgRating').textContent = stats.avgRating.toFixed(1);
+                    document.getElementById('photoConsentRate').textContent = stats.photoConsentRate + '%';
+                    
+                    document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                    loadingDiv.style.display = 'none';
+                } else {
+                    throw new Error('Failed to load dashboard data');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                loadingDiv.innerHTML = `<div class="error">Error loading dashboard: ${error.message}</div>`;
+            }
+        }
+
+        // Load feedback data
+        async function loadFeedbackData() {
+            const loadingDiv = document.getElementById('feedbackLoading');
+            const errorDiv = document.getElementById('feedbackError');
+            const table = document.getElementById('feedbackTable');
+            const noDataDiv = document.getElementById('noFeedbackData');
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            table.style.display = 'none';
+            noDataDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/admin/feedback-data', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    feedbackData = await response.json();
+                    
+                    // Update table header based on permissions
+                    const canEdit = currentUser && (currentUser.role === 'system_admin' || currentUser.role === 'it_admin');
+                    const actionsHeader = canEdit ? '<th>Actions</th>' : '';
+                    
+                    document.getElementById('feedbackTable').innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Visits</th>
+                                <th>Rating</th>
+                                <th>Feedback</th>
+                                <th>Pledge</th>
+                                <th>Photo</th>
+                                <th>Date</th>
+                                ${actionsHeader}
+                            </tr>
+                        </thead>
+                        <tbody id="feedbackTableBody"></tbody>
+                    `;
+                    
+                    displayFeedbackData(feedbackData);
+                    
+                    document.getElementById('feedbackCount').textContent = `${feedbackData.length} records`;
+                    loadingDiv.style.display = 'none';
+                    
+                    if (feedbackData.length === 0) {
+                        noDataDiv.style.display = 'block';
+                    } else {
+                        table.style.display = 'table';
+                    }
+                    
+                    console.log(`✅ Feedback data refreshed: ${feedbackData.length} records`);
+                } else {
+                    throw new Error('Failed to load feedback data');
+                }
+            } catch (error) {
+                console.error('Error loading feedback data:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.textContent = `Error loading feedback data: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Display feedback data
+        function displayFeedbackData(data) {
+            const tbody = document.getElementById('feedbackTableBody');
+            tbody.innerHTML = '';
+            
+            // Check if current user has edit permissions
+            const canEdit = currentUser && (currentUser.role === 'system_admin' || currentUser.role === 'it_admin');
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const feedbackDate = new Date(item.feedback_date).toLocaleDateString();
+                const ratingStars = '★'.repeat(item.rating || 0) + '☆'.repeat(5 - (item.rating || 0));
+                
+                // Create email display with decrypt button for system admins
+                let emailCell = `<td>${escapeHtml(item.email_masked)}</td>`;
+                if (item.email_masked !== 'N/A' && currentUser.role === 'system_admin') {
+                    emailCell = `
+                        <td>
+                            <div class="email-display">
+                                <span class="masked-email">${escapeHtml(item.email_masked)}</span>
+                                <button class="decrypt-btn" onclick="showPasswordModal(${item.user_id})" title="Decrypt Email">
+                                    <i class="fas fa-key"></i> View
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                }
+                
+                // Create the actions cell based on permissions
+                let actionsCell = '<td>-</td>';
+                if (canEdit) {
+                    actionsCell = `
+                        <td>
+                            <button class="btn-edit" onclick="openEditModal(
+                                ${item.feedback_id}, 
+                                '${escapeHtml(item.name)}', 
+                                '${escapeHtml(item.email_masked)}',  // Pass masked email for display
+                                ${item.rating}, 
+                                '${escapeHtml(item.feedback_text || '')}', 
+                                '${escapeHtml(item.pledge_text || '')}'
+                            )">
+                                ✏️ Edit
+                            </button>
+                        </td>
+                    `;
+                }
+                
+                row.innerHTML = `
+                    <td><strong>${escapeHtml(item.name)}</strong></td>
+                    ${emailCell}
+                    <td style="text-align: center;">${item.visit_count || 1}</td>
+                    <td>
+                        <div>${ratingStars}</div>
+                        <small>(${item.rating || 0}/5)</small>
+                    </td>
+                    <td>${escapeHtml(item.feedback_text || 'No feedback')}</td>
+                    <td>${escapeHtml(item.pledge_text || 'No pledge')}</td>
+                    <td>${item.photo_path ? '✅' : '❌'}</td>
+                    <td>${feedbackDate}</td>
+                    ${actionsCell}
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // Edit Modal Functions
+        function openEditModal(id, name, email, rating, feedback, pledge) {
+            document.getElementById('editRecordId').value = id;
+            document.getElementById('editName').value = name;
+            // Show the masked email as read-only
+            document.getElementById('editEmail').value = email || 'N/A';
+            document.getElementById('editRating').value = rating;
+            document.getElementById('editFeedback').value = feedback || '';
+            document.getElementById('editPledge').value = pledge || '';
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        // Handle form submission for updates
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            updateRecord();
+        });
+
+        async function updateRecord() {
+            const recordId = document.getElementById('editRecordId').value;
+            const formData = {
+                name: document.getElementById('editName').value,
+                // DO NOT include email - it's read-only
+                rating: parseInt(document.getElementById('editRating').value),
+                feedback: document.getElementById('editFeedback').value,
+                pledge: document.getElementById('editPledge').value
+            };
+
+            // Validate
+            if (!formData.name.trim()) {
+                alert('Name is required');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/update-feedback/${recordId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify(formData) // This now only contains name, rating, feedback, pledge
+                });
+
+                const result = await response.json();
+                
+                if (response.status === 403) {
+                    // Permission denied
+                    alert('❌ Permission denied: ' + result.error);
+                    closeEditModal();
+                    return;
+                }
+                
+                if (result.success) {
+                    alert('✅ Record updated successfully!');
+                    closeEditModal();
+                    loadFeedbackData(); // Refresh the table
+                } else {
+                    alert('❌ Error updating record: ' + result.error);
+                    // Don't close modal on error so user can fix the issue
+                }
+            } catch (error) {
+                console.error('Error updating record:', error);
+                if (error.message.includes('Unauthorized') || error.message.includes('token')) {
+                    alert('❌ Your session has expired. Please log in again.');
+                    logout();
+                } else {
+                    alert('❌ Error updating record: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteRecord() {
+            const recordId = document.getElementById('editRecordId').value;
+            
+            if (!confirm('⚠️ Are you sure you want to delete this record? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/delete-feedback/${recordId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.status === 403) {
+                    // Permission denied
+                    alert('❌ Permission denied: ' + result.error);
+                    closeEditModal();
+                    return;
+                }
+                
+                if (result.success) {
+                    alert('✅ Record deleted successfully!');
+                    closeEditModal();
+                    loadFeedbackData(); // Refresh the table
+                } else {
+                    alert('❌ Error deleting record: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting record:', error);
+                if (error.message.includes('Unauthorized') || error.message.includes('token')) {
+                    alert('❌ Your session has expired. Please log in again.');
+                    logout();
+                } else {
+                    alert('❌ Error deleting record: ' + error.message);
+                }
+            }
+        }
+
+        // NEW: Audit Logs Functions
+        async function loadAuditLogs() {
+            // Only system_admin can access this
+            if (currentUser.role !== 'system_admin') {
+                document.getElementById('auditError').textContent = 'Access denied. Only System Administrators can view audit logs.';
+                document.getElementById('auditError').style.display = 'block';
+                return;
+            }
+
+            const loadingDiv = document.getElementById('auditLoading');
+            const errorDiv = document.getElementById('auditError');
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/admin/audit-logs', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    auditLogs = await response.json();
+                    displayAuditLogs();
+                    
+                    document.getElementById('logsCount').textContent = `${auditLogs.length} log entries`;
+                    loadingDiv.style.display = 'none';
+                } else {
+                    throw new Error('Failed to load audit logs');
+                }
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.textContent = `Error loading audit logs: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function displayAuditLogs() {
+            const container = document.getElementById('auditLogsList');
+            const searchTerm = document.getElementById('searchLogs').value.toLowerCase();
+            const logType = document.getElementById('logTypeFilter').value;
+            const dateFilter = document.getElementById('logDateFilter').value;
+            
+            let filteredLogs = auditLogs;
+            
+            // Apply filters
+            if (searchTerm) {
+                filteredLogs = filteredLogs.filter(log => 
+                    log.message.toLowerCase().includes(searchTerm) ||
+                    (log.user && log.user.toLowerCase().includes(searchTerm)) ||
+                    (log.details && JSON.stringify(log.details).toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (logType !== 'all') {
+                filteredLogs = filteredLogs.filter(log => log.type === logType);
+            }
+            
+            if (dateFilter) {
+                filteredLogs = filteredLogs.filter(log => {
+                    const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                    return logDate === dateFilter;
+                });
+            }
+            
+            container.innerHTML = filteredLogs.map(log => `
+                <div class="audit-log-entry ${log.type}">
+                    <div class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</div>
+                    <div class="log-message">${log.message}</div>
+                    ${log.user ? `<div><strong>User:</strong> ${log.user}</div>` : ''}
+                    ${log.details ? `<div class="log-details"><strong>Details:</strong> ${JSON.stringify(log.details, null, 2)}</div>` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('logsCount').textContent = `${filteredLogs.length} of ${auditLogs.length} log entries`;
+        }
+
+        function switchAuditTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.admin-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            if (tabName === 'system-info') {
+                loadSystemInfo();
+            }
+        }
+
+        async function loadDetailedLogs() {
+            try {
+                const response = await fetch('/api/admin/detailed-logs', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const logs = await response.json();
+                
+                const container = document.getElementById('detailedLogsView');
+                container.textContent = logs.map(log => 
+                    `[${new Date(log.timestamp).toISOString()}] ${log.type.toUpperCase()}: ${log.message} ${log.details ? JSON.stringify(log.details, null, 2) : ''}`
+                ).join('\n');
+            } catch (error) {
+                console.error('Error loading detailed logs:', error);
+                document.getElementById('detailedLogsView').textContent = 'Error loading detailed logs: ' + error.message;
+            }
+        }
+
+        async function loadSystemInfo() {
+            const container = document.getElementById('systemInfo');
+            
+            try {
+                const response = await fetch('/api/admin/system-info', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const systemInfo = await response.json();
+                
+                container.innerHTML = `
+                    <div><strong>Server Time:</strong> ${new Date().toLocaleString()}</div>
+                    <div><strong>Uptime:</strong> ${systemInfo.uptime}</div>
+                    <div><strong>Memory Usage:</strong> ${systemInfo.memoryUsage}</div>
+                    <div><strong>Total Photos:</strong> ${systemInfo.totalPhotos}</div>
+                    <div><strong>Total Feedback:</strong> ${systemInfo.totalFeedback}</div>
+                    <div><strong>Last Backup:</strong> ${systemInfo.lastBackup}</div>
+                    <div><strong>Active Sessions:</strong> ${systemInfo.activeSessions || 'N/A'}</div>
+                `;
+            } catch (error) {
+                container.innerHTML = '<div class="error">Error loading system information</div>';
+            }
+        }
+
+        function exportAuditLogs() {
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + "Timestamp,Type,Message,User,Details\n"
+                + auditLogs.map(log => 
+                    `"${new Date(log.timestamp).toISOString()}","${log.type}","${log.message.replace(/"/g, '""')}","${log.user || ''}","${log.details ? JSON.stringify(log.details).replace(/"/g, '""') : ''}"`
+                ).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "audit_logs.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function clearAuditLogs() {
+            if (confirm('Are you sure you want to clear all audit logs? This action cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/admin/clear-logs', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        alert('Audit logs cleared successfully');
+                        loadAuditLogs();
+                    } else {
+                        throw new Error('Failed to clear logs');
+                    }
+                } catch (error) {
+                    alert('Error clearing logs: ' + error.message);
+                }
+            }
+        }
+
+        // Cleanup functions for admin panel
+        async function triggerCleanup() {
+            if (!confirm('Trigger cleanup now? This will delete photos and emails older than 20 seconds.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/cleanup-now', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Cleanup process started! Check server logs for details.');
+                    // Force immediate refresh after manual cleanup
+                    setTimeout(() => {
+                        loadFeedbackData();
+                        loadDashboard();
+                    }, 2000);
+                } else {
+                    alert('❌ Cleanup failed: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error triggering cleanup:', error);
+                alert('❌ Error triggering cleanup: ' + error.message);
+            }
+        }
+
+        async function checkCleanupStatus() {
+            try {
+                const response = await fetch('/api/admin/cleanup-status', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`🔍 Cleanup Status:\n\nInterval: ${result.cleanupInterval}\nNext: ${result.nextCleanup}\nDescription: ${result.description}`);
+                } else {
+                    alert('❌ Failed to get cleanup status: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error checking cleanup status:', error);
+                alert('❌ Error checking cleanup status: ' + error.message);
+            }
+        }
+
+        // Set up search and filter event listeners for audit logs
+        document.getElementById('searchLogs').addEventListener('input', displayAuditLogs);
+        document.getElementById('logTypeFilter').addEventListener('change', displayAuditLogs);
+        document.getElementById('logDateFilter').addEventListener('change', displayAuditLogs);
+
+        // Show password verification modal for email decryption
+        function showPasswordModal(userId) {
+            currentDecryptingUserId = userId;
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('passwordModal').style.display = 'flex';
+        }
+
+        // Handle password form submission
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            verifyPasswordAndDecrypt();
+        });
+
+        // Verify password and decrypt email
+        async function verifyPasswordAndDecrypt() {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!password) {
+                alert('Please enter your password');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/decrypt-email/${currentDecryptingUserId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Close the password modal
+                    closePasswordModal();
+                    
+                    // Show the decrypted email in an alert
+                    alert(`Decrypted Email: ${result.email}\n\nThis action has been logged for security auditing.`);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error decrypting email:', error);
+                alert('Error decrypting email: ' + error.message);
+            }
+        }
+
+        // Load tree data
+        async function loadTreeData() {
+            const loadingDiv = document.getElementById('treeLoading');
+            const treeDataDiv = document.getElementById('treeData');
+            
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/tree');
+                const data = await response.json();
+                
+                loadingDiv.style.display = 'none';
+                
+                document.getElementById('treeStats').textContent = `${data.length} visitors`;
+                
+                if (data.length === 0) {
+                    treeDataDiv.innerHTML = '<div class="no-data">No tree data available yet</div>';
+                    return;
+                }
+                
+                let html = `
+                    <div style="margin-bottom: 20px;">
+                        <h3>Recent Visitors (${data.length} total)</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Visit Count</th>
+                                    <th>Last Visit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.slice(0, 50).forEach(visitor => {
+                    const lastVisit = new Date(visitor.last_visit).toLocaleString();
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(visitor.name)}</td>
+                            <td style="text-align: center;">${visitor.visit_count}</td>
+                            <td>${lastVisit}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    ${data.length > 50 ? `<p style="margin-top: 15px; color: var(--text-light);">Showing 50 of ${data.length} visitors</p>` : ''}
+                `;
+                
+                treeDataDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading tree data:', error);
+                loadingDiv.innerHTML = `<div class="error">Error loading tree data: ${error.message}</div>`;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = ['editModal', 'passwordModal', 'userModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    if (modalId === 'passwordModal') {
+                        closePasswordModal();
+                    } else if (modalId === 'editModal') {
+                        closeEditModal();
+                    } else if (modalId === 'userModal') {
+                        closeUserModal();
+                    }
+                }
+            });
+        }
+
+        // Close modal with escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeEditModal();
+                closePasswordModal();
+                closeUserModal();
+            }
+        });
+
+        // Search functionality
+        document.getElementById('searchFeedback').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            if (!searchTerm) {
+                displayFeedbackData(feedbackData);
+                return;
+            }
+            
+            const filteredData = feedbackData.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) ||
+                (item.email_masked && item.email_masked.toLowerCase().includes(searchTerm)) ||
+                (item.feedback_text && item.feedback_text.toLowerCase().includes(searchTerm)) ||
+                (item.pledge_text && item.pledge_text.toLowerCase().includes(searchTerm))
+            );
+            
+            displayFeedbackData(filteredData);
+            document.getElementById('feedbackCount').textContent = `${filteredData.length} of ${feedbackData.length} records`;
+        });
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function logout() {
+            // Stop auto-refresh
+            stopAutoRefresh();
+            
+            // Clear both localStorage and sessionStorage
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            sessionStorage.removeItem('adminToken');
+            sessionStorage.removeItem('adminUser');
+            
+            authToken = null;
+            currentUser = null;
+            
+            // Reset UI to login screen
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            
+            // Clear form
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            
+            // Reset to default tab (Dashboard)
+            resetToDefaultTab();
+        }
+
+        // Reset to default tab (Dashboard)
+        function resetToDefaultTab() {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Activate Dashboard tab
+            document.getElementById('dashboard').classList.add('active');
+            document.querySelector('.nav-tab[onclick="showTab(\'dashboard\')"]').classList.add('active');
+        }
+
+        // User Management Functions
+        async function loadUserManagementData() {
+            // Only system_admin can access this
+            if (currentUser.role !== 'system_admin') {
+                document.getElementById('usersError').textContent = 'Access denied. Only System Administrators can manage users.';
+                document.getElementById('usersError').style.display = 'block';
+                return;
+            }
+
+            const loadingDiv = document.getElementById('usersLoading');
+            const errorDiv = document.getElementById('usersError');
+            const table = document.getElementById('usersTable');
+            const noDataDiv = document.getElementById('noUsersData');
+            const addUserBtn = document.getElementById('addUserBtn');
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            table.style.display = 'none';
+            noDataDiv.style.display = 'none';
+            addUserBtn.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    const usersData = await response.json();
+                    displayUsersData(usersData);
+                    
+                    document.getElementById('usersCount').textContent = `${usersData.length} users`;
+                    loadingDiv.style.display = 'none';
+                    addUserBtn.style.display = 'block';
+                    
+                    if (usersData.length === 0) {
+                        noDataDiv.style.display = 'block';
+                    } else {
+                        table.style.display = 'table';
+                    }
+                } else {
+                    throw new Error('Failed to load user data');
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.textContent = `Error loading user data: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function displayUsersData(data) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(user => {
+                const row = document.createElement('tr');
+                const createdDate = new Date(user.created_at).toLocaleDateString();
+                const status = user.is_active ? '🟢 Active' : '🔴 Inactive';
+                
+                row.innerHTML = `
+                    <td><strong>${escapeHtml(user.username)}</strong></td>
+                    <td>${escapeHtml(user.full_name || 'N/A')}</td>
+                    <td><span class="role-badge role-${user.role}">${user.role.replace('_', ' ').toUpperCase()}</span></td>
+                    <td>${escapeHtml(user.department || 'N/A')}</td>
+                    <td>${status}</td>
+                    <td>${createdDate}</td>
+                    <td>
+                        <button class="btn-edit" onclick="openEditUserModal(
+                            ${user.id},
+                            '${escapeHtml(user.username)}',
+                            '${escapeHtml(user.full_name || '')}',
+                            '${user.role}',
+                            '${escapeHtml(user.department || '')}',
+                            ${user.is_active}
+                        )">
+                            ✏️ Edit
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function openAddUserModal() {
+            document.getElementById('userModalTitle').textContent = '👥 Add New Admin User';
+            document.getElementById('userSubmitBtn').textContent = 'Add User';
+            document.getElementById('deleteUserBtn').style.display = 'none';
+            
+            // Reset form
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userPassword').required = true;
+            document.getElementById('userPassword').placeholder = '';
+            document.getElementById('userDepartment').value = 'IT';
+            document.getElementById('userStatus').value = '1';
+            
+            // Ensure role is set to a default value
+            document.getElementById('userRole').value = 'it_staff';
+            
+            document.getElementById('userModal').style.display = 'flex';
+        }
+
+        function openEditUserModal(id, username, fullName, role, department, isActive) {
+            document.getElementById('userModalTitle').textContent = '✏️ Edit Admin User';
+            document.getElementById('userSubmitBtn').textContent = 'Update User';
+            document.getElementById('deleteUserBtn').style.display = 'block';
+            
+            // Fill form with existing data
+            document.getElementById('userId').value = id;
+            document.getElementById('userUsername').value = username;
+            document.getElementById('userPassword').required = false;
+            document.getElementById('userPassword').placeholder = 'Leave blank to keep current password';
+            document.getElementById('userFullName').value = fullName;
+            document.getElementById('userRole').value = role;
+            document.getElementById('userDepartment').value = department;
+            document.getElementById('userStatus').value = isActive ? '1' : '0';
+            
+            document.getElementById('userModal').style.display = 'flex';
+        }
+
+        // Handle user form submission
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveUser();
+        });
+
+        async function saveUser() {
+            const userId = document.getElementById('userId').value;
+            const username = document.getElementById('userUsername').value.trim();
+            const password = document.getElementById('userPassword').value;
+            const full_name = document.getElementById('userFullName').value.trim();
+            const roleSelect = document.getElementById('userRole');
+            const role = roleSelect.value;
+            const department = document.getElementById('userDepartment').value.trim();
+            const is_active = document.getElementById('userStatus').value === '1';
+
+            // Validate
+            if (!username) {
+                alert('Username is required');
+                return;
+            }
+            if (!full_name) {
+                alert('Full name is required');
+                return;
+            }
+            if (!role) {
+                alert('Please select a role');
+                roleSelect.focus();
+                return;
+            }
+            if (!userId && !password) {
+                alert('Password is required for new users');
+                return;
+            }
+            if (password && password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+
+            try {
+                const url = userId ? `/api/admin/users/${userId}` : '/api/admin/users';
+                const method = userId ? 'PUT' : 'POST';
+
+                // Prepare form data
+                const formData = {
+                    username: username,
+                    full_name: full_name,
+                    role: role,
+                    department: department,
+                    is_active: is_active
+                };
+
+                // Only include password if provided (for new users or password changes)
+                if (password) {
+                    formData.password = password;
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (response.status === 403) {
+                    alert('❌ Permission denied: ' + result.error);
+                    closeUserModal();
+                    return;
+                }
+                
+                if (result.success) {
+                    alert(`✅ User ${userId ? 'updated' : 'created'} successfully!`);
+                    closeUserModal();
+                    loadUserManagementData();
+                } else {
+                    alert('❌ Error saving user: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error saving user:', error);
+                alert('❌ Error saving user: ' + error.message);
+            }
+        }
+
+        async function deleteUser() {
+            const userId = document.getElementById('userId').value;
+            const username = document.getElementById('userUsername').value;
+            
+            if (!confirm(`⚠️ Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.status === 403) {
+                    alert('❌ Permission denied: ' + result.error);
+                    return;
+                }
+                
+                if (result.success) {
+                    alert('✅ User deleted successfully!');
+                    closeUserModal();
+                    loadUserManagementData();
+                } else {
+                    alert('❌ Error deleting user: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('❌ Error deleting user: ' + error.message);
+            }
+        }
+
+        // Initialize app on page load - ALWAYS start with login screen
+        initializeApp();
+    </script>
+</body>
+</html>
