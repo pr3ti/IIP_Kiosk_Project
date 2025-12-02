@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Kiosk Admin</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="login-container">
+        <div class="login-card">
+            <div class="login-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 3v18h18V3H3zm16 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4v4z" fill="#4F46E5"/>
+                </svg>
+            </div>
+            <h1>Admin Login</h1>
+            <p class="login-subtitle">Access the feedback kiosk administration panel</p>
+            
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">Sign In</button>
+            </form>
+            
+            <div class="test-accounts">
+                <p><strong>Test Accounts:</strong></p>
+                <p><strong>System Admin:</strong> systemadmin / SystemAdmin123!</p>
+                <p><strong>IT Admin:</strong> admin / admin123</p>
+                <p><strong>IT Staff:</strong> staff / staff123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <h1>Feedback Kiosk Admin</h1>
+                <p>Manage visitor feedback and system settings</p>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-details">
+                        <span class="username" id="logged-username">systemadmin</span>
+                        <span class="user-role" id="logged-role">System Admin</span>
+                    </div>
+                    <div class="user-avatar">S</div>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="admin-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section" id="main-section">
+                    <h3>MAIN</h3>
+                    <nav>
+                        <a href="#" class="nav-item active" onclick="showPage('dashboard')">
+                            <span class="nav-icon">📊</span>
+                            Dashboard
+                        </a>
+                        <a href="#" class="nav-item" onclick="showPage('feedback-data')">
+                            <span class="nav-icon">💬</span>
+                            Feedback Data
+                        </a>
+                        <a href="#" class="nav-item" onclick="showPage('digital-tree')">
+                            <span class="nav-icon">🌳</span>
+                            Digital Tree
+                        </a>
+                    </nav>
+                </div>
+                
+                <div class="sidebar-section" id="admin-section">
+                    <h3>ADMINISTRATION</h3>
+                    <nav>
+                        <a href="#" class="nav-item" onclick="showPage('overlay')">
+                            <span class="nav-icon">🎨</span>
+                            Overlay Management
+                        </a>
+                        <a href="#" class="nav-item" onclick="showPage('questions')">
+                            <span class="nav-icon">❓</span>
+                            Question Management
+                        </a>
+                        <a href="#" class="nav-item" onclick="showPage('users')">
+                            <span class="nav-icon">👥</span>
+                            User Management
+                        </a>
+                        <a href="#" class="nav-item" onclick="showPage('audit')">
+                            <span class="nav-icon">📋</span>
+                            Audit Logs
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Page Content -->
+            <main class="page-content">
+                <!-- Dashboard Page -->
+                <div id="dashboard-page" class="page active">
+                    <div class="page-header">
+                        <h2>Dashboard</h2>
+                        <p>Overview of system statistics and performance</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card stat-card-purple">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Total Visitors</div>
+                        </div>
+                        <div class="stat-card stat-card-blue">
+                            <div class="stat-icon">👤</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Today's Visitors</div>
+                        </div>
+                        <div class="stat-card stat-card-cyan">
+                            <div class="stat-icon">💬</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Feedback Submissions</div>
+                        </div>
+                        <div class="stat-card stat-card-green">
+                            <div class="stat-icon">📷</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Users with Email</div>
+                        </div>
+                        <div class="stat-card stat-card-yellow">
+                            <div class="stat-icon">🗓️</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Recent Submissions</div>
+                        </div>
+                    </div>
+
+                    <div class="activity-section">
+                        <div class="section-header">
+                            <h3>Recent Activity</h3>
+                            <button class="refresh-btn" onclick="refreshDashboard()">🔄 Refresh</button>
+                        </div>
+                        <p class="last-updated">Last updated: Loading...</p>
+
+                        <div class="status-grid">
+                            <div class="status-section">
+                                <h4>System Status</h4>
+                                <!-- Status items will be populated by JavaScript -->
+                            </div>
+
+                            <div class="status-section">
+                                <h4>Data Management</h4>
+                                <!-- Status items will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feedback Data Page -->
+                <div id="feedback-data-page" class="page">
+                    <div class="page-header">
+                        <h2>Feedback Data</h2>
+                        <p>Manage and review visitor feedback submissions</p>
+                    </div>
+
+                    <div class="toolbar">
+                        <input type="text" class="search-input" placeholder="Search feedback...">
+                        <div class="toolbar-buttons">
+                            <button class="btn-primary" onclick="refreshFeedbackData()">🔄 Refresh</button>
+                            <button class="btn-secondary" onclick="downloadExcel()" style="display: none;">📥 Download Excel</button>
+                            <button class="btn-secondary" onclick="downloadPhotos()" style="display: none;">📷 Download Photos</button>
+                        </div>
+                    </div>
+
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Visits</th>
+                                    <th>Pledge</th>
+                                    <th>Questions & Answers</th>
+                                    <th>Data Retention</th>
+                                    <th>Raw Photo</th>
+                                    <th>Processed Photo</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- This will be populated dynamically by JavaScript -->
+                                <tr>
+                                    <td colspan="10" style="text-align: center; padding: 40px; color: #64748b;">
+                                        Loading feedback data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Digital Tree Page -->
+                <div id="digital-tree-page" class="page">
+                    <div class="page-header">
+                        <h2>Digital Tree</h2>
+                        <p>View visitor tree data and statistics</p>
+                    </div>
+
+                    <div class="tree-section">
+                        <div class="section-header">
+                            <h3>Tree Management</h3>
+                            <button class="btn-primary" onclick="refreshTreeData()">🔄 Refresh</button>
+                        </div>
+
+                        <div class="tree-info">
+                            <h4>Current Year Visitors: <span id="tree-count">0</span></h4>
+                            <p>The digital tree shows visitors from <span id="current-year"></span> only.</p>
+                        </div>
+
+                        <table class="simple-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Visit Count</th>
+                                    <th>Last Visit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- This will be populated dynamically by JavaScript -->
+                                <tr>
+                                    <td colspan="3" style="text-align: center; padding: 40px; color: #64748b;">
+                                        Loading tree data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Overlay Management Page -->
+                <div id="overlay-page" class="page">
+                    <div class="page-header">
+                        <h2>Overlay Management</h2>
+                        <p>Manage photo overlay themes for the kiosk</p>
+                    </div>
+
+                    <div class="overlay-section">
+                        <div class="section-header">
+                            <h3>Available Overlays</h3>
+                            <button class="btn-primary" onclick="showAddOverlayModal()">+ Add Overlay</button>
+                        </div>
+
+                        <!-- This is the container that will be populated by JavaScript -->
+                        <div class="overlay-grid">
+                            <!-- Overlay cards will be dynamically inserted here -->
+                            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">
+                                Loading overlays...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question Management Page -->
+                <div id="questions-page" class="page">
+                    <div class="page-header">
+                        <h2>Question Management</h2>
+                        <p>Manage feedback questions and their options</p>
+                    </div>
+
+                    <div class="user-section">
+                        <div class="section-header">
+                            <h3>Feedback Questions</h3>
+                            <button class="btn-primary" onclick="showAddQuestionModal()">+ Add Question</button>
+                        </div>
+
+                        <div id="questions-container">
+                            <!-- Questions will be loaded here dynamically -->
+                            <div style="text-align: center; padding: 40px; color: #64748b;">
+                                Loading questions...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management Page -->
+                <div id="users-page" class="page">
+                    <div class="page-header">
+                        <h2>User Management</h2>
+                        <p>Manage admin users and permissions</p>
+                    </div>
+
+                    <div class="user-section">
+                        <div class="section-header">
+                            <h3>Admin Users</h3>
+                            <button class="btn-primary" onclick="addUser()">+ Add User</button>
+                        </div>
+                        
+                        <!-- Replace the entire table section with this: -->
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Full Name</th>
+                                        <th>Role</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- This will be populated dynamically by JavaScript -->
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">
+                                            Loading user data...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Logs Page -->
+                <div id="audit-page" class="page">
+                    <div class="page-header">
+                        <h2>Audit Logs</h2>
+                        <p>Important system actions and security events</p>
+                    </div>
+
+                    <div class="audit-section">
+                        <div class="section-header">
+                            <h3>Recent Activity</h3>
+                            <button class="btn-primary" onclick="loadAuditLogs()">🔄 Refresh</button>
+                        </div>
+
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Target</th>
+                                        <th>IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-logs-body">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">
+                                            Loading audit logs...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="pagination" style="margin-top: 20px;">
+                                <button onclick="prevAuditPage()" id="prev-audit-btn" disabled>← Previous</button>
+                                <span id="audit-page-info">Page 1</span>
+                                <button onclick="nextAuditPage()" id="next-audit-btn">Next →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
