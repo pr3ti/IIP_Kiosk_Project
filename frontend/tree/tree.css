@@ -1,0 +1,135 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    /* root-relative background image */
+    background: url('/assets/Tree/plainsBackground.jpg') no-repeat center center fixed;
+    background-size: cover;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    height: 100vh;
+}
+
+#treeContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#treeImage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2200px;
+    height: auto;
+    z-index: 1;
+}
+
+#treeImageLeaves {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2200px;
+    height: auto;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.leaf {
+    position: absolute;
+    z-index: 2;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.leaf:hover {
+    transform: scale(1.1);
+    z-index: 3;
+}
+
+.leaf-name {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #2d5016;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+    max-width: 80%;
+    word-wrap: break-word;
+    line-height: 1.2;
+}
+
+.tree-title {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 30px;
+    border-radius: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.tree-title h1 {
+    color: #2d5016;
+    font-size: 2em;
+    margin: 0;
+}
+
+.tree-title p {
+    color: #666;
+    margin: 5px 0 0 0;
+    font-size: 1em;
+}
+
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.5em;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+#ovalOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1898px;
+    height: 849px;
+    border: 1px dashed rgba(255, 0, 0, 0);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.transparency-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    font-size: 14px;
+}
