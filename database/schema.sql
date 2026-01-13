@@ -206,7 +206,7 @@ CREATE TABLE countdown_management (
 
 -- Ensure exactly ONE row exists
 INSERT INTO countdown_management (id, countdown_seconds, updated_by)
-VALUES (1, 3, 'system')
+VALUES (1, 3, 'systemadmin')
 ON DUPLICATE KEY UPDATE countdown_seconds = countdown_seconds;
 
 -- ============================================================

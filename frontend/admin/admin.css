@@ -3604,3 +3604,26 @@ input[type="color"]::-webkit-color-swatch {
     color: #991b1b;
     border: 1px solid #fecaca;
 }
+
+/* ==================== TIMER COUNTDOWN ==================== */
+
+#timer-countdown-page {
+    min-height: 100%;
+    padding: 30px;
+}
+
+.timer-countdown-section {
+    background: #F7F7F7FF;
+    border: 2px solid #F7F7F7FF;
+    border-radius: 16px;
+    padding: 25px;
+}
+
+#timer-countdown-page .toolbar {
+    margin-top: 10px;
+}
+
+#timer-countdown-message {
+    font-size: 14px;
+    margin-top: 12px;
+}
