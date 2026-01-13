@@ -311,7 +311,7 @@
                     <canvas id="photo-canvas" style="display: none;"></canvas>
                     <!-- Updated Countdown Overlay - Top Left Corner -->
                     <div id="countdown-overlay" style="display: none;">
-                        <span id="countdown-text">6</span>
+                        <span id="countdown-text"></span>
                     </div>
                     <div class="corner top-left"></div>
                     <div class="corner top-right"></div>
@@ -596,6 +596,13 @@
             <!-- (DONE BY PRETI) -->
         </div>
     </div>
+
+    <script>
+    // Frontend configuration (no hardcoding)
+    window.FEEDBACK_CONFIG = {
+        countdownApi: "/api/admin/countdown-management"
+    };
+    </script>
     
     <script src="feedback.js"></script>
 </body>

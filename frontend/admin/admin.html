@@ -116,6 +116,10 @@
                             <span class="nav-icon">📦</span>
                             Data Export
                         </a>
+                        <a href="#" class="nav-item" onclick="showPage('timer-countdown')">
+                            <span class="nav-icon">🕔</span>
+                            Timer Countdown
+                        </a>
                     </nav>
                 </div>
             </aside>
@@ -1181,6 +1185,52 @@
                                         <button class="preview-btn-secondary">Secondary Button</button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timer Countdown Page -->
+                <div id="timer-countdown-page" class="page">
+                    <div class="page-header">
+                        <h2>Timer Countdown</h2>
+                        <p>
+                            Configure the countdown duration for automated photo capturing in the feedback form.
+                        </p>
+                    </div>
+
+                    <div class="timer-countdown-section">
+                        <div class="section-header">
+                            <h3>Automated Photo Capture Timer</h3>
+                            <!-- ADD id="refresh-timer-btn" HERE -->
+                            <button class="btn-primary" id="refresh-timer-btn" onclick="loadTimerCountdownSetting()">
+                                🔄 Refresh
+                            </button>
+                        </div>
+
+                        <div class="toolbar">
+                            <!-- Countdown input -->
+                            <div class="timer-input-group">
+                                <label class="filter-label" for="timer-countdown-seconds">
+                                    Countdown (seconds)
+                                </label>
+
+                                <input type="text" id="timer-countdown-seconds" class="filter-input" min="0" step="1" oninput="validateTimerCountdown()"/>
+                                <p class="text-muted font-size-13">
+                                    Whole numbers only. Use <strong>0</strong> to disable countdown.
+                                </p>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="toolbar-buttons">
+                                <button
+                                    class="btn-primary"
+                                    id="save-timer-countdown-btn"
+                                    onclick="saveTimerCountdownSetting()"
+                                    disabled
+                                >
+                                    💾 Save
+                                </button>
                             </div>
                         </div>
                     </div>

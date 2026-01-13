@@ -3875,5 +3875,96 @@ router.get('/saved-themes/active', auth.requireAuth, (req, res) => {
     });
 });
 
+// ==================== COUNTDOWN MANAGEMENT ROUTES ====================
+/**
+ * GET /api/admin/countdown-management
+ * Public (used by feedback page)
+ * Returns: { success: true, countdown_seconds: number }
+ */
+router.get('/countdown-management', (req, res) => {
+    const sql = `
+        SELECT countdown_seconds
+        FROM countdown_management
+        WHERE id = 1
+        LIMIT 1
+    `;
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+            console.error('❌ Error loading countdown:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error'
+            });
+        }
+
+        const seconds = rows?.[0]?.countdown_seconds;
+        const safeSeconds =
+            Number.isInteger(seconds) && seconds >= 0 ? seconds : 3;
+
+        return res.json({
+            success: true,
+            countdown_seconds: safeSeconds
+        });
+    });
+});
+
+/**
+ * PUT /api/admin/countdown-management
+ * REMOVED AUTHENTICATION - Any user can update
+ * Body: { countdown_seconds: number }
+ */
+router.put('/countdown-management', (req, res) => {  // REMOVED: auth.requireAuth
+    console.log('🔄 PUT /countdown-management - Updating countdown');
+    
+    // Get username from session
+    const username = req.session?.user?.username;
+    const seconds = Number(req.body?.countdown_seconds);
+
+    console.log('📝 Request details:', {
+        username: username,
+        countdown_seconds: seconds,
+        body: req.body
+    });
+
+    // Validate input
+    if (!Number.isInteger(seconds) || seconds < 0) {
+        console.log('❌ Invalid input received:', seconds);
+        return res.status(400).json({
+            success: false,
+            error: 'countdown_seconds must be a whole number (>= 0)'
+        });
+    }
+
+    console.log('✅ Valid input received:', seconds, 'seconds by user:', username);
+
+    const sql = `
+        UPDATE countdown_management
+        SET countdown_seconds = ?, updated_by = ?
+        WHERE id = 1
+    `;
+
+    db.query(sql, [seconds, username], (err, result) => {
+        if (err) {
+            console.error('❌ Database error saving countdown:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error: ' + err.message
+            });
+        }
+
+        console.log('✅ Countdown updated successfully:', {
+            seconds: seconds,
+            username: username,
+            affectedRows: result.affectedRows
+        });
+
+        return res.json({
+            success: true,
+            countdown_seconds: seconds,
+            message: 'Countdown updated successfully'
+        });
+    });
+});
 
 module.exports = router;

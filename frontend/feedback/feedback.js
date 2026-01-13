@@ -98,6 +98,7 @@ let photoData = null;
 let currentDevice = 'desktop'; // 'desktop' or 'mobile'
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 300000; // 5 minutes (300,000 milliseconds)
+let countdownSeconds = null; // loaded from backend
 
 // ==================== 2. INITIALIZATION & SETUP FUNCTIONS ====================
 
@@ -181,6 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Detect device type
     detectDeviceType();
+    
+    loadCountdownSeconds();
     
     const pledgeTextarea = document.getElementById('pledge-text');
     if (pledgeTextarea) {
@@ -816,8 +819,31 @@ async function initializeCamera() {
     }
 }
 
+async function loadCountdownSeconds() {
+    try {
+        const config = window.FEEDBACK_CONFIG || {};
+        const url = config.countdownApi || "/api/admin/countdown-management";
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data || data.success !== true) {
+            countdownSeconds = 0;
+            return;
+        }
+
+        countdownSeconds = Number.isInteger(data.countdown_seconds)
+            ? data.countdown_seconds
+            : 0;
+
+    } catch (err) {
+        console.warn("Countdown fetch failed, using 0", err);
+        countdownSeconds = 0;
+    }
+}
+
 // Capture photo with countdown timer (desktop) or redirect to upload (mobile)
-function capturePhoto() {
+async function capturePhoto() {
     // For mobile, redirect to file upload
     if (currentDevice === 'mobile') {
         document.getElementById('photo-page').style.display = 'none';
@@ -838,28 +864,41 @@ function capturePhoto() {
 
         // Disable capture button during countdown
         captureBtn.disabled = true;
-        
-        let countdown = 6;
+
+        // ✅ LOAD countdown from backend if not yet loaded
+        if (countdownSeconds === null) {
+            await loadCountdownSeconds();
+        }
+
+        let countdown = Number.isInteger(countdownSeconds) ? countdownSeconds : 0;
+
+        // If admin set to 0, take photo immediately (no countdown)
+        if (countdown === 0) {
+            takePhoto();
+            captureBtn.disabled = false;
+            return;
+        }
+
+        // Show first number
         countdownText.textContent = countdown;
         countdownOverlay.style.display = 'flex';
-        console.log('Starting countdown...');
+        console.log('Starting countdown:', countdown);
 
         const countdownInterval = setInterval(() => {
             countdown--;
-            countdownText.textContent = countdown;
-            console.log('Countdown:', countdown);
-            
+
             if (countdown <= 0) {
                 clearInterval(countdownInterval);
                 countdownOverlay.style.display = 'none';
                 console.log('Countdown finished, taking photo...');
-                
-                // Take the photo
+
                 takePhoto();
-                
-                // Re-enable capture button
                 captureBtn.disabled = false;
+                return;
             }
+
+            countdownText.textContent = countdown;
+            console.log('Countdown:', countdown);
         }, 1000);
     } catch (error) {
         console.error('Error in capturePhoto:', error);
