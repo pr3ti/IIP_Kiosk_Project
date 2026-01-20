@@ -120,6 +120,10 @@
                             <span class="nav-icon">🕔</span>
                             Timer Countdown
                         </a>
+                        <a href="#" class="nav-item" onclick="showPage('server-schedule')">
+                            <span class="nav-icon">❗</span>
+                            Server Schedule
+                        </a>
                     </nav>
                 </div>
             </aside>
@@ -1235,7 +1239,210 @@
                         </div>
                     </div>
                 </div>
-            </main>
+                
+                <!-- Server Schedule Page -->
+                <div id="server-schedule-page" class="page">
+                    <div class="page-header">
+                        <h2>Server Schedule Management</h2>
+                        <p>Configure automated server start/stop schedules</p>
+                    </div>
+
+                    <div class="schedule-section">
+                        <div class="section-header">
+                            <h3>Schedules</h3>
+                            <button class="btn-primary" onclick="showAddScheduleModal()">
+                                + Add Schedule
+                            </button>
+                        </div>
+
+                        <!-- Schedules Table -->
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Schedule Name</th>
+                                        <th>Type</th>
+                                        <th>Days/Date</th>
+                                        <th>Start Time</th>
+                                        <th>Stop Time</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schedules-table-body">
+                                    <tr>
+                                        <td colspan="7" class="schedule-loading">
+                                            Loading schedules...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="quick-actions">
+                            <h4>Quick Actions</h4>
+                            <div class="action-buttons">
+                                <button class="btn-secondary" onclick="enableAllSchedules()">
+                                    ✅ Enable All
+                                </button>
+                                <button class="btn-secondary" onclick="disableAllSchedules()">
+                                    ⏸️ Disable All
+                                </button>
+                                <button class="btn-secondary" onclick="startServer()">
+                                    ▶️ Start Server
+                                </button>
+                                <button class="btn-danger" onclick="stopServer()">
+                                    ⏹️ Stop Server
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Modal -->
+                <div id="schedule-modal" class="modal schedule-modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Add New Schedule</h3>
+                            <button class="modal-close" onclick="closeModal('schedule-modal')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="schedule-form" onsubmit="event.preventDefault(); saveSchedule();">
+                                <div class="form-group">
+                                    <label for="schedule-name">Schedule Name *</label>
+                                    <input type="text" id="schedule-name" name="schedule-name" 
+                                        placeholder="e.g., Morning Start Schedule" required>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="schedule-type">Schedule Type *</label>
+                                        <select id="schedule-type" name="schedule-type" required onchange="updateFormFields()">
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="specific_date">Specific Date</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="start-time">Start Time *</label>
+                                        <input type="time" id="start-time" name="start-time" required 
+                                            oninput="validateTimes()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="end-time">Stop Time *</label>
+                                        <input type="time" id="end-time" name="end-time" required 
+                                            oninput="validateTimes()">
+                                    </div>
+                                </div>
+                                
+                                <!-- Weekly Schedule Options -->
+                                <div id="weekly-days-section" style="display: none;">
+                                    <div class="form-group">
+                                        <label>Days of Week *</label>
+                                        <div class="days-selection">
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-1" name="day" value="1">
+                                                <label for="day-1">S</label>
+                                            </div>
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-2" name="day" value="2">
+                                                <label for="day-2">M</label>
+                                            </div>
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-3" name="day" value="3">
+                                                <label for="day-3">T</label>
+                                            </div>
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-4" name="day" value="4">
+                                                <label for="day-4">W</label>
+                                            </div>
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-5" name="day" value="5">
+                                                <label for="day-5">T</label>
+                                            </div>
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-6" name="day" value="6">
+                                                <label for="day-6">F</label>
+                                            </div>
+                                            <div class="day-checkbox">
+                                                <input type="checkbox" id="day-7" name="day" value="7">
+                                                <label for="day-7">S</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Specific Date Option -->
+                                <div id="specific-date-section" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="specific-date">Specific Date *</label>
+                                        <input type="date" id="specific-date" name="specific-date">
+                                    </div>
+                                </div>
+                                
+                                <!-- Status Toggle -->
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="is-active" name="is-active" checked>
+                                        <span>Activate this schedule immediately</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="modal-footer">
+                                    <button type="button" class="btn-secondary" onclick="closeModal('schedule-modal')">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="btn-primary modal-submit-btn">
+                                        Create Schedule
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Status Modal -->
+                <div id="server-status-modal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 500px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Server Status</h3>
+                            <button class="modal-close" onclick="closeModal('server-status-modal')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="server-status-info">
+                                <div class="status-item">
+                                    <span>Feedback Server:</span>
+                                    <span id="modal-server-status" class="status-badge">Checking...</span>
+                                </div>
+                                <div class="status-item">
+                                    <span>Server PID:</span>
+                                    <span id="modal-server-pid">-</span>
+                                </div>
+                                <div class="status-item">
+                                    <span>Server Port:</span>
+                                    <span id="modal-server-port">-</span>
+                                </div>
+                                <div class="status-item">
+                                    <span>Last Updated:</span>
+                                    <span id="modal-last-updated">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-secondary" onclick="closeModal('server-status-modal')">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Container -->
+                <div id="notification-container"></div>
     <script src="admin.js"></script>
 </body>
 </html>

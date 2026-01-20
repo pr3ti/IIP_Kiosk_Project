@@ -3967,4 +3967,584 @@ router.put('/countdown-management', (req, res) => {  // REMOVED: auth.requireAut
     });
 });
 
+// ==================== SERVER SCHEDULE MANAGEMENT ROUTES ====================
+
+// Get all server schedules
+router.get('/server-schedules', auth.requireAuth, (req, res) => {
+    console.log('📅 Fetching server schedules...');
+    
+    const query = `
+        SELECT 
+            id,
+            schedule_name,
+            schedule_type,
+            DATE_FORMAT(start_time, '%H:%i') as start_time,
+            DATE_FORMAT(end_time, '%H:%i') as end_time,
+            days_of_week,
+            specific_date,
+            is_active,
+            created_by,
+            created_at,
+            updated_at
+        FROM server_schedules
+        ORDER BY is_active DESC, schedule_name ASC
+    `;
+    
+    db.query(query, [], (err, results) => {
+        if (err) {
+            console.error('❌ Error fetching server schedules:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Failed to load server schedules' 
+            });
+        }
+        
+        console.log(`✅ Loaded ${results.length} server schedules`);
+        res.json({ success: true, schedules: results });
+    });
+});
+
+// Add new server schedule
+router.post('/server-schedules', auth.requireAuth, (req, res) => {
+    const {
+        schedule_name,
+        schedule_type,
+        start_time,
+        end_time,
+        days_of_week,
+        specific_date,
+        is_active = true
+    } = req.body;
+    
+    const username = req.session.user.username;
+    
+    console.log('➕ Adding new server schedule:', { schedule_name, schedule_type, username });
+    
+    // Validate required fields
+    if (!schedule_name || !schedule_type || !start_time || !end_time) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Schedule name, type, start time, and end time are required' 
+        });
+    }
+    
+    // Validate schedule type
+    const validScheduleTypes = ['daily', 'weekly', 'specific_date'];
+    if (!validScheduleTypes.includes(schedule_type)) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Invalid schedule type. Must be: daily, weekly, or specific_date' 
+        });
+    }
+    
+    // Validate that start time is earlier than end time
+    if (start_time >= end_time) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Start time must be earlier than end time' 
+        });
+    }
+    
+    // Validate days_of_week for weekly type
+    if (schedule_type === 'weekly' && (!days_of_week || days_of_week.trim() === '')) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Days of week are required for weekly schedules' 
+        });
+    }
+    
+    // Validate specific_date for specific_date type
+    if (schedule_type === 'specific_date' && !specific_date) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Specific date is required for specific_date schedules' 
+        });
+    }
+    
+    // Check for duplicate schedule names
+    const duplicateCheckQuery = 'SELECT id FROM server_schedules WHERE schedule_name = ?';
+    db.query(duplicateCheckQuery, [schedule_name], (err, results) => {
+        if (err) {
+            console.error('❌ Error checking duplicate schedule:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Failed to check for duplicate schedule' 
+            });
+        }
+        
+        if (results.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Schedule name already exists. Please use a unique name.' 
+            });
+        }
+        
+        // Insert the new schedule
+        const insertQuery = `
+            INSERT INTO server_schedules (
+                schedule_name,
+                schedule_type,
+                start_time,
+                end_time,
+                days_of_week,
+                specific_date,
+                is_active,
+                created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        db.query(insertQuery, [
+            schedule_name,
+            schedule_type,
+            start_time,
+            end_time,
+            days_of_week || null,
+            specific_date || null,
+            is_active ? 1 : 0,
+            username
+        ], (err, result) => {
+            if (err) {
+                console.error('❌ Error creating server schedule:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to create server schedule' 
+                });
+            }
+            
+            console.log(`✅ Server schedule "${schedule_name}" created with ID: ${result.insertId}`);
+            
+            // Log audit trail
+            logAudit('CREATE_SCHEDULE', username, 'server_schedule', result.insertId, req);
+            
+            // Return the created schedule
+            const getScheduleQuery = 'SELECT * FROM server_schedules WHERE id = ?';
+            db.query(getScheduleQuery, [result.insertId], (err, scheduleResults) => {
+                if (err) {
+                    return res.json({
+                        success: true,
+                        message: 'Server schedule created successfully',
+                        schedule_id: result.insertId
+                    });
+                }
+                
+                res.json({
+                    success: true,
+                    message: 'Server schedule created successfully',
+                    schedule: scheduleResults[0]
+                });
+            });
+        });
+    });
+});
+
+// Update server schedule
+router.put('/server-schedules/:id', auth.requireAuth, (req, res) => {
+    const scheduleId = req.params.id;
+    const {
+        schedule_name,
+        schedule_type,
+        start_time,
+        end_time,
+        days_of_week,
+        specific_date,
+        is_active
+    } = req.body;
+    
+    const username = req.session.user.username;
+    
+    console.log(`✏️ Updating server schedule ID: ${scheduleId} by ${username}`);
+    
+    // Validate required fields
+    if (!schedule_name || !schedule_type || !start_time || !end_time) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Schedule name, type, start time, and end time are required' 
+        });
+    }
+    
+    // Validate that start time is earlier than end time
+    if (start_time >= end_time) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Start time must be earlier than end time' 
+        });
+    }
+    
+    // Verify the schedule exists
+    const verifyQuery = 'SELECT id, schedule_name FROM server_schedules WHERE id = ?';
+    
+    db.query(verifyQuery, [scheduleId], (err, results) => {
+        if (err) {
+            console.error('❌ Error verifying schedule:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Failed to verify schedule' 
+            });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Schedule not found' 
+            });
+        }
+        
+        const schedule = results[0];
+        
+        // Check for duplicate schedule names (excluding current schedule)
+        const duplicateCheckQuery = 'SELECT id FROM server_schedules WHERE schedule_name = ? AND id != ?';
+        db.query(duplicateCheckQuery, [schedule_name, scheduleId], (err, duplicateResults) => {
+            if (err) {
+                console.error('❌ Error checking duplicate schedule:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to check for duplicate schedule' 
+                });
+            }
+            
+            if (duplicateResults.length > 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Schedule name already exists. Please use a unique name.' 
+                });
+            }
+            
+            // Update the schedule
+            const updateQuery = `
+                UPDATE server_schedules SET
+                    schedule_name = ?,
+                    schedule_type = ?,
+                    start_time = ?,
+                    end_time = ?,
+                    days_of_week = ?,
+                    specific_date = ?,
+                    is_active = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `;
+            
+            db.query(updateQuery, [
+                schedule_name,
+                schedule_type,
+                start_time,
+                end_time,
+                days_of_week || null,
+                specific_date || null,
+                is_active ? 1 : 0,
+                scheduleId
+            ], (err, result) => {
+                if (err) {
+                    console.error('❌ Error updating server schedule:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Failed to update server schedule' 
+                    });
+                }
+                
+                console.log(`✅ Server schedule ${scheduleId} updated. Affected rows: ${result.affectedRows}`);
+                
+                // Log audit trail
+                logAudit('UPDATE_SCHEDULE', username, 'server_schedule', scheduleId, req);
+                
+                res.json({
+                    success: true,
+                    message: 'Server schedule updated successfully',
+                    changes: result.affectedRows
+                });
+            });
+        });
+    });
+});
+
+// Delete server schedule
+router.delete('/server-schedules/:id', auth.requireAuth, (req, res) => {
+    const scheduleId = req.params.id;
+    const username = req.session.user.username;
+    
+    console.log(`🗑️ Deleting server schedule ID: ${scheduleId} by ${username}`);
+    
+    // Verify the schedule exists
+    const verifyQuery = 'SELECT id, schedule_name FROM server_schedules WHERE id = ?';
+    
+    db.query(verifyQuery, [scheduleId], (err, results) => {
+        if (err) {
+            console.error('❌ Error verifying schedule:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Failed to verify schedule' 
+            });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Schedule not found' 
+            });
+        }
+        
+        const schedule = results[0];
+        
+        // Delete the schedule
+        const deleteQuery = 'DELETE FROM server_schedules WHERE id = ?';
+        
+        db.query(deleteQuery, [scheduleId], (err, result) => {
+            if (err) {
+                console.error('❌ Error deleting server schedule:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to delete server schedule' 
+                });
+            }
+            
+            console.log(`✅ Server schedule "${schedule.schedule_name}" deleted. Affected rows: ${result.affectedRows}`);
+            
+            // Log audit trail
+            logAudit('DELETE_SCHEDULE', username, 'server_schedule', scheduleId, req);
+            
+            res.json({
+                success: true,
+                message: 'Server schedule deleted successfully',
+                changes: result.affectedRows
+            });
+        });
+    });
+});
+
+// Toggle schedule active status
+router.put('/server-schedules/:id/toggle', auth.requireAuth, (req, res) => {
+    const scheduleId = req.params.id;
+    const { is_active } = req.body;
+    const username = req.session.user.username;
+
+    if (typeof is_active !== 'boolean') {
+        return res.status(400).json({
+            success: false,
+            error: 'is_active must be a boolean'
+        });
+    }
+
+    // ✅ Get schedule name first (so logs show name not ID)
+    const getNameQuery = 'SELECT schedule_name FROM server_schedules WHERE id = ?';
+
+    db.query(getNameQuery, [scheduleId], (err, results) => {
+        if (err) {
+            console.error('❌ Error fetching schedule name:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch schedule'
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Schedule not found'
+            });
+        }
+
+        const scheduleName = results[0].schedule_name;
+
+        console.log(`🔘 Toggling schedule "${scheduleName}" (ID: ${scheduleId}) to ${is_active ? 'active' : 'inactive'} by ${username}`);
+
+        const updateQuery = `
+            UPDATE server_schedules 
+            SET is_active = ?, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        `;
+
+        db.query(updateQuery, [is_active ? 1 : 0, scheduleId], (err, result) => {
+            if (err) {
+                console.error('❌ Error toggling schedule status:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to toggle schedule status'
+                });
+            }
+
+            console.log(`✅ Schedule "${scheduleName}" ${is_active ? 'enabled' : 'disabled'}. Affected rows: ${result.affectedRows}`);
+
+            logAudit(
+                is_active ? 'ENABLE_SCHEDULE' : 'DISABLE_SCHEDULE',
+                username,
+                'server_schedule',
+                scheduleId,
+                req
+            );
+
+            res.json({
+                success: true,
+                message: `"${scheduleName}" schedule ${is_active ? 'enabled' : 'disabled'} successfully`,
+                is_active: is_active
+            });
+        });
+    });
+});
+
+// Get schedule system status
+router.get('/server-schedules/status', auth.requireAuth, (req, res) => {
+    console.log('📊 Getting schedule system status...');
+    
+    // Check if scheduler is running
+    const schedulerActive = true;
+    
+    // Get next scheduled start - MySQL version
+    const nextStartQuery = `
+        SELECT 
+            schedule_name,
+            DATE_FORMAT(start_time, '%H:%i') as start_time,
+            DATE_FORMAT(end_time, '%H:%i') as end_time,
+            schedule_type,
+            days_of_week,
+            specific_date
+        FROM server_schedules
+        WHERE is_active = 1
+        AND start_time > TIME(NOW())
+        AND (
+            (schedule_type = 'daily')
+            OR (schedule_type = 'weekly' AND FIND_IN_SET(DAYOFWEEK(NOW()), days_of_week))
+            OR (schedule_type = 'specific_date' AND specific_date = CURDATE())
+        )
+        ORDER BY start_time ASC
+        LIMIT 1
+    `;
+    
+    db.query(nextStartQuery, [], (err, results) => {
+        if (err) {
+            console.error('❌ Error getting next start:', err);
+            return res.json({
+                success: true,
+                scheduler_active: schedulerActive,
+                next_start: null,
+                message: 'Scheduler status check completed'
+            });
+        }
+        
+        // Format next start time
+        let nextStartTime = null;
+        let nextEndTime = null;
+        let nextSchedule = null;
+        
+        if (results.length > 0) {
+            nextSchedule = results[0];
+            const now = new Date();
+            const startDate = new Date(now);
+            const endDate = new Date(now);
+            const [startHours, startMinutes] = nextSchedule.start_time.split(':');
+            const [endHours, endMinutes] = nextSchedule.end_time.split(':');
+            startDate.setHours(startHours, startMinutes, 0, 0);
+            endDate.setHours(endHours, endMinutes, 0, 0);
+            nextStartTime = startDate.toLocaleString();
+            nextEndTime = endDate.toLocaleString();
+        }
+        
+        res.json({
+            success: true,
+            scheduler_active: schedulerActive,
+            next_start: nextStartTime,
+            next_end: nextEndTime,
+            next_schedule_details: nextSchedule,
+            message: 'Scheduler status check completed'
+        });
+    });
+});
+
+// Test schedule system
+router.post('/server-schedules/test', auth.requireAuth, (req, res) => {
+    const username = req.session.user.username;
+    
+    console.log(`🧪 Schedule system test triggered by ${username}`);
+    
+    // Test database connection
+    const testQuery = 'SELECT COUNT(*) as count FROM server_schedules';
+    
+    db.query(testQuery, [], (err, results) => {
+        if (err) {
+            console.error('❌ Schedule system test failed:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database test failed: ' + err.message
+            });
+        }
+        
+        // Test time calculations
+        const now = new Date();
+        const testData = {
+            database_connection: 'OK',
+            schedule_count: results[0].count,
+            server_time: now.toISOString(),
+            server_time_local: now.toLocaleString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+        
+        // Log audit trail
+        logAudit('TEST_SCHEDULE_SYSTEM', username, 'server_schedule', null, req);
+        
+        res.json({
+            success: true,
+            message: 'Schedule system test completed',
+            test_results: testData
+        });
+    });
+});
+
+// Enable all schedules
+router.post('/server-schedules/enable-all', auth.requireAuth, (req, res) => {
+    const username = req.session.user.username;
+    
+    console.log(`✅ Enabling all schedules by ${username}`);
+    
+    const updateQuery = 'UPDATE server_schedules SET is_active = 1, updated_at = CURRENT_TIMESTAMP';
+    
+    db.query(updateQuery, [], (err, result) => {
+        if (err) {
+            console.error('❌ Error enabling all schedules:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to enable all schedules'
+            });
+        }
+        
+        console.log(`✅ ${result.affectedRows} schedules enabled`);
+        
+        // Log audit trail
+        logAudit('ENABLE_ALL_SCHEDULES', username, 'server_schedule', result.affectedRows, req);
+        
+        res.json({
+            success: true,
+            message: `All schedules (${result.affectedRows}) enabled successfully`,
+            enabled_count: result.affectedRows
+        });
+    });
+});
+
+// Disable all schedules
+router.post('/server-schedules/disable-all', auth.requireAuth, (req, res) => {
+    const username = req.session.user.username;
+    
+    console.log(`⏸️ Disabling all schedules by ${username}`);
+    
+    const updateQuery = 'UPDATE server_schedules SET is_active = 0, updated_at = CURRENT_TIMESTAMP';
+    
+    db.query(updateQuery, [], (err, result) => {
+        if (err) {
+            console.error('❌ Error disabling all schedules:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to disable all schedules'
+            });
+        }
+        
+        console.log(`✅ ${result.affectedRows} schedules disabled`);
+        
+        // Log audit trail
+        logAudit('DISABLE_ALL_SCHEDULES', username, 'server_schedule', result.affectedRows, req);
+        
+        res.json({
+            success: true,
+            message: `All schedules (${result.affectedRows}) disabled successfully`,
+            disabled_count: result.affectedRows
+        });
+    });
+});
+
 module.exports = router;

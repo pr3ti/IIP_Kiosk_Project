@@ -210,6 +210,38 @@ VALUES (1, 3, 'systemadmin')
 ON DUPLICATE KEY UPDATE countdown_seconds = countdown_seconds;
 
 -- ============================================================
+-- SERVER SCHEDULES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS server_schedules (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    schedule_name VARCHAR(100) NOT NULL UNIQUE,
+    schedule_type ENUM('daily', 'weekly', 'specific_date') NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    days_of_week VARCHAR(50),
+    specific_date DATE,
+    is_active BOOLEAN DEFAULT true,
+    created_by VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_active (is_active),
+    INDEX idx_type (schedule_type)
+);
+
+-- ============================================================
+-- SERVER EXECUTIONS LOG TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS schedule_executions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    schedule_id INT NOT NULL,
+    status ENUM('success', 'failed') NOT NULL,
+    error_message TEXT,
+    executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (schedule_id) REFERENCES server_schedules(id) ON DELETE CASCADE,
+    INDEX idx_schedule_date (schedule_id, executed_at)
+);
+
+-- ============================================================
 -- INSERT INITIAL DATA (DONE BY PRETI)
 -- ============================================================
 
@@ -251,3 +283,5 @@ SELECT COUNT(*) as questions FROM questions;
 SELECT COUNT(*) as saved_themes FROM saved_themes;
 SELECT COUNT(*) as pledge_likes FROM pledge_likes;
 SELECT COUNT(*) as countdown_management FROM countdown_management;
+SELECT COUNT(*) as server_schedules FROM server_schedules;
+SELECT COUNT(*) as schedule_executions FROM schedule_executions;
