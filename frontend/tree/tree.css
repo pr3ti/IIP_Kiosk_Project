@@ -6,7 +6,7 @@
 
 body {
     /* root-relative background image */
-    background: url('/assets/Tree/plainsBackground.jpg') no-repeat center center fixed;
+    background: url('/assets/Tree/BackGround.jpg') no-repeat center center fixed;
     background-size: cover;
     overflow: hidden;
     font-family: 'Arial', sans-serif;
@@ -38,20 +38,32 @@ body {
     width: 2200px;
     height: auto;
     z-index: 1;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
+    display: none;
 }
 
 .leaf {
     position: absolute;
     z-index: 2;
-    transition: transform 0.3s ease;
-    cursor: pointer;
+    cursor: default;
 }
 
-.leaf:hover {
-    transform: scale(1.1);
-    z-index: 3;
+.leaf {
+    position: absolute;
+    z-index: 10; /* Make sure this is higher than treeImage and treeImageLeaves */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* transition: all 0.5s ease; Optional: makes growth smooth */
+}
+
+#leavesContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5; /* Ensure the container is above the trunk but below UI */
+    pointer-events: none;
 }
 
 .leaf-name {
@@ -59,12 +71,11 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #2d5016;
+    color: #ffffff;
     font-weight: bold;
     font-size: 12px;
     text-align: center;
     pointer-events: none;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
     max-width: 80%;
     word-wrap: break-word;
     line-height: 1.2;
@@ -117,19 +128,7 @@ body {
     width: 1898px;
     height: 849px;
     border: 1px dashed rgba(255, 0, 0, 0);
-    border-radius: 50%;
+    border-radius: 0;
     pointer-events: none;
-    z-index: 0;
-}
-
-.transparency-info {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 10px 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    font-size: 14px;
+    z-index: 0; 
 }
