@@ -104,6 +104,14 @@
                             <span class="nav-icon">👥</span>
                             User Management
                         </a>
+                        <a href="#" class="nav-item" onclick="showPage('email-management')">
+                            <span class="nav-icon">📧</span>
+                            Email Management
+                        </a>
+                        <a href="#" class="nav-item" onclick="showPage('form-management')">
+                            <span class="nav-icon">📝</span>
+                            Form Management
+                        </a>
                         <a href="#" class="nav-item" onclick="showPage('archive')">
                             <span class="nav-icon">📚</span>
                             Archive
@@ -1185,6 +1193,63 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Email Management Page (DONE BY NADHIRAH)-->
+                <div id="email-management-page" class="page">
+                    <div class="page-header">
+                        <h2>Email Management</h2>
+                        <p>Manage SMTP settings and email configurations</p>
+                    </div>
+
+                    <!-- Your email management UI goes here -->
+                </div>
+
+                <!-- Form Management Page -->
+                <div id="form-management-page" class="page">
+
+                    <div class="page-header">
+                        <h2>Form Management</h2>
+                        <p>Manage form background, landing title, and subtitle</p>
+                    </div>
+
+                    <!-- OUTER CARD (same as Question Management) -->
+                    <div class="overlay-section user-section">
+
+                        <div class="section-header">
+                            <h3>Form UI Settings</h3>
+                            <div class="header-actions">
+                                <button class="btn-secondary" onclick="loadFormUISettings()">Reset</button>
+                                <button class="btn-primary" onclick="saveFormUISettings()">Save</button>
+                            </div>
+                        </div>
+
+                        <!-- CONTENT MUST STAY INSIDE user-section -->
+                        <div class="form-group">
+                            <label for="fm-bg">Background</label>
+                            <select id="fm-bg">
+                                <option value="linear-gradient(135deg, #f0f4ff 0%, #f8f0ff 50%, #f0f9ff 100%)">
+                                Default Gradient
+                                </option>
+                                <option value="#ffffff">White</option>
+                                <option value="#f1f5f9">Light Gray</option>
+                                <option value="#0f172a">Dark</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fm-title">Landing Title</label>
+                            <input id="fm-title" type="text" maxlength="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fm-subtitle">Landing Subtitle</label>
+                            <input id="fm-subtitle" type="text" maxlength="200">
+                        </div>
+
+                        <div id="fm-status" class="fm-status fm-status--hidden" aria-live="polite"></div>
+                </div>
+
+
             </main>
     <script src="admin.js"></script>
 </body>

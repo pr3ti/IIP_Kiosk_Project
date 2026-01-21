@@ -5447,7 +5447,10 @@ function showPage(pageName) {
         initializeDeletionControls();
     } else if (pageName === 'theme-settings') {
         initThemeSettings();
+    } else if (pageName === 'form-management') {
+        loadFormUISettings();
     }
+
 }
 
 // Initialize archive page
@@ -8457,4 +8460,69 @@ function nextLeaderboardPage() {
         leaderboardCurrentPage++;
         renderLeaderboardPage();
     }
+}
+
+// ===================== 27. FORM MANAGEMENT =====================
+// Configure feedback form UI (background, landing title, subtitle)
+
+function setFormStatus(message, type = 'info', autoHide = false) {
+  const status = document.getElementById('fm-status');
+  if (!status) return;
+
+  status.textContent = message;
+  status.className = `fm-status fm-status--${type}`;
+
+  if (autoHide) {
+    setTimeout(() => {
+      status.className = 'fm-status fm-status--hidden';
+      status.textContent = '';
+    }, 2500);
+  }
+}
+
+async function loadFormUISettings() {
+  try {
+    setFormStatus('Loading form settings…', 'info');
+
+    const res = await fetch('/api/admin/form-ui');
+    const cfg = await res.json();
+
+    document.getElementById('fm-bg').value = cfg.background || '';
+    document.getElementById('fm-title').value = cfg.landingTitle || '';
+    document.getElementById('fm-subtitle').value = cfg.landingSubtitle || '';
+
+    setFormStatus('Settings loaded', 'success', true);
+  } catch (err) {
+    console.error(err);
+    setFormStatus('Failed to load settings', 'error');
+  }
+}
+
+async function saveFormUISettings() {
+  try {
+    setFormStatus('Saving changes…', 'info');
+
+    const payload = {
+      background: document.getElementById('fm-bg').value,
+      landingTitle: document.getElementById('fm-title').value,
+      landingSubtitle: document.getElementById('fm-subtitle').value
+    };
+
+    const res = await fetch('/api/admin/form-ui', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Save failed');
+    }
+
+    setFormStatus('Changes saved successfully', 'success', true);
+  } catch (err) {
+    console.error(err);
+    setFormStatus('Failed to save changes', 'error');
+  }
 }
