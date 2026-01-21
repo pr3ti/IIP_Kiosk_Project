@@ -3875,5 +3875,71 @@ router.get('/saved-themes/active', auth.requireAuth, (req, res) => {
     });
 });
 
+// ==================== 17. FORM UI CONFIGURATION ====================
+// Read + write feedback form UI settings 
+
+const FORM_UI_CONFIG_PATH = path.join(__dirname, 'config', 'form-ui.json');
+
+// GET /api/admin/form-ui
+// Load current form UI configuration
+router.get('/form-ui', auth.requireAuth, (req, res) => {
+  try {
+    if (!fs.existsSync(FORM_UI_CONFIG_PATH)) {
+      return res.json({
+        background: '',
+        landingTitle: '',
+        landingSubtitle: ''
+      });
+    }
+
+    const raw = fs.readFileSync(FORM_UI_CONFIG_PATH, 'utf8');
+    const data = JSON.parse(raw);
+    res.json(data);
+  } catch (error) {
+    console.error('❌ Error reading form-ui.json:', error);
+    res.status(500).json({ success: false, error: 'Failed to load form UI config' });
+  }
+});
+
+// PUT /api/admin/form-ui
+// Save/update form UI configuration
+router.put('/form-ui', auth.requireAuth, (req, res) => {
+  try {
+    const { background, landingTitle, landingSubtitle } = req.body;
+
+    // Basic validation (keeps it safe + prevents weird payloads)
+    if (typeof background !== 'string' || background.length > 300) {
+      return res.status(400).json({ success: false, error: 'Invalid background value' });
+    }
+    if (typeof landingTitle !== 'string' || landingTitle.length > 100) {
+      return res.status(400).json({ success: false, error: 'Invalid landing title' });
+    }
+    if (typeof landingSubtitle !== 'string' || landingSubtitle.length > 200) {
+      return res.status(400).json({ success: false, error: 'Invalid landing subtitle' });
+    }
+
+    const payload = {
+      background: background.trim(),
+      landingTitle: landingTitle.trim(),
+      landingSubtitle: landingSubtitle.trim()
+    };
+
+    // Ensure config folder exists
+    const dir = path.dirname(FORM_UI_CONFIG_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    fs.writeFileSync(FORM_UI_CONFIG_PATH, JSON.stringify(payload, null, 2), 'utf8');
+
+    // Optional: audit log (uses your existing audit logger)
+    if (req.session?.user?.username) {
+      logAudit('FORM_UI_UPDATED', req.session.user.username, 'config', 'form-ui', req);
+    }
+
+    res.json({ success: true, message: 'Form UI settings saved' });
+  } catch (error) {
+    console.error('❌ Error writing form-ui.json:', error);
+    res.status(500).json({ success: false, error: 'Failed to save form UI config' });
+  }
+});
 
 module.exports = router;

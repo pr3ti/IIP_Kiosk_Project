@@ -711,4 +711,25 @@ router.get('/', (req, res) => {
     });
 });
 
+// ==================== 7. FORM UI CONFIGURATION ====================
+// Get form UI configuration (public)
+router.get('/form-ui', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    const configPath = path.join(__dirname, 'config', 'form-ui.json');
+
+    if (!fs.existsSync(configPath)) {
+      return res.json({});
+    }
+
+    const data = fs.readFileSync(configPath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error loading form UI configuration:', error);
+    res.status(500).json({ error: 'Failed to load form UI configuration' });
+  }
+});
+
 module.exports = router;
