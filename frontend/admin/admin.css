@@ -928,6 +928,47 @@ body {
   color: #991b1b;
 }
 
+/* ==================== EMAIL MANAGEMENT PAGE STYLES ==================== */
+
+/* Email page container (match spacing of other management pages) */
+#email-management-page {
+  min-height: 100%;
+  padding: 30px;
+  margin-top: 0;
+}
+
+/* Keep Email Management layout consistent with other management cards */
+#email-management-page .user-section {
+  background: #f4f4f4;
+  border-radius: 16px;
+  padding: 25px;
+  border: 2px solid var(--theme-border-color);
+}
+
+/* Divider line inside the card (instead of inline <hr> styling) */
+#email-management-page .email-divider {
+  height: 1px;
+  width: 100%;
+  background: rgba(71, 85, 105, 0.15);
+  margin: 18px 0 22px;
+}
+
+/* Make the Provider dropdown match other inputs */
+#email-management-page select {
+  width: 100%;
+  min-height: 44px;
+}
+
+/* Test email row: input + button aligned like other actions */
+#email-management-page .email-test-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+#email-management-page .email-test-row input {
+  flex: 1;
+}
 
 /* ==================== DIGITAL TREE PAGE STYLES ==================== */
 

@@ -1196,15 +1196,72 @@
 
                 <!-- Email Management Page (DONE BY NADHIRAH)-->
                 <div id="email-management-page" class="page">
+
                     <div class="page-header">
                         <h2>Email Management</h2>
                         <p>Manage SMTP settings and email configurations</p>
                     </div>
 
-                    <!-- Your email management UI goes here -->
+                    <div class="overlay-section user-section">
+
+                        <div class="section-header">
+                            <h3>SMTP Configuration</h3>
+                            <div class="header-actions">
+                                <button class="btn-secondary" type="button" onclick="loadEmailConfig()">Reset</button>
+                                <button class="btn-primary" type="button" onclick="saveEmailConfig()">Save</button>
+                            </div>
+                        </div>
+
+                        <!-- Provider -->
+                        <div class="form-group">
+                            <label for="email-provider">Provider</label>
+                            <select id="email-provider" onchange="renderEmailFields()">
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook (Office365)</option>
+                                <option value="custom">Custom SMTP</option>
+                            </select>
+                        </div>
+
+                        <!-- Sender Email -->
+                        <div class="form-group">
+                            <label for="sender-email">Sender Email (From)</label>
+                            <input
+                                id="sender-email"
+                                type="email"
+                                placeholder="e.g. noreply@yourdomain.com"
+                            />
+                        </div>
+
+                        <!-- Dynamic Provider Fields -->
+                        <div id="email-fields"></div>
+
+                        <div class="email-divider"></div>
+
+                        <!-- Test Email -->
+                        <div class="form-group">
+                            <label for="email-test-to">Test Email (optional)</label>
+                            <div class="email-test-row">
+                                <input
+                                    id="email-test-to"
+                                    type="email"
+                                    placeholder="Send a test email to..."
+                                />
+                                <button
+                                    class="btn-secondary"
+                                    type="button"
+                                    onclick="sendTestEmail()"
+                                >
+                                    Send Test Email
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div id="email-status" style="margin-top: 12px;"></div>
+                    </div>
                 </div>
 
-                <!-- Form Management Page -->
+                <!-- Form Management Page (DONE BY NADHIRAH)-->
                 <div id="form-management-page" class="page">
 
                     <div class="page-header">

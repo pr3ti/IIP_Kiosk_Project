@@ -5449,7 +5449,11 @@ function showPage(pageName) {
         initThemeSettings();
     } else if (pageName === 'form-management') {
         loadFormUISettings();
+    } else if (pageName === 'email-management') {
+        setEmailStatus('', '');
+        loadEmailConfig();
     }
+
 
 }
 
@@ -8524,5 +8528,210 @@ async function saveFormUISettings() {
   } catch (err) {
     console.error(err);
     setFormStatus('Failed to save changes', 'error');
+  }
+}
+
+// ==================== 28. EMAIL MANAGEMENT ====================
+// Dynamic SMTP fields + load/save/test
+
+function setEmailStatus(type, message) {
+  const el = document.getElementById('email-status');
+  if (!el) return;
+
+  // simple badge look (same idea as your form management status)
+  let bg = '#eef2ff', border = '#c7d2fe', text = '#1e3a8a';
+  if (type === 'success') { bg = '#ecfdf5'; border = '#a7f3d0'; text = '#065f46'; }
+  if (type === 'error')   { bg = '#fef2f2'; border = '#fecaca'; text = '#991b1b'; }
+  if (type === 'info')    { bg = '#eff6ff'; border = '#bfdbfe'; text = '#1d4ed8'; }
+
+  el.innerHTML = `
+    <div style="display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid ${border};background:${bg};color:${text};font-weight:600;">
+      ${message}
+    </div>
+  `;
+}
+
+function renderEmailFields() {
+  const provider = document.getElementById('email-provider')?.value || 'gmail';
+  const container = document.getElementById('email-fields');
+  if (!container) return;
+
+  if (provider === 'gmail') {
+    container.innerHTML = `
+      <div class="form-group">
+        <label for="gmail-user">Gmail Username</label>
+        <input id="gmail-user" type="email" placeholder="e.g. yourgmail@gmail.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="gmail-pass">Gmail App Password</label>
+        <input id="gmail-pass" type="password" placeholder="16-character app password" />
+      </div>
+    `;
+  } else if (provider === 'outlook') {
+    container.innerHTML = `
+      <div class="form-group">
+        <label for="outlook-user">Outlook Username</label>
+        <input id="outlook-user" type="email" placeholder="e.g. yourname@company.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="outlook-pass">Outlook Password</label>
+        <input id="outlook-pass" type="password" placeholder="Your Outlook password" />
+      </div>
+    `;
+  } else {
+    // custom
+    container.innerHTML = `
+      <div class="form-group">
+        <label for="smtp-host">SMTP Host</label>
+        <input id="smtp-host" type="text" placeholder="e.g. smtp.yourdomain.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="smtp-port">SMTP Port</label>
+        <input id="smtp-port" type="number" placeholder="e.g. 587" />
+      </div>
+
+      <div class="form-group">
+        <label for="smtp-secure">Secure (TLS/SSL)</label>
+        <select id="smtp-secure">
+          <option value="false">false (STARTTLS, common for 587)</option>
+          <option value="true">true (SSL, common for 465)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="smtp-user">SMTP Username</label>
+        <input id="smtp-user" type="text" placeholder="SMTP username" />
+      </div>
+
+      <div class="form-group">
+        <label for="smtp-pass">SMTP Password</label>
+        <input id="smtp-pass" type="password" placeholder="SMTP password" />
+      </div>
+    `;
+  }
+}
+
+async function loadEmailConfig() {
+  try {
+    setEmailStatus('info', 'Loading email settings...');
+
+    const res = await fetch('/api/admin/email-config', {
+        credentials: 'include'
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      setEmailStatus('error', data.error || 'Failed to load email config.');
+      return;
+    }
+
+    const cfg = data.config || {};
+
+    // set base fields
+    document.getElementById('email-provider').value = cfg.provider || 'gmail';
+    document.getElementById('sender-email').value = cfg.senderEmail || '';
+
+    // render fields first (so inputs exist)
+    renderEmailFields();
+
+    // fill provider-specific fields
+    if (cfg.provider === 'gmail' && cfg.gmail) {
+      document.getElementById('gmail-user').value = cfg.gmail.user || '';
+      document.getElementById('gmail-pass').value = cfg.gmail.pass || '';
+    }
+
+    if (cfg.provider === 'outlook' && cfg.outlook) {
+      document.getElementById('outlook-user').value = cfg.outlook.user || '';
+      document.getElementById('outlook-pass').value = cfg.outlook.pass || '';
+    }
+
+    if (cfg.provider === 'custom' && cfg.custom) {
+      document.getElementById('smtp-host').value = cfg.custom.host || '';
+      document.getElementById('smtp-port').value = cfg.custom.port ?? 587;
+      document.getElementById('smtp-secure').value = String(!!cfg.custom.secure);
+      document.getElementById('smtp-user').value = cfg.custom.user || '';
+      document.getElementById('smtp-pass').value = cfg.custom.pass || '';
+    }
+
+    setEmailStatus('success', 'Settings loaded');
+  } catch (err) {
+    console.error(err);
+    setEmailStatus('error', 'Failed to load email config.');
+  }
+}
+
+async function saveEmailConfig() {
+  try {
+    setEmailStatus('info', 'Saving email settings...');
+
+    const provider = document.getElementById('email-provider').value;
+    const senderEmail = document.getElementById('sender-email').value.trim();
+
+    const payload = { provider, senderEmail, gmail: {}, outlook: {}, custom: {} };
+
+    if (provider === 'gmail') {
+      payload.gmail.user = document.getElementById('gmail-user')?.value.trim() || '';
+      payload.gmail.pass = document.getElementById('gmail-pass')?.value || '';
+    } else if (provider === 'outlook') {
+      payload.outlook.user = document.getElementById('outlook-user')?.value.trim() || '';
+      payload.outlook.pass = document.getElementById('outlook-pass')?.value || '';
+    } else {
+      payload.custom.host = document.getElementById('smtp-host')?.value.trim() || '';
+      payload.custom.port = Number(document.getElementById('smtp-port')?.value || 587);
+      payload.custom.secure = document.getElementById('smtp-secure')?.value === 'true';
+      payload.custom.user = document.getElementById('smtp-user')?.value.trim() || '';
+      payload.custom.pass = document.getElementById('smtp-pass')?.value || '';
+    }
+
+    const res = await fetch('/api/admin/email-config', {
+      method: 'PUT',
+      credentials: 'include', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      setEmailStatus('error', data.error || 'Save failed.');
+      return;
+    }
+
+    setEmailStatus('success', data.message || 'Saved successfully.');
+  } catch (err) {
+    console.error(err);
+    setEmailStatus('error', 'Save failed.');
+  }
+}
+
+async function sendTestEmail() {
+  try {
+    const to = document.getElementById('email-test-to')?.value.trim();
+    if (!to) {
+      setEmailStatus('error', 'Please enter a test email address.');
+      return;
+    }
+
+    setEmailStatus('info', 'Sending test email...');
+
+    const res = await fetch('/api/admin/email-config/test', {
+      method: 'POST',
+      credentials: 'include', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      setEmailStatus('error', data.error || 'Test email failed.');
+      return;
+    }
+
+    setEmailStatus('success', 'Test email sent successfully.');
+  } catch (err) {
+    console.error(err);
+    setEmailStatus('error', 'Test email failed.');
   }
 }
