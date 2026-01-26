@@ -798,7 +798,39 @@ router.get('/', (req, res) => {
     });
 });
 
-
+// Get countdown timer setting for photo capture (DONE BY BERNISSA)
+router.get('/countdown-timer', (req, res) => {
+    console.log('⏱️ Fetching countdown timer setting for feedback form...');
+    
+    const query = `
+        SELECT countdown_seconds
+        FROM countdown_management
+        WHERE id = 1
+        LIMIT 1
+    `;
+    
+    db.get(query, [], (err, row) => {
+        if (err) {
+            console.error('❌ Error fetching countdown timer:', err);
+            return res.json({
+                success: true,
+                countdown_seconds: 3
+            });
+        }
+        
+        const seconds = row?.countdown_seconds;
+        const safeSeconds = Number.isInteger(seconds) && seconds >= 0 ? seconds : 3;
+        
+        console.log(`✅ Countdown timer setting: ${safeSeconds} seconds`);
+        
+        res.json({
+            success: true,
+            countdown_seconds: safeSeconds
+        });
+    });
+});
 
 module.exports = router;
+
+//—-//
 
