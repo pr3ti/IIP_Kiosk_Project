@@ -3875,5 +3875,504 @@ router.get('/saved-themes/active', auth.requireAuth, (req, res) => {
     });
 });
 
+// ==================== 17. TIMER COUNTDOWN MANAGEMENT ROUTES (DONE BY BERNISSA) ====================
+
+ // GET /api/admin/countdown-management
+ // Returns: { success: true, countdown_seconds: number }
+
+router.get('/countdown-management', auth.requireAuth, (req, res) => {
+    const sql = `
+        SELECT countdown_seconds
+        FROM countdown_management
+        WHERE id = 1
+        LIMIT 1
+    `;
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+            console.error('❌ Error loading countdown:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error'
+            });
+        }
+
+        const seconds = rows?.[0]?.countdown_seconds;
+        const safeSeconds =
+            Number.isInteger(seconds) && seconds >= 0 ? seconds : 3;
+
+        return res.json({
+            success: true,
+            countdown_seconds: safeSeconds
+        });
+    });
+});
+
+// PUT /api/admin/countdown-management
+
+router.put('/countdown-management', auth.requireAuth, (req, res) => {
+    console.log('🔄 PUT /countdown-management - Updating countdown');
+    
+    // Get username from session
+    const username = req.session?.user?.username;
+    const seconds = Number(req.body?.countdown_seconds);
+
+    console.log('📝 Request details:', {
+        username: username,
+        countdown_seconds: seconds,
+        body: req.body
+    });
+
+    // Validate input
+    if (!Number.isInteger(seconds) || seconds < 0) {
+        console.log('❌ Invalid input received:', seconds);
+        return res.status(400).json({
+            success: false,
+            error: 'countdown_seconds must be a whole number (>= 0)'
+        });
+    }
+
+    console.log('✅ Valid input received:', seconds, 'seconds by user:', username);
+
+    const sql = `
+        UPDATE countdown_management
+        SET countdown_seconds = ?, updated_by = ?
+        WHERE id = 1
+    `;
+
+    db.query(sql, [seconds, username], (err, result) => {
+        if (err) {
+            console.error('❌ Database error saving countdown:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error: ' + err.message
+            });
+        }
+
+        console.log('✅ Countdown updated successfully:', {
+            seconds: seconds,
+            username: username,
+            affectedRows: result.affectedRows
+        });
+
+        return res.json({
+            success: true,
+            countdown_seconds: seconds,
+            message: 'Countdown updated successfully'
+        });
+    });
+});
+
+// ==================== 18. SERVER SCHEDULE MANAGEMENT ROUTES (DONE BY BERNISSA) ====================
+
+// SERVER SCHEDULE MANAGEMENT (Config File Based)
+
+// Config file location (readable/ writable by both Node.js and the schedule runner)
+const SCHEDULE_CONFIG_PATH = process.env.SCHEDULE_CONFIG_PATH || path.join(__dirname, 'kiosk-schedules.json');
+
+// Helper: Read schedules from config file
+function readSchedulesConfig() {
+  try {
+    if (!fs.existsSync(SCHEDULE_CONFIG_PATH)) {
+      // Create empty config if doesn't exist
+      const emptyConfig = { schedules: [], last_updated: new Date().toLocaleString('sv-SE') };
+      fs.writeFileSync(SCHEDULE_CONFIG_PATH, JSON.stringify(emptyConfig, null, 2));
+      return emptyConfig;
+    }
+    
+    const data = fs.readFileSync(SCHEDULE_CONFIG_PATH, 'utf8');
+    return JSON.parse(data);
+    
+  } catch (err) {
+    console.error('❌ Error reading schedules config:', err);
+    return { schedules: [], last_updated: null };
+  }
+}
+
+// Helper: Write schedules to config file
+function writeSchedulesConfig(config) {
+  try {
+    config.last_updated = new Date().toLocaleString('sv-SE');
+    fs.writeFileSync(SCHEDULE_CONFIG_PATH, JSON.stringify(config, null, 2));
+    return true;
+  } catch (err) {
+    console.error('❌ Error writing schedules config:', err);
+    return false;
+  }
+}
+
+// GET /api/admin/server-schedules
+// Fetch all schedules
+router.get('/server-schedules', auth.requireAuth, (req, res) => {
+  console.log('📅 Fetching server schedules...');
+  
+  try {
+    const config = readSchedulesConfig();
+    
+    console.log(`✅ Loaded ${config.schedules.length} schedules`);
+    res.json({ 
+      success: true, 
+      schedules: config.schedules 
+    });
+    
+  } catch (err) {
+    console.error('❌ Error fetching schedules:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to load schedules' 
+    });
+  }
+});
+
+// POST /api/admin/server-schedules
+// Add new schedule
+router.post('/server-schedules', auth.requireAuth, (req, res) => {
+  const {
+    schedule_name,
+    schedule_type,
+    start_time,
+    end_time,
+    days_of_week,
+    specific_date,
+    is_active
+  } = req.body;
+  
+  const username = req.session?.user?.username || 'unknown';
+  
+  console.log('➕ Adding new schedule:', { schedule_name, schedule_type, username });
+  
+  // Validation
+  if (!schedule_name || !schedule_type || !start_time || !end_time) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: schedule_name, schedule_type, start_time, end_time'
+    });
+  }
+  
+  const validScheduleTypes = ['daily', 'weekly', 'specific_date'];
+  if (!validScheduleTypes.includes(schedule_type)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid schedule type. Must be: daily, weekly, or specific_date'
+    });
+  }
+  
+  if (schedule_type === 'weekly' && (!days_of_week || days_of_week.trim() === '')) {
+    return res.status(400).json({
+      success: false,
+      error: 'Days of week are required for weekly schedules'
+    });
+  }
+  
+  if (schedule_type === 'specific_date' && !specific_date) {
+    return res.status(400).json({
+      success: false,
+      error: 'Specific date is required for specific_date schedules'
+    });
+  }
+  
+  try {
+    const config = readSchedulesConfig();
+    
+    // Check for duplicate names
+    const duplicate = config.schedules.find(s => s.schedule_name === schedule_name);
+    if (duplicate) {
+      return res.status(400).json({
+        success: false,
+        error: `Schedule with name "${schedule_name}" already exists`
+      });
+    }
+    
+    // Create new schedule
+    const newSchedule = {
+      id: Date.now(), // ID generation
+      schedule_name,
+      schedule_type,
+      start_time,
+      end_time,
+      days_of_week: days_of_week || null,
+      specific_date: specific_date || null,
+      is_active: is_active !== false, // Default to true
+      created_by: username,
+      created_at: new Date().toLocaleString('sv-SE')
+    };
+    
+    config.schedules.push(newSchedule);
+    
+    if (!writeSchedulesConfig(config)) {
+      throw new Error('Failed to write config file');
+    }
+    
+    console.log(`✅ Schedule "${schedule_name}" added successfully`);
+    
+    res.json({
+      success: true,
+      message: 'Schedule created successfully',
+      schedule: newSchedule
+    });
+    
+  } catch (err) {
+    console.error('❌ Error adding schedule:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create schedule'
+    });
+  }
+});
+
+// PUT /api/admin/server-schedules/:id
+// Update existing schedule
+router.put('/server-schedules/:id', auth.requireAuth, (req, res) => {
+  const scheduleId = parseInt(req.params.id);
+  const {
+    schedule_name,
+    schedule_type,
+    start_time,
+    end_time,
+    days_of_week,
+    specific_date,
+    is_active
+  } = req.body;
+  
+  console.log(`✏️  Updating schedule ID ${scheduleId}`);
+  
+  try {
+    const config = readSchedulesConfig();
+    const scheduleIndex = config.schedules.findIndex(s => s.id === scheduleId);
+    
+    if (scheduleIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'Schedule not found'
+      });
+    }
+    
+    // Update schedule
+    config.schedules[scheduleIndex] = {
+      ...config.schedules[scheduleIndex],
+      schedule_name: schedule_name || config.schedules[scheduleIndex].schedule_name,
+      schedule_type: schedule_type || config.schedules[scheduleIndex].schedule_type,
+      start_time: start_time || config.schedules[scheduleIndex].start_time,
+      end_time: end_time || config.schedules[scheduleIndex].end_time,
+      days_of_week: days_of_week !== undefined ? days_of_week : config.schedules[scheduleIndex].days_of_week,
+      specific_date: specific_date !== undefined ? specific_date : config.schedules[scheduleIndex].specific_date,
+      is_active: is_active !== undefined ? is_active : config.schedules[scheduleIndex].is_active,
+      updated_at: new Date().toLocaleString('sv-SE')
+    };
+    
+    if (!writeSchedulesConfig(config)) {
+      throw new Error('Failed to write config file');
+    }
+    
+    console.log(`✅ Schedule updated successfully`);
+    
+    res.json({
+      success: true,
+      message: 'Schedule updated successfully',
+      schedule: config.schedules[scheduleIndex]
+    });
+    
+  } catch (err) {
+    console.error('❌ Error updating schedule:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update schedule'
+    });
+  }
+});
+
+// DELETE /api/admin/server-schedules/:id
+// Delete schedule
+router.delete('/server-schedules/:id', auth.requireAuth, (req, res) => {
+  const scheduleId = parseInt(req.params.id);
+  
+  console.log(`🗑️  Deleting schedule ID ${scheduleId}`);
+  
+  try {
+    const config = readSchedulesConfig();
+    const originalLength = config.schedules.length;
+    
+    config.schedules = config.schedules.filter(s => s.id !== scheduleId);
+    
+    if (config.schedules.length === originalLength) {
+      return res.status(404).json({
+        success: false,
+        error: 'Schedule not found'
+      });
+    }
+    
+    if (!writeSchedulesConfig(config)) {
+      throw new Error('Failed to write config file');
+    }
+    
+    console.log(`✅ Schedule deleted successfully`);
+    
+    res.json({
+      success: true,
+      message: 'Schedule deleted successfully'
+    });
+    
+  } catch (err) {
+    console.error('❌ Error deleting schedule:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete schedule'
+    });
+  }
+});
+
+// PUT /api/admin/server-schedules/:id/toggle
+// Toggle schedule active status
+router.put('/server-schedules/:id/toggle', auth.requireAuth, (req, res) => {
+  const scheduleId = parseInt(req.params.id);
+  const { is_active } = req.body;
+  
+  console.log(`🔄 Toggling schedule ID ${scheduleId} to ${is_active}`);
+  
+  try {
+    const config = readSchedulesConfig();
+    const schedule = config.schedules.find(s => s.id === scheduleId);
+    
+    if (!schedule) {
+      return res.status(404).json({
+        success: false,
+        error: 'Schedule not found'
+      });
+    }
+    
+    // Update active status
+    schedule.is_active = is_active;
+    schedule.updated_at = new Date().toLocaleString('sv-SE')
+    
+    if (!writeSchedulesConfig(config)) {
+      throw new Error('Failed to write config file');
+    }
+    
+    const status = is_active ? 'enabled' : 'disabled';
+    console.log(`✅ Schedule ${status} successfully`);
+    
+    res.json({
+      success: true,
+      message: `Schedule ${status} successfully`
+    });
+    
+  } catch (err) {
+    console.error('❌ Error toggling schedule:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to toggle schedule'
+    });
+  }
+});
+
+// POST /api/admin/server-schedules/enable-all
+// Enable all schedules
+router.post('/server-schedules/enable-all', auth.requireAuth, (req, res) => {
+  console.log('✅ Enabling all schedules');
+  
+  try {
+    const config = readSchedulesConfig();
+    
+    config.schedules.forEach(schedule => {
+      schedule.is_active = true;
+    });
+    
+    if (!writeSchedulesConfig(config)) {
+      throw new Error('Failed to write config file');
+    }
+    
+    res.json({
+      success: true,
+      message: `Enabled ${config.schedules.length} schedule(s)`,
+      enabled_count: config.schedules.length
+    });
+    
+  } catch (err) {
+    console.error('❌ Error enabling schedules:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to enable schedules'
+    });
+  }
+});
+
+// POST /api/admin/server-schedules/disable-all
+// Disable all schedules
+router.post('/server-schedules/disable-all', auth.requireAuth, (req, res) => {
+  console.log('⏸️  Disabling all schedules');
+  
+  try {
+    const config = readSchedulesConfig();
+    
+    config.schedules.forEach(schedule => {
+      schedule.is_active = false;
+    });
+    
+    if (!writeSchedulesConfig(config)) {
+      throw new Error('Failed to write config file');
+    }
+    
+    res.json({
+      success: true,
+      message: `Disabled ${config.schedules.length} schedule(s)`,
+      disabled_count: config.schedules.length
+    });
+    
+  } catch (err) {
+    console.error('❌ Error disabling schedules:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to disable schedules'
+    });
+  }
+});
+
+// POST /api/admin/server/start
+// Manually start the kiosk service
+router.post('/server/start', auth.requireAuth, (req, res) => {
+  const { exec } = require('child_process');
+  
+  console.log('▶️  Manual server start requested');
+  
+  exec('sudo systemctl start kiosk.service', (err, stdout, stderr) => {
+    if (err) {
+      console.error('❌ Failed to start server:', stderr);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to start server'
+      });
+    }
+    
+    console.log('✅ Server started successfully');
+    res.json({
+      success: true,
+      message: 'Server started successfully'
+    });
+  });
+});
+
+// POST /api/admin/server/stop
+// Manually stop the kiosk service
+router.post('/server/stop', auth.requireAuth, (req, res) => {
+  const { exec } = require('child_process');
+  
+  console.log('⏹️  Manual server stop requested');
+  
+  exec('sudo systemctl stop kiosk.service', (err, stdout, stderr) => {
+    if (err) {
+      console.error('❌ Failed to stop server:', stderr);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to stop server'
+      });
+    }
+    
+    console.log('✅ Server stopped successfully');
+    res.json({
+      success: true,
+      message: 'Server stopped successfully'
+    });
+  });
+});
 
 module.exports = router;
