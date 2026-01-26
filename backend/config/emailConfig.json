@@ -1,0 +1,19 @@
+{
+  "provider": "gmail",
+  "senderEmail": "fyptestingg1@gmail.com",
+  "gmail": {
+    "user": "fyptestingg1@gmail.com",
+    "pass": "bgrwuncwoubsmpnv"
+  },
+  "outlook": {
+    "user": "23041034@myrp.edu.sg",
+    "pass": "QILApunzel25"
+  },
+  "custom": {
+    "host": "",
+    "port": 587,
+    "secure": false,
+    "user": "",
+    "pass": ""
+  }
+}
