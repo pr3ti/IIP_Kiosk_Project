@@ -11,9 +11,11 @@
 //    let currentDevice                - 'desktop' or 'mobile' device type (DONE BY PRETI)
 //    let inactivityTimer              - Timer for inactivity timeout (DONE BY PRETI)
 //    const INACTIVITY_TIMEOUT         - 5 minutes timeout duration (DONE BY PRETI)
+//    let countdownSeconds             - Photo capture countdown duration loaded from server
 //
 // 2. INITIALIZATION & SETUP FUNCTIONS
 //    async function loadDynamicQRCode() - Load dynamic QR code from server (DONE BY PRETI)
+//    async function loadCountdownTimer() - Load countdown timer setting from server
 //    function detectDeviceType()      - Detect mobile/desktop device (DONE BY PRETI)
 //    DOMContentLoaded                 - Application bootstrap
 
@@ -98,6 +100,7 @@ let photoData = null;
 let currentDevice = 'desktop'; // 'desktop' or 'mobile'
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 300000; // 5 minutes (300,000 milliseconds)
+let countdownSeconds = null; // Loaded from backend when needed
 
 // ==================== 2. INITIALIZATION & SETUP FUNCTIONS ====================
 
@@ -280,7 +283,7 @@ function returnToLandingPage() {
     // Show notification
     showTimeoutNotification();
     
-    console.log('✅ Successfully returned to landing page');
+    console.log('âœ… Successfully returned to landing page');
 }
 
 // Show timeout notification message
@@ -819,7 +822,7 @@ async function initializeCamera() {
 }
 
 // Capture photo with countdown timer (desktop) or redirect to upload (mobile)
-function capturePhoto() {
+async function capturePhoto() {
     // For mobile, redirect to file upload
     if (currentDevice === 'mobile') {
         document.getElementById('photo-page').style.display = 'none';
@@ -841,15 +844,27 @@ function capturePhoto() {
         // Disable capture button during countdown
         captureBtn.disabled = true;
         
-        let countdown = 6;
+        // Load countdown from backend if not yet loaded
+        if (countdownSeconds === null) {
+            await loadCountdownTimer();
+        }
+        
+        let countdown = Number.isInteger(countdownSeconds) ? countdownSeconds : 0;
+        
+        // If admin set to 0, take photo immediately (no countdown overlay)
+        if (countdown === 0) {
+            takePhoto();
+            captureBtn.disabled = false;
+            return;
+        }
+        
+        // Show countdown overlay
         countdownText.textContent = countdown;
         countdownOverlay.style.display = 'flex';
-        console.log('Starting countdown...');
+        console.log('Starting countdown:', countdown);
 
         const countdownInterval = setInterval(() => {
             countdown--;
-            countdownText.textContent = countdown;
-            console.log('Countdown:', countdown);
             
             if (countdown <= 0) {
                 clearInterval(countdownInterval);
@@ -861,7 +876,11 @@ function capturePhoto() {
                 
                 // Re-enable capture button
                 captureBtn.disabled = false;
+                return;
             }
+            
+            countdownText.textContent = countdown;
+            console.log('Countdown:', countdown);
         }, 1000);
     } catch (error) {
         console.error('Error in capturePhoto:', error);
@@ -1564,3 +1583,22 @@ async function applyFormUIConfig() {
   }
 }
 
+// Load countdown timer setting from server (DONE BY BERNISSA)
+async function loadCountdownTimer() {
+    try {
+        console.log('â±ï¸ Loading countdown timer setting...');
+        const response = await fetch('/api/feedback/countdown-timer');
+        const data = await response.json();
+        
+        if (data.success && typeof data.countdown_seconds === 'number') {
+            countdownSeconds = data.countdown_seconds >= 0 ? data.countdown_seconds : 3;
+            console.log(`âœ… Countdown timer loaded: ${countdownSeconds} seconds`);
+        } else {
+            console.warn('⚠️ Invalid countdown data, using default');
+            countdownSeconds = 3;
+        }
+    } catch (error) {
+        console.error('âŒ Error loading countdown timer:', error);
+        countdownSeconds = 3; // Fallback to default 3 seconds
+    }
+}
