@@ -1601,3 +1601,5 @@ async function loadCountdownTimer() {
         countdownSeconds = 3; // Fallback to default 3 seconds
     }
 }
+
+//—-//
