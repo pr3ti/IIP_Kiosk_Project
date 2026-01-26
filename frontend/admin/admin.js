@@ -8553,6 +8553,7 @@ function setEmailStatus(type, message) {
 
 function renderEmailFields() {
   const provider = document.getElementById('email-provider')?.value || 'gmail';
+  updateEmailUIByProvider(provider);
   const container = document.getElementById('email-fields');
   if (!container) return;
 
@@ -8636,6 +8637,7 @@ async function loadEmailConfig() {
 
     // render fields first (so inputs exist)
     renderEmailFields();
+    updateEmailUIByProvider(document.getElementById('email-provider').value);
 
     // fill provider-specific fields
     if (cfg.provider === 'gmail' && cfg.gmail) {
@@ -8699,7 +8701,7 @@ async function saveEmailConfig() {
       return;
     }
 
-    setEmailStatus('success', data.message || 'Saved successfully.');
+    setEmailStatus('success', `Saved successfully. Provider is now: ${provider.toUpperCase()}`);
   } catch (err) {
     console.error(err);
     setEmailStatus('error', 'Save failed.');
@@ -8733,5 +8735,25 @@ async function sendTestEmail() {
   } catch (err) {
     console.error(err);
     setEmailStatus('error', 'Test email failed.');
+  }
+}
+
+function updateEmailUIByProvider(provider) {
+  const testSection = document.getElementById('email-test-section');
+  const note = document.getElementById('email-provider-note');
+
+  if (!testSection || !note) return;
+
+  if (provider === 'outlook') {
+    testSection.style.display = 'none';
+    note.innerHTML = `
+      <div style="display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;font-weight:600;">
+        Outlook testing may be blocked by school/company policies (SMTP AUTH / app passwords disabled).
+        Provider can still be saved and switched successfully.
+      </div>
+    `;
+  } else {
+    testSection.style.display = '';
+    note.innerHTML = '';
   }
 }

@@ -1237,24 +1237,25 @@
 
                         <div class="email-divider"></div>
 
+                        <div id="email-provider-note" style="margin-top: 8px;"></div>
+                        
                         <!-- Test Email -->
+                        <div id="email-test-section">
                         <div class="form-group">
                             <label for="email-test-to">Test Email (optional)</label>
                             <div class="email-test-row">
-                                <input
-                                    id="email-test-to"
-                                    type="email"
-                                    placeholder="Send a test email to..."
-                                />
-                                <button
-                                    class="btn-secondary"
-                                    type="button"
-                                    onclick="sendTestEmail()"
-                                >
-                                    Send Test Email
-                                </button>
+                            <input
+                                id="email-test-to"
+                                type="email"
+                                placeholder="Send a test email to..."
+                            />
+                            <button class="btn-secondary" type="button" onclick="sendTestEmail()">
+                                Send Test Email
+                            </button>
                             </div>
                         </div>
+                        </div>
+
 
                         <!-- Status -->
                         <div id="email-status" style="margin-top: 12px;"></div>
