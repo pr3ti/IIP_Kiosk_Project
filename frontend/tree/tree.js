@@ -1,174 +1,165 @@
-// ============================================================
 // TREE.JS - TABLE OF CONTENTS
 // ============================================================
-// 
+//
 // CLASS: TreeManager
 //   - constructor()               - Initialize TreeManager instance
-// 
+//
 // INITIALIZATION & SETUP
 //   - init()                     - Initialize tree and load data
 //   - loadTreeImage()            - Load tree images with promises
 //   - fetchVisitorData()         - Fetch visitor data from API
-// 
+//
 // TREE VISUALIZATION
 //   - createLeaves()             - Create leaf elements for visitors
-//   - calculateOvalArea()        - Calculate oval area for leaf placement
-//   - updateOvalOverlay()        - Update visual oval overlay
-//   - createLeaf()               - Create individual leaf element
-//   - findRandomPositionInOval() - Find random position within oval area
-// 
+//   - calculateOvalArea()        - Calculate oval area (fallback only)
+//   - updateOvalOverlay()        - Update debug overlay (optional)
+//   - buildMaskCanvas()          - Build offscreen canvas from stage4leaves.png
+//   - findRandomPositionInLeavesMask() - Find random position inside mask
+//   - createLeaf()               - Create an individual leaf
+//   - findRandomPositionInOval() - Fallback placement
+//
 // VISUAL EFFECTS & UPDATES
-//   - updateLeavesTransparency() - Update tree transparency based on visitors
-//   - refreshTree()              - Refresh entire tree visualization
-// 
-// TREE CONFIGURATION
-//   - setOvalPosition()          - Set oval position offsets
-//   - addVisitor()               - Add new visitor to tree (manual)
-// 
-// GLOBAL FUNCTIONS & EVENT LISTENERS
-//   - Window load event          - Initialize TreeManager
-//   - Auto-refresh interval      - Refresh tree data every 30 seconds
-//   - Window resize event        - Refresh tree on resize
-// 
+//   - updateLeavesTransparency() - Keep mask image ALWAYS hidden
+//   - refreshTree()              - Refresh tree visualization
+//
+// CONFIGURATION
+//   - setOvalPosition()          - Set oval offset (fallback only)
+//   - addVisitor()               - Manual test add
+//
+// GLOBAL LISTENERS
+//   - on load                    - Init
+//   - setInterval refresh        - Refresh every 30s
+//   - resize                     - Refresh on resize
 // ============================================================
 
 class TreeManager {
-    // ==================== INITIALIZATION ====================
-    
+
     constructor() {
         // DOM Elements
         this.treeImage = document.getElementById('treeImage');
         this.treeImageLeaves = document.getElementById('treeImageLeaves');
         this.leavesContainer = document.getElementById('leavesContainer');
         this.loadingMessage = document.getElementById('loadingMessage');
-        
-        // Data storage
-        this.visitors = [];
-        
-        // Tree configuration
-        this.ovalWidth = 1400;
-        this.ovalHeight = 500;
-        this.ovalTopOffset = 0;
-        this.ovalBottomOffset = 0;
 
-        // Initialize the tree manager
+        // Data
+        this.visitors = [];
+
+        // ====================================================
+        // CANOPY AREA (UPDATED: smaller + moved up)
+        // ====================================================
+        // These control where leaves are allowed to spawn.
+        // Smaller area prevents leaves from appearing outside branches.
+        this.ovalWidth = 850;       
+        this.ovalHeight = 300;       
+        this.ovalTopOffset = -100;   
+
+        // Mask cache
+        this.maskData = null;
+
+        // Debug overlay toggle (set true if you want to see an oval)
+        this.debugOval = false;
+
         this.init();
     }
-    
-    // ==================== SETUP METHODS ====================
-    
-    /**
-     * Initialize the tree manager
-     */
+
+    // ==================== INIT ====================
+
     async init() {
-        await this.loadTreeImage();
-        await this.fetchVisitorData();
-        this.createLeaves();
-        this.loadingMessage.style.display = 'none';
+        try {
+            await this.loadTreeImage();
+
+            // Force mask image hidden always
+            this.updateLeavesTransparency();
+
+            // Build mask from stage4leaves.png
+            this.maskData = this.buildMaskCanvas();
+
+            await this.fetchVisitorData();
+            this.createLeaves();
+        } catch (err) {
+            console.error('Init error:', err);
+        } finally {
+            this.loadingMessage.style.display = 'none';
+        }
     }
-    
-    /**
-     * Load tree images with promise-based completion checking
-     */
+
     loadTreeImage() {
         return new Promise((resolve) => {
-            if (this.treeImage.complete && this.treeImageLeaves.complete) {
-                resolve();
+            let loaded = 0;
+            const done = () => {
+                loaded += 1;
+                if (loaded >= 2) resolve();
+            };
+
+            // trunk
+            if (this.treeImage && this.treeImage.complete) {
+                done();
+            } else if (this.treeImage) {
+                this.treeImage.onload = done;
+                this.treeImage.onerror = done;
             } else {
-                let imagesLoaded = 0;
-                const checkLoaded = () => {
-                    imagesLoaded++;
-                    if (imagesLoaded === 2) resolve();
-                };
-                
-                this.treeImage.onload = checkLoaded;
-                this.treeImageLeaves.onload = checkLoaded;
+                done();
+            }
+
+            // leaves mask image
+            if (this.treeImageLeaves && this.treeImageLeaves.complete) {
+                done();
+            } else if (this.treeImageLeaves) {
+                this.treeImageLeaves.onload = done;
+                this.treeImageLeaves.onerror = done;
+            } else {
+                done();
             }
         });
     }
-    
-    /**
-     * Fetch visitor data from the API
-     */
+
     async fetchVisitorData() {
         try {
             const response = await fetch('/api/tree');
-            this.visitors = await response.json();
+            const data = await response.json();
+
+            this.visitors = Array.isArray(data) ? data : [];
             console.log(`Loaded ${this.visitors.length} visitors`);
         } catch (error) {
             console.error('Error fetching visitor data:', error);
             this.visitors = [];
         }
     }
-    
-    // ==================== TREE VISUALIZATION METHODS ====================
-    // Update the trunk image based on submission milestones (every 5)
-        
-    updateTreeStage(totalSubmissions) {
-        if (!this.treeImage) return;
 
-        let trunkImage;
-        let currentScale = 1.0; 
+    // ==================== VISUALIZATION ====================
 
-        // Milestones starting from Stage 1
-        if (totalSubmissions >= 20) {
-            trunkImage = 'stage4.png';
-            currentScale = 1.0;      
-            this.ovalTopOffset = -180; 
-        } else if (totalSubmissions >= 15) {
-            trunkImage = 'stage3.png';
-            currentScale = 0.75;     
-            this.ovalTopOffset = -100;
-        } else if (totalSubmissions >= 10) {
-            trunkImage = 'stage2.png';
-            currentScale = 0.55;     
-            this.ovalTopOffset = -40;
-        } else {
-            // Default to Stage 1 for anything less than 10
-            trunkImage = 'stage1.png';
-            currentScale = 0.35;     
-            this.ovalTopOffset = 30;
-        }
-
-        // This fixes the "straight line" issue:
-        // We force a height proportional to the width so leaves can scatter vertically.
-        this.ovalWidth = 1400 * currentScale;
-        this.ovalHeight = 730 * currentScale; 
-
-        this.treeImage.src = `/assets/Tree/${trunkImage}`;
-        
-        // Hide the unused leaves reference image
-        if (this.treeImageLeaves) {
-            this.treeImageLeaves.style.display = 'none';
-        }
-
-        this.refreshTree();
-    }
-
-    /**
-     * Create leaf elements for all visitors
-     */
     createLeaves() {
         this.leavesContainer.innerHTML = '';
+
         const treeRect = this.treeImage.getBoundingClientRect();
         const containerRect = this.leavesContainer.getBoundingClientRect();
         const ovalArea = this.calculateOvalArea(treeRect, containerRect);
-        
-        console.log('Oval area for leaves:', ovalArea);
-        this.updateOvalOverlay(ovalArea);
-        
+
+        if (this.debugOval) {
+            this.updateOvalOverlay(ovalArea);
+        } else {
+            const overlay = document.getElementById('ovalOverlay');
+            if (overlay) {
+                overlay.style.borderColor = 'rgba(255, 0, 0, 0)';
+                overlay.style.background = 'transparent';
+            }
+        }
+
         this.visitors.forEach((visitor, index) => {
             this.createLeaf(visitor, index, ovalArea);
         });
     }
- 
+
     calculateOvalArea(treeRect, containerRect) {
-        const centerX = treeRect.left - containerRect.left + (treeRect.width / 2);
-    
-        // 2. Find the vertical center point where branches begin
-        // We use a percentage (e.g., 40% from the top of the tree image) 
-        // so it scales as the tree grows taller.
-        const centerY = treeRect.top - containerRect.top + (treeRect.height * 0.4);
+        const centerX =
+            treeRect.left - containerRect.left + (treeRect.width / 2);
+
+        // ====================================================
+        // UPDATED: move canopy center slightly higher
+        // ====================================================
+        // was (treeRect.height * 0.4)
+        const centerY =
+            treeRect.top - containerRect.top + (treeRect.height * 0.32);
 
         return {
             x: centerX - (this.ovalWidth / 2),
@@ -176,140 +167,225 @@ class TreeManager {
             width: this.ovalWidth,
             height: this.ovalHeight
         };
-    } 
-   
-    /*
-     * Update the visual oval overlay for debugging
-    */
+    }
+
     updateOvalOverlay(ovalArea) {
         let ovalOverlay = document.getElementById('ovalOverlay');
+
         if (!ovalOverlay) {
             ovalOverlay = document.createElement('div');
             ovalOverlay.id = 'ovalOverlay';
             document.getElementById('treeContainer').appendChild(ovalOverlay);
         }
-        
-        ovalOverlay.style.width = ovalArea.width + 'px';
-        ovalOverlay.style.height = ovalArea.height + 'px';
-        ovalOverlay.style.left = ovalArea.x + 'px';
-        ovalOverlay.style.top = ovalArea.y + 'px';
+
+        ovalOverlay.style.position = 'absolute';
+        ovalOverlay.style.width = `${ovalArea.width}px`;
+        ovalOverlay.style.height = `${ovalArea.height}px`;
+        ovalOverlay.style.left = `${ovalArea.x}px`;
+        ovalOverlay.style.top = `${ovalArea.y}px`;
         ovalOverlay.style.transform = 'none';
     }
-    
-    /**
-     * Create an individual leaf element for a visitor
-     */
+
+    // ==================== MASK ====================
+
+    buildMaskCanvas() {
+        if (!this.treeImageLeaves) {
+            console.warn('treeImageLeaves not found - mask disabled');
+            return null;
+        }
+
+        const img = this.treeImageLeaves;
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+
+        if (!w || !h) {
+            console.warn('stage4leaves image not ready - mask disabled');
+            return null;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        return { canvas, ctx, w, h };
+    }
+
+    findRandomPositionInLeavesMask(leafSize) {
+        if (!this.maskData || !this.treeImageLeaves) {
+            return null;
+        }
+
+        const { ctx, w, h } = this.maskData;
+
+        const rect = this.treeImageLeaves.getBoundingClientRect();
+        const containerRect = this.leavesContainer.getBoundingClientRect();
+
+        const left = rect.left - containerRect.left;
+        const top = rect.top - containerRect.top;
+
+        const displayW = rect.width;
+        const displayH = rect.height;
+
+        if (!displayW || !displayH) {
+            return null;
+        }
+
+        const scaleX = w / displayW;
+        const scaleY = h / displayH;
+
+        for (let i = 0; i < 700; i++) {
+            const rx = Math.random() * displayW;
+            const ry = Math.random() * displayH;
+
+            const nx = Math.floor(rx * scaleX);
+            const ny = Math.floor(ry * scaleY);
+
+            const pixel = ctx.getImageData(nx, ny, 1, 1).data;
+            const alpha = pixel[3];
+
+            // alpha threshold (higher = stricter)
+            if (alpha > 35) {
+                return {
+                    x: left + rx - leafSize / 2,
+                    y: top + ry - leafSize / 2
+                };
+            }
+        }
+
+        return null;
+    }
+
+    // ==================== LEAF CREATION ====================
+
     createLeaf(visitor, index, ovalArea) {
         const leaf = document.createElement('div');
         leaf.className = 'leaf';
 
-        // 1. Decide direction (Left/Right)
-        const side = Math.random() > 0.5 ? 'LeftLeaf.png' : 'RightLeaf.png';
+        const isVip = !!visitor.isVip;
+        if (isVip) {
+            leaf.classList.add('vip');
+        }
 
-        // 2. The 2-minute rule (Adjusted for UTC+8/Local sync)
-        const visitTime = new Date(visitor.created_at); 
+        const side = Math.random() > 0.5
+            ? 'LeftLeaf.png'
+            : 'RightLeaf.png';
+
+        const visitTime = new Date(visitor.created_at);
         const now = new Date();
+        const diffInMinutes = (now - visitTime) / 60000;
 
-        // Calculate difference in milliseconds
-        const diffInMs = now.getTime() - visitTime.getTime();
-        const diffInMinutes = diffInMs / 60000;
-
-        // 3. Select image based on age
         let finalLeafImage;
-        if (diffInMinutes >= 0 && diffInMinutes <= 2) {
-            finalLeafImage = 'New' + side;
+
+        if (isVip) {
+            finalLeafImage = 'Gold' + side;
         } else {
-            finalLeafImage = 'Old' + side;
+            finalLeafImage =
+                diffInMinutes >= 0 && diffInMinutes <= 2
+                    ? 'New' + side
+                    : 'Old' + side;
         }
 
         leaf.style.backgroundImage = `url('/assets/Tree/${finalLeafImage}')`;
-        
-        const leafSize = 80 + ((visitor.visit_count || 1) * 5);
-        leaf.style.width = leafSize + 'px';
-        leaf.style.height = leafSize + 'px';
 
-        const position = this.findRandomPositionInOval(ovalArea, leafSize);
-        leaf.style.left = position.x + 'px';
-        leaf.style.top = position.y + 'px';
+        const leafSize = 80 + ((visitor.visit_count || 1) * 5);
+        leaf.style.width = `${leafSize}px`;
+        leaf.style.height = `${leafSize}px`;
+
+        // 1) Place within mask
+        let position = this.findRandomPositionInLeavesMask(leafSize);
+
+        // 2) Fallback to oval
+        if (!position) {
+            position = this.findRandomPositionInOval(ovalArea, leafSize);
+        }
+
+        leaf.style.left = `${position.x}px`;
+        leaf.style.top = `${position.y}px`;
 
         const nameElement = document.createElement('div');
         nameElement.className = 'leaf-name';
         nameElement.textContent = visitor.name || '';
         leaf.appendChild(nameElement);
+
         this.leavesContainer.appendChild(leaf);
     }
 
     findRandomPositionInOval(ovalArea, leafSize) {
-        const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.sqrt(Math.random());
-        
-        // Calculate position relative to the CENTER of the ovalArea
-        const offsetX = (ovalArea.width / 2) * distance * Math.cos(angle);
-        const offsetY = (ovalArea.height / 2) * distance * Math.sin(angle);
-        
-        const x = (ovalArea.x + ovalArea.width / 2) + offsetX - (leafSize / 2);
-        const y = (ovalArea.y + ovalArea.height / 2) + offsetY - (leafSize / 2);
-        
-        return { x, y };
-    } 
-    
-    // ==================== VISUAL EFFECTS & UPDATES ====================
-    
-    /**
-     * Update tree transparency (disabled)
-     */
-    updateLeavesTransparency() {
-        this.treeImageLeaves.style.opacity = '1';
+        let x;
+        let y;
+        let tries = 0;
+
+        const cx = ovalArea.x + ovalArea.width / 2;
+        const cy = ovalArea.y + ovalArea.height / 2;
+
+        const a = ovalArea.width / 2;
+        const b = ovalArea.height / 2;
+
+        do {
+            x = (Math.random() * 2 - 1) * a;
+            y = (Math.random() * 2 - 1) * b;
+
+            tries += 1;
+            if (tries > 500) break;
+        } while ((x * x) / (a * a) + (y * y) / (b * b) > 1);
+
+        return {
+            x: cx + x - leafSize / 2,
+            y: cy + y - leafSize / 2
+        };
     }
 
-    
-    /**
-     * Refresh the entire tree visualization
-     */
-    refreshTree() {
-        this.createLeaves();
-        this.updateLeavesTransparency();
+    // ==================== FIX: KEEP MASK ALWAYS HIDDEN ====================
+
+    updateLeavesTransparency() {
+        if (this.treeImageLeaves) {
+            this.treeImageLeaves.style.display = 'block';
+            this.treeImageLeaves.style.opacity = '0';
+            this.treeImageLeaves.style.pointerEvents = 'none';
+        }
     }
-    
-    // ==================== CONFIGURATION METHODS ====================
-    
-    /**
-     * Set the oval position offsets
-     */
-    setOvalPosition(topOffset, bottomOffset) {
+
+    refreshTree() {
+        this.updateLeavesTransparency();
+
+        // rebuild mask (helps after resize)
+        this.maskData = this.buildMaskCanvas();
+
+        this.createLeaves();
+    }
+
+    // ==================== CONFIG ====================
+
+    setOvalPosition(topOffset) {
         this.ovalTopOffset = topOffset;
-        this.ovalBottomOffset = bottomOffset;
         this.refreshTree();
     }
-    
-    /**
-     * Add a new visitor to the tree (manual addition)
-     */
+
     addVisitor(name, visitCount = 1) {
         this.visitors.push({
-            name: name,
-            visit_count: visitCount
+            name,
+            visit_count: visitCount,
+            created_at: new Date().toISOString(),
+            isVip: name.toLowerCase().includes('vip')
         });
+
         this.refreshTree();
     }
 }
 
-// ==================== GLOBAL VARIABLES ====================
+// ==================== GLOBAL ====================
 
 let treeManager;
 
 // ==================== EVENT LISTENERS ====================
 
-/**
- * Initialize TreeManager when window loads
- */
 window.addEventListener('load', () => {
     treeManager = new TreeManager();
 });
 
-/**
- * Auto-refresh tree data every 30 seconds
- */
 setInterval(() => {
     if (treeManager) {
         treeManager.fetchVisitorData().then(() => {
@@ -318,13 +394,10 @@ setInterval(() => {
     }
 }, 30000);
 
-/**
- * Refresh tree on window resize
- */
 window.addEventListener('resize', () => {
     if (treeManager) {
         setTimeout(() => {
             treeManager.refreshTree();
-        }, 100);
+        }, 150);
     }
 });
