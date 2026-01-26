@@ -1,43 +1,53 @@
-// treeRoutes.js
 const express = require('express');
 const router = express.Router();
 
 let db;
 
-// Called from server.js to inject the shared SQLite connection
 function setDatabase(database) {
     db = database;
 }
 
-// GET /api/tree
-// Returns [{ name, visit_count }, ...] for current year users
+/**
+ * GET /api/tree
+ * Returns ARRAY of visitors from users table
+ */
 router.get('/', (req, res) => {
     if (!db) {
-        return res.status(500).json({ error: 'Database not initialized for tree routes' });
+        console.error('❌ TreeRoutes: DB not initialized');
+        return res.status(500).json([]);
     }
 
-    const currentYear = new Date().getFullYear().toString();
-
+    // ✅ USERS TABLE (based on your screenshot)
     const sql = `
         SELECT
             name,
-            visit_count
+            visit_count,
+            created_at
         FROM users
-        WHERE YEAR(created_at) = ?
-          AND name IS NOT NULL
-          AND name <> ''
         ORDER BY created_at ASC
     `;
 
-    db.all(sql, [currentYear], (err, rows) => {
+    db.query(sql, (err, rows) => {
         if (err) {
-            console.error('Error fetching tree data:', err);
-            return res.status(500).json({ error: 'Database error fetching tree data' });
+            console.error('❌ Tree route DB error:', err);
+            return res.status(500).json([]);
         }
 
-        // Tree expects an array of visitors; UI only shows the name on the leaf
-        res.json(rows);
+        const visitors = (Array.isArray(rows) ? rows : []).map(r => {
+            const name = (r.name || '').trim();
+            return {
+                name,
+                visit_count: Number(r.visit_count) || 1,
+                created_at: r.created_at,
+                isVip: name.toLowerCase().includes('vip') // testing
+            };
+        });
+
+        res.json(visitors);
     });
 });
 
-module.exports = { router, setDatabase };
+module.exports = {
+    router,
+    setDatabase
+};

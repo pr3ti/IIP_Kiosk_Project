@@ -41,8 +41,6 @@ class TreeManager {
         this.treeImageLeaves = document.getElementById('treeImageLeaves');
         this.leavesContainer = document.getElementById('leavesContainer');
         this.loadingMessage = document.getElementById('loadingMessage');
-        this.transparencyInfo = document.getElementById('transparencyInfo');
-        this.transparencyValue = document.getElementById('transparencyValue');
         
         // Data storage
         this.visitors = [];
@@ -50,11 +48,9 @@ class TreeManager {
         // Tree configuration
         this.ovalWidth = 1400;
         this.ovalHeight = 500;
-        this.ovalTopOffset = -180;
-        this.ovalBottomOffset = 50;
-        this.transparencyStep = 0.05;
-        this.usersPerStep = 2;
-        
+        this.ovalTopOffset = 0;
+        this.ovalBottomOffset = 0;
+
         // Initialize the tree manager
         this.init();
     }
@@ -68,7 +64,6 @@ class TreeManager {
         await this.loadTreeImage();
         await this.fetchVisitorData();
         this.createLeaves();
-        this.updateLeavesTransparency();
         this.loadingMessage.style.display = 'none';
     }
     
@@ -107,7 +102,49 @@ class TreeManager {
     }
     
     // ==================== TREE VISUALIZATION METHODS ====================
-    
+    // Update the trunk image based on submission milestones (every 5)
+        
+    updateTreeStage(totalSubmissions) {
+        if (!this.treeImage) return;
+
+        let trunkImage;
+        let currentScale = 1.0; 
+
+        // Milestones starting from Stage 1
+        if (totalSubmissions >= 20) {
+            trunkImage = 'stage4.png';
+            currentScale = 1.0;      
+            this.ovalTopOffset = -180; 
+        } else if (totalSubmissions >= 15) {
+            trunkImage = 'stage3.png';
+            currentScale = 0.75;     
+            this.ovalTopOffset = -100;
+        } else if (totalSubmissions >= 10) {
+            trunkImage = 'stage2.png';
+            currentScale = 0.55;     
+            this.ovalTopOffset = -40;
+        } else {
+            // Default to Stage 1 for anything less than 10
+            trunkImage = 'stage1.png';
+            currentScale = 0.35;     
+            this.ovalTopOffset = 30;
+        }
+
+        // This fixes the "straight line" issue:
+        // We force a height proportional to the width so leaves can scatter vertically.
+        this.ovalWidth = 1400 * currentScale;
+        this.ovalHeight = 730 * currentScale; 
+
+        this.treeImage.src = `/assets/Tree/${trunkImage}`;
+        
+        // Hide the unused leaves reference image
+        if (this.treeImageLeaves) {
+            this.treeImageLeaves.style.display = 'none';
+        }
+
+        this.refreshTree();
+    }
+
     /**
      * Create leaf elements for all visitors
      */
@@ -124,32 +161,26 @@ class TreeManager {
             this.createLeaf(visitor, index, ovalArea);
         });
     }
-    
-    /**
-     * Calculate the oval area for leaf placement
-     */
+ 
     calculateOvalArea(treeRect, containerRect) {
-        const baseOvalArea = {
-            x: treeRect.left - containerRect.left + (treeRect.width - this.ovalWidth) / 2,
-            y: treeRect.top - containerRect.top + (treeRect.height - this.ovalHeight) / 2,
+        const centerX = treeRect.left - containerRect.left + (treeRect.width / 2);
+    
+        // 2. Find the vertical center point where branches begin
+        // We use a percentage (e.g., 40% from the top of the tree image) 
+        // so it scales as the tree grows taller.
+        const centerY = treeRect.top - containerRect.top + (treeRect.height * 0.4);
+
+        return {
+            x: centerX - (this.ovalWidth / 2),
+            y: centerY - (this.ovalHeight / 2) + this.ovalTopOffset,
             width: this.ovalWidth,
             height: this.ovalHeight
         };
-        
-        const adjustedY = baseOvalArea.y + this.ovalTopOffset;
-        const adjustedHeight = this.ovalHeight - this.ovalTopOffset + this.ovalBottomOffset;
-        
-        return {
-            x: baseOvalArea.x,
-            y: adjustedY,
-            width: this.ovalWidth,
-            height: adjustedHeight
-        };
-    }
-    
-    /**
+    } 
+   
+    /*
      * Update the visual oval overlay for debugging
-     */
+    */
     updateOvalOverlay(ovalArea) {
         let ovalOverlay = document.getElementById('ovalOverlay');
         if (!ovalOverlay) {
@@ -171,73 +202,66 @@ class TreeManager {
     createLeaf(visitor, index, ovalArea) {
         const leaf = document.createElement('div');
         leaf.className = 'leaf';
+
+        // 1. Decide direction (Left/Right)
+        const side = Math.random() > 0.5 ? 'LeftLeaf.png' : 'RightLeaf.png';
+
+        // 2. The 2-minute rule (Adjusted for UTC+8/Local sync)
+        const visitTime = new Date(visitor.created_at); 
+        const now = new Date();
+
+        // Calculate difference in milliseconds
+        const diffInMs = now.getTime() - visitTime.getTime();
+        const diffInMinutes = diffInMs / 60000;
+
+        // 3. Select image based on age
+        let finalLeafImage;
+        if (diffInMinutes >= 0 && diffInMinutes <= 2) {
+            finalLeafImage = 'New' + side;
+        } else {
+            finalLeafImage = 'Old' + side;
+        }
+
+        leaf.style.backgroundImage = `url('/assets/Tree/${finalLeafImage}')`;
         
-        // Randomly choose leaf type and calculate size
-        const leafType = Math.random() > 0.5 ? 'leafleft.png' : 'leafright.png';
-        const leafSize = 80 + (visitor.visit_count * 5);
-        
-        // Set leaf styles
+        const leafSize = 80 + ((visitor.visit_count || 1) * 5);
         leaf.style.width = leafSize + 'px';
         leaf.style.height = leafSize + 'px';
-        leaf.style.backgroundImage = `url('/assets/Tree/${leafType}')`;
-        leaf.style.backgroundSize = 'contain';
-        leaf.style.backgroundRepeat = 'no-repeat';
-        leaf.style.backgroundPosition = 'center';
-        
-        // Position the leaf within the oval area
+
         const position = this.findRandomPositionInOval(ovalArea, leafSize);
         leaf.style.left = position.x + 'px';
         leaf.style.top = position.y + 'px';
-        
-        // Create name label
+
         const nameElement = document.createElement('div');
         nameElement.className = 'leaf-name';
         nameElement.textContent = visitor.name || '';
-        
-        const fontSize = Math.max(10, Math.min(14, leafSize / 6));
-        nameElement.style.fontSize = fontSize + 'px';
-        
         leaf.appendChild(nameElement);
         this.leavesContainer.appendChild(leaf);
-        
-        // Add tooltip with visitor information
-        if (visitor.name && typeof visitor.visit_count === 'number') {
-            leaf.title = `${visitor.name} - ${visitor.visit_count} visit${visitor.visit_count > 1 ? 's' : ''}`;
-        }
     }
-    
-    /**
-     * Find a random position within the oval area for leaf placement
-     */
+
     findRandomPositionInOval(ovalArea, leafSize) {
         const angle = Math.random() * 2 * Math.PI;
         const distance = Math.sqrt(Math.random());
         
-        const ovalX = ovalArea.width / 2 + distance * (ovalArea.width / 2) * Math.cos(angle);
-        const ovalY = ovalArea.height / 2 + distance * (ovalArea.height / 2) * Math.sin(angle);
+        // Calculate position relative to the CENTER of the ovalArea
+        const offsetX = (ovalArea.width / 2) * distance * Math.cos(angle);
+        const offsetY = (ovalArea.height / 2) * distance * Math.sin(angle);
         
-        const x = ovalArea.x + ovalX - leafSize / 2;
-        const y = ovalArea.y + ovalY - leafSize / 2;
+        const x = (ovalArea.x + ovalArea.width / 2) + offsetX - (leafSize / 2);
+        const y = (ovalArea.y + ovalArea.height / 2) + offsetY - (leafSize / 2);
         
         return { x, y };
-    }
+    } 
     
     // ==================== VISUAL EFFECTS & UPDATES ====================
     
     /**
-     * Update tree transparency based on number of visitors
+     * Update tree transparency (disabled)
      */
     updateLeavesTransparency() {
-        const userCount = this.visitors.length;
-        const steps = Math.floor(userCount / this.usersPerStep);
-        const newTransparency = Math.min(1.0, steps * this.transparencyStep);
-        
-        this.treeImageLeaves.style.opacity = newTransparency;
-        const transparencyPercentage = Math.round(newTransparency * 100);
-        this.transparencyValue.textContent = transparencyPercentage;
-        
-        console.log(`User count: ${userCount}, Transparency: ${newTransparency}`);
+        this.treeImageLeaves.style.opacity = '1';
     }
+
     
     /**
      * Refresh the entire tree visualization
