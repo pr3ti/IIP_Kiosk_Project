@@ -5795,9 +5795,14 @@ const themeConfig = {
         { id: 'overlay-page', name: 'Overlay Management', icon: '🎨', requiredRole: 'system_admin' },
         { id: 'questions-page', name: 'Question Management', icon: '❓', requiredRole: 'system_admin' },
         { id: 'users-page', name: 'User Management', icon: '👥', requiredRole: 'system_admin' },
+        { id: 'vip-page', name: 'VIP Management', icon: '👑', requiredRole: 'system_admin' },
+        { id: 'email-management-page', name: 'Email Management', icon: '📧', requiredRole: 'system_admin' },
+        { id: 'form-management-page', name: 'Form Management', icon: '📝', requiredRole: 'system_admin' },
         { id: 'archive-page', name: 'Archive', icon: '📚', requiredRole: 'system_admin' },
         { id: 'audit-page', name: 'Audit Logs', icon: '📋', requiredRole: 'system_admin' },
         { id: 'data-export-page', name: 'Data Export', icon: '📦', requiredRole: 'system_admin' },
+        { id: 'timer-countdown-page', name: 'Timer Countdown', icon: '🕔', requiredRole: 'system_admin' },
+        { id: 'server-schedule-page', name: 'Server Schedule', icon: '❗', requiredRole: 'system_admin' },
         { id: 'theme-settings-page', name: 'Style & Theme Settings', icon: '🎨' }
     ],
     
@@ -6190,6 +6195,57 @@ const themeConfig = {
             }
         },
         
+        'vip-page': {
+            general: {
+                'page-background': ['#vip-page'],
+                'primary-text': ['#vip-page .page-header h2'],
+                'secondary-text': ['#vip-page .page-header p']
+            },
+            card: {
+                'card-background': ['#vip-page .vip-card'],
+                'card-primary-text': ['#vip-page .vip-card-header h3'],
+                'card-secondary-text': ['#vip-page .vip-subtext']
+            },
+            buttons: {
+                'button-color': ['#vip-page .vip-add-btn', '#vip-page .btn-primary'],
+                'button-text-color': ['#vip-page .vip-add-btn', '#vip-page .btn-primary']
+            }
+        },
+        
+        'email-management-page': {
+            general: {
+                'page-background': ['#email-management-page'],
+                'primary-text': ['#email-management-page .page-header h2'],
+                'secondary-text': ['#email-management-page .page-header p']
+            },
+            card: {
+                'card-background': ['#email-management-page .email-config-card'],
+                'card-primary-text': ['#email-management-page .section-header h3'],
+                'card-secondary-text': ['#email-management-page label']
+            },
+            buttons: {
+                'button-color': ['#email-management-page .btn-primary', '#email-management-page .btn-secondary'],
+                'button-text-color': ['#email-management-page .btn-primary', '#email-management-page .btn-secondary']
+            }
+        },
+        
+        'form-management-page': {
+            general: {
+                'page-background': ['#form-management-page'],
+                'primary-text': ['#form-management-page .page-header h2'],
+                'secondary-text': ['#form-management-page .page-header p']
+            },
+            card: {
+                'card-background': ['#form-management-page .overlay-section', '#form-management-page .user-section'],
+                'card-primary-text': ['#form-management-page .section-header h3'],
+                'card-secondary-text': ['#form-management-page label']
+            },
+            buttons: {
+                'button-color': ['#form-management-page .btn-primary', '#form-management-page .btn-secondary'],
+                'button-text-color': ['#form-management-page .btn-primary', '#form-management-page .btn-secondary']
+            }
+        },
+        
         'archive-page': {
             general: {
                 'page-background': ['#archive-page'],
@@ -6279,6 +6335,40 @@ const themeConfig = {
             buttons: {
                 'button-color': ['#data-export-page .export-btn'],
                 'button-text-color': ['#data-export-page .export-btn']
+            }
+        },
+        
+        'timer-countdown-page': {
+            general: {
+                'page-background': ['#timer-countdown-page'],
+                'primary-text': ['#timer-countdown-page .page-header h2'],
+                'secondary-text': ['#timer-countdown-page .page-header p']
+            },
+            card: {
+                'card-background': ['#timer-countdown-page .timer-countdown-section'],
+                'card-primary-text': ['#timer-countdown-page .section-header h3'],
+                'card-secondary-text': ['#timer-countdown-page .filter-label', '#timer-countdown-page .text-muted']
+            },
+            buttons: {
+                'button-color': ['#timer-countdown-page .btn-primary', '#timer-countdown-page #refresh-timer-btn', '#timer-countdown-page #save-timer-countdown-btn'],
+                'button-text-color': ['#timer-countdown-page .btn-primary', '#timer-countdown-page #refresh-timer-btn', '#timer-countdown-page #save-timer-countdown-btn']
+            }
+        },
+        
+        'server-schedule-page': {
+            general: {
+                'page-background': ['#server-schedule-page'],
+                'primary-text': ['#server-schedule-page .page-header h2'],
+                'secondary-text': ['#server-schedule-page .page-header p']
+            },
+            card: {
+                'card-background': ['#server-schedule-page .schedule-section'],
+                'card-primary-text': ['#server-schedule-page .section-header h3'],
+                'card-secondary-text': ['#server-schedule-page label']
+            },
+            buttons: {
+                'button-color': ['#server-schedule-page .btn-primary', '#server-schedule-page .btn-secondary'],
+                'button-text-color': ['#server-schedule-page .btn-primary', '#server-schedule-page .btn-secondary']
             }
         },
         
@@ -9675,4 +9765,3 @@ async function watchKioskService() {
 
 setInterval(watchKioskService, 3000);
 watchKioskService();
-
