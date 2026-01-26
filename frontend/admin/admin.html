@@ -104,6 +104,9 @@
                             <span class="nav-icon">👥</span>
                             User Management
                         </a>
+                        <a href="#" class="nav-item" onclick="showPage('vip')">
+                            <span class="nav-icon">👑</span>
+                            VIP Management
                         <a href="#" class="nav-item" onclick="showPage('email-management')">
                             <span class="nav-icon">📧</span>
                             Email Management
@@ -557,7 +560,46 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- VIP Management (DONE BY ZAH) -->
+                <div id="vip-page" class="page">
+                    <div class="page-header">
+                        <h2>VIP Management</h2>
+                        <p>VIPs will appear as a golden leaf on the tree.</p>
+                    </div>
+
+                    <!-- VIP Card -->
+                    <div class="vip-card">
+                        <div class="vip-card-header">
+                            <div>
+                                <h3>VIP List</h3>
+                                <p class="vip-subtext">Add names exactly as they appear in the tree (case-insensitive).</p>
+                            </div>
+
+                            <button class="vip-add-btn" onclick="addVip()">
+                                + Add VIP
+                            </button>
+                        </div>
+
+                        <!-- Status / Info row -->
+                        <div class="vip-info-row">
+                            <div class="vip-info-pill">
+                                👑 Golden Leaf Enabled
+                            </div>
+                            <div class="vip-count" id="vip-count">
+                                Loading...
+                            </div>
+                        </div>
+
+                        <!-- VIP List -->
+                        <div class="vip-list" id="vip-list">
+                            <div class="vip-empty">
+                                Loading VIPs...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              
                 <!-- Archive Page (DONE BY PRETI)-->
                 <div id="archive-page" class="page">
                     <div class="page-header">

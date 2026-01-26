@@ -17,33 +17,83 @@ router.get('/', (req, res) => {
         return res.status(500).json([]);
     }
 
-    // ✅ USERS TABLE (based on your screenshot)
+    // 1️⃣ Get all ACTIVE VIP names
+    const vipQuery = `
+        SELECT name
+        FROM vip_management
+        WHERE is_deleted = 0
+    `;
+
+    db.all(vipQuery, [], (vipErr, vipRows) => {
+        if (vipErr) {
+            console.error('❌ VIP fetch error:', vipErr);
+            return res.status(500).json([]);
+        }
+
+        // Normalize VIP names for safe matching
+        const vipSet = new Set(
+            vipRows.map(v => (v.name || '').trim().toLowerCase())
+        );
+
+        // 2️⃣ Get all visitors
+        const userQuery = `
+            SELECT
+                name,
+                visit_count,
+                created_at
+            FROM users
+            ORDER BY created_at ASC
+        `;
+
+        db.all(userQuery, [], (userErr, rows) => {
+            if (userErr) {
+                console.error('❌ Tree route DB error:', userErr);
+                return res.status(500).json([]);
+            }
+
+            const visitors = rows.map(r => {
+                const name = (r.name || '').trim();
+                return {
+                    name,
+                    visit_count: Number(r.visit_count) || 1,
+                    created_at: r.created_at,
+                    isVip: vipSet.has(name.toLowerCase()) // ✅ REAL VIP CHECK
+                };
+            });
+
+            res.json(visitors);
+        });
+    });
+});
+
+/**
+ * GET /api/tree/vip-names
+ * Returns ACTIVE VIP names from vip_management
+ */
+router.get('/vip-names', (req, res) => {
+    if (!db) {
+        console.error('❌ TreeRoutes: DB not initialized');
+        return res.status(500).json({ success: false, vipNames: [] });
+    }
+
     const sql = `
-        SELECT
-            name,
-            visit_count,
-            created_at
-        FROM users
-        ORDER BY created_at ASC
+        SELECT name
+        FROM vip_management
+        WHERE is_deleted = 0
+        ORDER BY created_at DESC
     `;
 
     db.query(sql, (err, rows) => {
         if (err) {
-            console.error('❌ Tree route DB error:', err);
-            return res.status(500).json([]);
+            console.error('❌ VIP names DB error:', err);
+            return res.status(500).json({ success: false, vipNames: [] });
         }
 
-        const visitors = (Array.isArray(rows) ? rows : []).map(r => {
-            const name = (r.name || '').trim();
-            return {
-                name,
-                visit_count: Number(r.visit_count) || 1,
-                created_at: r.created_at,
-                isVip: name.toLowerCase().includes('vip') // testing
-            };
-        });
+        const vipNames = (Array.isArray(rows) ? rows : [])
+            .map(r => (r.name || '').trim())
+            .filter(Boolean);
 
-        res.json(visitors);
+        return res.json({ success: true, vipNames });
     });
 });
 

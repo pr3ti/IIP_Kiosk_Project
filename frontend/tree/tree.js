@@ -2,34 +2,37 @@
 // ============================================================
 //
 // CLASS: TreeManager
-//   - constructor()               - Initialize TreeManager instance
+//   - constructor()                    - Initialize TreeManager instance
 //
 // INITIALIZATION & SETUP
-//   - init()                     - Initialize tree and load data
-//   - loadTreeImage()            - Load tree images with promises
-//   - fetchVisitorData()         - Fetch visitor data from API
+//   - init()                           - Initialize tree and load data
+//   - loadTreeImage()                  - Load tree images with promises
+//   - normalizeName()                  - Normalize names for VIP matching
+//   - fetchVipNames()                  - Fetch ACTIVE VIP names from API
+//   - isVipName()                      - Check if a visitor name is VIP
+//   - fetchVisitorData()               - Fetch visitor data from API
 //
 // TREE VISUALIZATION
-//   - createLeaves()             - Create leaf elements for visitors
-//   - calculateOvalArea()        - Calculate oval area (fallback only)
-//   - updateOvalOverlay()        - Update debug overlay (optional)
-//   - buildMaskCanvas()          - Build offscreen canvas from stage4leaves.png
+//   - createLeaves()                   - Create leaf elements for visitors
+//   - calculateOvalArea()              - Calculate oval area (fallback only)
+//   - updateOvalOverlay()              - Update debug overlay (optional)
+//   - buildMaskCanvas()                - Build offscreen canvas from stage4leaves.png
 //   - findRandomPositionInLeavesMask() - Find random position inside mask
-//   - createLeaf()               - Create an individual leaf
-//   - findRandomPositionInOval() - Fallback placement
+//   - createLeaf()                     - Create an individual leaf
+//   - findRandomPositionInOval()       - Fallback placement
 //
 // VISUAL EFFECTS & UPDATES
-//   - updateLeavesTransparency() - Keep mask image ALWAYS hidden
-//   - refreshTree()              - Refresh tree visualization
+//   - updateLeavesTransparency()        - Keep mask image ALWAYS hidden
+//   - refreshTree()                    - Refresh tree visualization
 //
 // CONFIGURATION
-//   - setOvalPosition()          - Set oval offset (fallback only)
-//   - addVisitor()               - Manual test add
+//   - setOvalPosition()                - Set oval offset (fallback only)
+//   - addVisitor()                     - Manual test add
 //
 // GLOBAL LISTENERS
-//   - on load                    - Init
-//   - setInterval refresh        - Refresh every 30s
-//   - resize                     - Refresh on resize
+//   - on load                          - Init
+//   - setInterval refresh              - Refresh every 30s (VIP + visitors)
+//   - resize                           - Refresh on resize
 // ============================================================
 
 class TreeManager {
@@ -44,14 +47,17 @@ class TreeManager {
         // Data
         this.visitors = [];
 
+        // VIP Names (for golden leaves)
+        this.vipNames = new Set();
+
         // ====================================================
         // CANOPY AREA (UPDATED: smaller + moved up)
         // ====================================================
         // These control where leaves are allowed to spawn.
         // Smaller area prevents leaves from appearing outside branches.
-        this.ovalWidth = 850;       
-        this.ovalHeight = 300;       
-        this.ovalTopOffset = -100;   
+        this.ovalWidth = 850;
+        this.ovalHeight = 300;
+        this.ovalTopOffset = -100;
 
         // Mask cache
         this.maskData = null;
@@ -74,12 +80,17 @@ class TreeManager {
             // Build mask from stage4leaves.png
             this.maskData = this.buildMaskCanvas();
 
+            // Load VIP list first, then visitors
+            await this.fetchVipNames();
             await this.fetchVisitorData();
+
             this.createLeaves();
         } catch (err) {
             console.error('Init error:', err);
         } finally {
-            this.loadingMessage.style.display = 'none';
+            if (this.loadingMessage) {
+                this.loadingMessage.style.display = 'none';
+            }
         }
     }
 
@@ -112,6 +123,33 @@ class TreeManager {
             }
         });
     }
+
+    // ==================== VIP HELPERS ====================
+
+    normalizeName(name) {
+        return String(name || '').trim().toLowerCase();
+    }
+
+    async fetchVipNames() {
+        try {
+            const response = await fetch('/api/tree/vip-names');
+            const data = await response.json();
+
+            const list = Array.isArray(data.vipNames) ? data.vipNames : [];
+            this.vipNames = new Set(list.map(n => this.normalizeName(n)));
+
+            console.log(`✅ Loaded ${this.vipNames.size} VIP names`);
+        } catch (error) {
+            console.error('❌ Error fetching VIP names:', error);
+            this.vipNames = new Set();
+        }
+    }
+
+    isVipName(name) {
+        return this.vipNames.has(this.normalizeName(name));
+    }
+
+    // ==================== DATA ====================
 
     async fetchVisitorData() {
         try {
@@ -154,10 +192,7 @@ class TreeManager {
         const centerX =
             treeRect.left - containerRect.left + (treeRect.width / 2);
 
-        // ====================================================
         // UPDATED: move canopy center slightly higher
-        // ====================================================
-        // was (treeRect.height * 0.4)
         const centerY =
             treeRect.top - containerRect.top + (treeRect.height * 0.32);
 
@@ -264,7 +299,7 @@ class TreeManager {
         const leaf = document.createElement('div');
         leaf.className = 'leaf';
 
-        const isVip = !!visitor.isVip;
+        const isVip = this.isVipName(visitor.name);
         if (isVip) {
             leaf.classList.add('vip');
         }
@@ -368,8 +403,7 @@ class TreeManager {
         this.visitors.push({
             name,
             visit_count: visitCount,
-            created_at: new Date().toISOString(),
-            isVip: name.toLowerCase().includes('vip')
+            created_at: new Date().toISOString()
         });
 
         this.refreshTree();
@@ -388,7 +422,10 @@ window.addEventListener('load', () => {
 
 setInterval(() => {
     if (treeManager) {
-        treeManager.fetchVisitorData().then(() => {
+        Promise.all([
+            treeManager.fetchVipNames(),
+            treeManager.fetchVisitorData()
+        ]).then(() => {
             treeManager.refreshTree();
         });
     }

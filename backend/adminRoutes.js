@@ -87,6 +87,12 @@
 //     router.delete('/saved-themes/:id' - Delete a saved theme (DONE BY PRETI)
 //     router.get('/saved-themes/active' - Get the currently active theme for the logged-in user (DONE BY PRETI)
 //
+// 17. VIP MANAGEMENT ROUTES
+//     router.get('/vips'                - Get VIP list by status (active / deleted) with table check (DONE BY ZAH)
+//     router.post('/vips'               - Add new VIP name (duplicate-safe, case-insensitive) (DONE BY ZAH)
+//     router.patch('/vips/:id/delete'   - Soft delete VIP (mark is_deleted = 1) (DONE BY ZAH)
+//     router.patch('/vips/:id/restore'  - Restore deleted VIP (mark is_deleted = 0) (DONE BY ZAH)
+
 const express = require('express');
 const router = express.Router();
 const auth = require('./auth');
@@ -97,6 +103,7 @@ const fs = require('fs');
 const archiver = require('archiver');
 const emailService = require('./emailService');
 const emailConfigStore = require('./emailConfigStore');
+
 
 // ==================== 1. AUDIT LOGGING FUNCTIONS ====================
 
@@ -3877,6 +3884,217 @@ router.get('/saved-themes/active', auth.requireAuth, (req, res) => {
     });
 });
 
+// ==================== 17. VIP MANAGEMENT ROUTES (DONE BY ZAH) ====================
+
+// Get VIP list (Active / Deleted)
+// GET /vips?status=active
+// GET /vips?status=deleted
+router.get('/vips', (req, res) => {
+    console.log('👑 Fetching VIP list...');
+
+    const status = (req.query.status || 'active').toLowerCase();
+    const isDeleted = status === 'deleted' ? 1 : 0;
+
+    // Check if vip_management table exists (same pattern as users)
+    const tableCheckQuery = `
+        SELECT TABLE_NAME AS name
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE() AND table_name = 'vip_management'
+    `;
+
+    db.get(tableCheckQuery, [], (err, table) => {
+        if (err) {
+            console.error('❌ Error checking vip_management table:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error: ' + err.message
+            });
+        }
+
+        if (!table) {
+            console.log('❌ vip_management table does not exist');
+            return res.status(404).json({
+                success: false,
+                error: 'VIP table not found. Please run database setup.'
+            });
+        }
+
+        const query = `
+            SELECT
+                id,
+                name,
+                created_at,
+                is_deleted
+            FROM vip_management
+            WHERE is_deleted = ?
+            ORDER BY created_at DESC
+        `;
+
+        db.all(query, [isDeleted], (err, rows) => {
+            if (err) {
+                console.error('❌ Error fetching VIPs:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database error: ' + err.message
+                });
+            }
+
+            console.log(`✅ Found ${rows.length} VIP records (${status})`);
+
+            const vips = rows.map(vip => ({
+                id: vip.id,
+                name: vip.name || 'Unknown',
+                createdAt: vip.created_at,
+                is_deleted: vip.is_deleted
+            }));
+
+            return res.json({
+                success: true,
+                vips,
+                count: vips.length
+            });
+        });
+    });
+});
+
+// Add VIP
+router.post('/vips', (req, res) => {
+    console.log('➕ Adding VIP...');
+
+    const name = (req.body.name || '').trim();
+
+    if (!name || name.length < 2) {
+        return res.status(400).json({
+            success: false,
+            error: 'VIP name is required'
+        });
+    }
+
+    // Prevent duplicates among active VIPs
+    const checkQuery = `
+        SELECT id
+        FROM vip_management
+        WHERE LOWER(name) = LOWER(?) AND is_deleted = 0
+        LIMIT 1
+    `;
+
+    db.get(checkQuery, [name], (err, existing) => {
+        if (err) {
+            console.error('❌ Error checking VIP duplicate:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error: ' + err.message
+            });
+        }
+
+        if (existing) {
+            return res.status(409).json({
+                success: false,
+                error: 'VIP already exists'
+            });
+        }
+
+        const insertQuery = `
+            INSERT INTO vip_management (name, created_at, is_deleted)
+            VALUES (?, NOW(), 0)
+        `;
+
+        db.run(insertQuery, [name], function(err) {
+            if (err) {
+                console.error('❌ Error adding VIP:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database error: ' + err.message
+                });
+            }
+
+            console.log(`✅ VIP added with ID: ${this.lastID}`);
+
+            return res.json({
+                success: true,
+                message: 'VIP added successfully',
+                vip: {
+                    id: this.lastID,
+                    name,
+                    createdAt: new Date().toISOString(),
+                    is_deleted: 0
+                }
+            });
+        });
+    });
+});
+
+// Soft delete VIP (move to deleted)
+// PATCH /vips/:id/delete
+router.patch('/vips/:id/delete', (req, res) => {
+    const { id } = req.params;
+    console.log('🗑️ Soft deleting VIP ID:', id);
+
+    const deleteQuery = `
+        UPDATE vip_management
+        SET is_deleted = 1
+        WHERE id = ?
+    `;
+
+    db.run(deleteQuery, [id], function(err) {
+        if (err) {
+            console.error('❌ Error soft deleting VIP:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error: ' + err.message
+            });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'VIP not found or already deleted'
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'VIP moved to deleted list (can be restored)',
+            changes: this.changes
+        });
+    });
+});
+
+// Restore VIP
+// PATCH /vips/:id/restore
+router.patch('/vips/:id/restore', (req, res) => {
+    const { id } = req.params;
+    console.log('🔄 Restoring VIP ID:', id);
+
+    const restoreQuery = `
+        UPDATE vip_management
+        SET is_deleted = 0
+        WHERE id = ?
+    `;
+
+    db.run(restoreQuery, [id], function(err) {
+        if (err) {
+            console.error('❌ Error restoring VIP:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Database error: ' + err.message
+            });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'VIP not found or already restored'
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'VIP restored successfully',
+            changes: this.changes
+        });
+    });
+});
 
 // ==================== 17. FORM UI CONFIGURATION ====================
 // Read + write feedback form UI settings 

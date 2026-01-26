@@ -9477,6 +9477,175 @@ window.serverScheduleManager = {
     stopServer
 };
 
+// ==================== 31. VIP MANAGEMENT (DONE BY ZAH) ====================
+
+// VIP Data (Active only)
+let vipData = [];
+
+// API base (same origin)
+const VIP_API_BASE = "/api/admin";
+
+/*
+    Expected API (ACTIVE ONLY for this UI):
+    GET  /api/admin/vips?status=active
+    POST /api/admin/vips   { name }
+*/
+const VIP_API = {
+    listActive: () => {
+        return `${VIP_API_BASE}/vips?status=active`;
+    },
+    create: () => {
+        return `${VIP_API_BASE}/vips`;
+    }
+};
+
+// DOM helpers (NEW VIP UI)
+function getVipElements() {
+    return {
+        vipPage: document.getElementById("vip-page"),
+        vipList: document.getElementById("vip-list"),
+        vipCount: document.getElementById("vip-count")
+    };
+}
+
+// Safe HTML escape (fallback if global helper not available)
+function escapeHtmlSafe(value) {
+    if (typeof window.escapeHtml === "function") {
+        return window.escapeHtml(value);
+    }
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+// Date formatter
+function formatVipDate(value) {
+    if (!value) return "-";
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+
+    return d.toLocaleString();
+}
+
+// Fetch helper
+async function fetchVipJson(url, options = {}) {
+    const res = await fetch(url, options);
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} - ${text}`);
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+        return {};
+    }
+
+    return res.json();
+}
+
+// Render VIP list (NEW UI)
+function renderVipList() {
+    const { vipList, vipCount } = getVipElements();
+    if (!vipList || !vipCount) return;
+
+    vipCount.textContent = `${vipData.length} VIP(s)`;
+
+    if (!vipData.length) {
+        vipList.innerHTML = `
+            <div class="vip-empty">
+                No VIP names yet.
+            </div>
+        `;
+        return;
+    }
+
+    vipList.innerHTML = vipData.map((vip) => {
+        const name = escapeHtmlSafe(vip.name ?? "");
+        const createdAt = formatVipDate(vip.created_at ?? vip.createdAt);
+
+        return `
+            <div class="vip-item">
+                <div class="vip-item-left">
+                    <div class="vip-name">👑 ${name}</div>
+                    <div class="vip-date">Added: ${createdAt}</div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+// Load VIPs (Active only)
+async function loadVipData() {
+    const { vipList, vipCount } = getVipElements();
+    if (!vipList || !vipCount) return;
+
+    vipCount.textContent = "Loading...";
+    vipList.innerHTML = `
+        <div class="vip-empty">
+            Loading VIPs...
+        </div>
+    `;
+
+    try {
+        const res = await fetchVipJson(VIP_API.listActive());
+
+        // Support formats: [ ... ] OR { vips: [...] } OR { data: [...] }
+        vipData = Array.isArray(res) ? res : (res.vips || res.data || []);
+
+        renderVipList();
+    } catch (err) {
+        console.error("VIP load error:", err);
+        vipCount.textContent = "Error";
+        vipList.innerHTML = `
+            <div class="vip-empty" style="color:#ef4444;">
+                Failed to load VIPs.
+            </div>
+        `;
+    }
+}
+
+// Loader used by showPage('vip')
+function loadVipManagementData() {
+    loadVipData();
+}
+
+window.loadVipManagementData = loadVipManagementData;
+
+// Add VIP (NEW UI)
+async function addVip() {
+    const name = prompt("Enter VIP name (exact match):");
+    if (!name) return;
+
+    const trimmed = name.trim();
+    if (trimmed.length < 2) {
+        alert("VIP name is too short.");
+        return;
+    }
+
+    try {
+        await fetchVipJson(VIP_API.create(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: trimmed })
+        });
+
+        // Refresh list
+        loadVipData();
+    } catch (err) {
+        console.error("Add VIP error:", err);
+        alert("Failed to add VIP.");
+    }
+}
+
+// Expose for HTML onclick
+window.addVip = addVip;
+
 // ==================== KIOSK AUTO-RELOAD ON START/STOP ====================
 
 let lastKioskActive = null;
@@ -9506,3 +9675,4 @@ async function watchKioskService() {
 
 setInterval(watchKioskService, 3000);
 watchKioskService();
+
