@@ -1585,19 +1585,19 @@ async function applyFormUIConfig() {
 // Load countdown timer setting from server (DONE BY BERNISSA)
 async function loadCountdownTimer() {
     try {
-        console.log('â±ï¸ Loading countdown timer setting...');
+        console.log('Loading countdown timer setting...');
         const response = await fetch('/api/feedback/countdown-timer');
         const data = await response.json();
         
         if (data.success && typeof data.countdown_seconds === 'number') {
             countdownSeconds = data.countdown_seconds >= 0 ? data.countdown_seconds : 3;
-            console.log(`âœ… Countdown timer loaded: ${countdownSeconds} seconds`);
+            console.log(`Countdown timer loaded: ${countdownSeconds} seconds`);
         } else {
-            console.warn('⚠️ Invalid countdown data, using default');
+            console.warn('Invalid countdown data, using default');
             countdownSeconds = 3;
         }
     } catch (error) {
-        console.error('âŒ Error loading countdown timer:', error);
+        console.error('Error loading countdown timer:', error);
         countdownSeconds = 3; // Fallback to default 3 seconds
     }
 }
