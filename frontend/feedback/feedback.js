@@ -325,7 +325,7 @@ function showTimeoutNotification() {
 // Load questions from the database
 async function loadFeedbackQuestions() {
     try {
-        const response = await fetch('/api/admin/questions');
+        const response = await fetch('/api/feedback/questions');
         const data = await response.json();
         
         if (data.success && data.questions.length > 0) {
@@ -972,7 +972,7 @@ async function loadOverlayOptions() {
 
     try {
         // Fetch overlays from the API
-        const response = await fetch('/api/admin/overlays');
+        const response = await fetch('/api/feedback/overlays');
         const data = await response.json();
         
         if (data.success && data.overlays.length > 0) {
