@@ -8,7 +8,6 @@
 //
 // 2. QUESTION MANAGEMENT ROUTES
 //    router.get('/questions'          - Get active questions for feedback form (DONE BY PRETI)
-//    router.get('/countdown-timer'    - Get countdown timer setting (PUBLIC - no auth)
 //
 // 3. PHOTO UPLOAD ROUTES
 //    router.post('/save-photo'        - Upload and save raw photo (DONE BY PRETI)
@@ -57,7 +56,7 @@ if (!fs.existsSync(processedDir)) {
 // ==================== 2. QUESTION MANAGEMENT ROUTES ====================
 // Get active questions for feedback form
 router.get('/questions', (req, res) => {
-    console.log('ðŸ“‹ Fetching active questions for feedback form...');
+    console.log('📋 Fetching active questions for feedback form...');
     
     const query = `
         SELECT 
@@ -78,7 +77,7 @@ router.get('/questions', (req, res) => {
     
     db.all(query, [], (err, rows) => {
         if (err) {
-            console.error('âŒ Error fetching questions:', err);
+            console.error('❌ Error fetching questions:', err);
             return res.json({
                 success: true,
                 questions: []
@@ -114,7 +113,7 @@ router.get('/questions', (req, res) => {
         
         const questions = Array.from(questionsMap.values());
         
-        console.log(`âœ… Found ${questions.length} active questions for feedback form`);
+        console.log(`✅ Found ${questions.length} active questions for feedback form`);
         
         res.json({
             success: true,
@@ -122,7 +121,6 @@ router.get('/questions', (req, res) => {
         });
     });
 });
-
 
 // ==================== 3. PHOTO UPLOAD ROUTES ====================
 // Upload and save raw photo
@@ -210,7 +208,7 @@ router.post('/submit-feedback', async (req, res) => {
     try {
         const { userData, device, theme, retention } = req.body;
         
-        console.log('ðŸ“ Feedback submitted:', {
+        console.log('📝 Feedback submitted:', {
             userName: userData.name,
             email: userData.email,
             device: device,
@@ -245,29 +243,29 @@ router.post('/submit-feedback', async (req, res) => {
         // Send response IMMEDIATELY
         res.json(responseData);
         const responseTime = Date.now() - startTime;
-        console.log(`âœ… Response sent in ${responseTime}ms`);
+        console.log(`✅ Response sent in ${responseTime}ms`);
         
         // 2. AFTER sending response, process database and email in background
         setTimeout(async () => {
-            console.log('ðŸ”„ Background processing started...');
+            console.log('🔄 Background processing started...');
             const bgStartTime = Date.now();
             
             try {
                 saveFeedbackToDatabase(userData, device, theme, retention, async (error, result) => {
                     if (error) {
-                        console.error('âŒ Error saving to database:', error);
+                        console.error('❌ Error saving to database:', error);
                         return;
                     }
                     
-                    console.log('âœ… Feedback saved to database:', result);
+                    console.log('✅ Feedback saved to database:', result);
                     const bgTime = Date.now() - bgStartTime;
-                    console.log(`ðŸ”„ Database completed in ${bgTime}ms`);
+                    console.log(`🔄 Database completed in ${bgTime}ms`);
                     
                     // Send email AFTER database is committed
                     if (shouldQueueEmail && result && result.feedbackId) {
                         const photoToSend = userData.processedPhotoId || userData.photoId;
                         
-                        console.log(`ðŸ“§ Starting email for ${userData.email}...`);
+                        console.log(`📧 Starting email for ${userData.email}...`);
                         
                         setImmediate(async () => {
                             try {
@@ -278,7 +276,7 @@ router.post('/submit-feedback', async (req, res) => {
                                 );
                                 
                                 if (emailResult.success) {
-                                    console.log(`âœ… Email sent to ${userData.email}`);
+                                    console.log(`✅ Email sent to ${userData.email}`);
                                     
                                     // Update email flag (separate query, non-blocking)
                                     db.run(
@@ -286,32 +284,32 @@ router.post('/submit-feedback', async (req, res) => {
                                         [result.feedbackId],
                                         function(err) {
                                             if (err) {
-                                                console.error(`âš ï¸ Email flag update failed:`, err.message);
+                                                console.error(`⚠️ Email flag update failed:`, err.message);
                                             } else {
-                                                console.log(`âœ… Email flag updated for feedback ${result.feedbackId}`);
+                                                console.log(`✅ Email flag updated for feedback ${result.feedbackId}`);
                                             }
                                         }
                                     );
                                 } else {
-                                    console.error(`âŒ Email failed:`, emailResult.error);
+                                    console.error(`❌ Email failed:`, emailResult.error);
                                 }
                             } catch (emailError) {
-                                console.error(`âŒ Email exception:`, emailError.message);
+                                console.error(`❌ Email exception:`, emailError.message);
                             }
                         });
                     }
                 });
             } catch (err) {
-                console.error('âŒ Background error:', err);
+                console.error('❌ Background error:', err);
             }
         }, 0);
 
         
     } catch (error) {
-        console.error('âŒ Error in submit-feedback:', error);
+        console.error('❌ Error in submit-feedback:', error);
         // Even on error, return success to user quickly
         const errorResponseTime = Date.now() - startTime;
-        console.log(`âš ï¸ Error response sent in ${errorResponseTime}ms`);
+        console.log(`⚠️ Error response sent in ${errorResponseTime}ms`);
         
         res.json({ 
             success: true, 
@@ -341,7 +339,7 @@ router.post('/send-email', async (req, res) => {
             });
         }
         
-        console.log(`ðŸ“§ Manual email request for ${email} with photo ${photoFilename}`);
+        console.log(`📧 Manual email request for ${email} with photo ${photoFilename}`);
         
         const result = await emailService.sendEmailAndUpdateFlag(db, name, email, photoFilename);
         
@@ -394,7 +392,7 @@ router.post('/feedback/:id/retry-email', async (req, res) => {
         try {
             email = auth.decryptEmail(feedback.email_encrypted);
         } catch (error) {
-            console.error('âŒ Failed to decrypt email:', error);
+            console.error('❌ Failed to decrypt email:', error);
             return res.status(500).json({ error: 'Failed to decrypt email' });
         }
         
@@ -445,7 +443,7 @@ router.get('/test-email', async (req, res) => {
     try {
         const testEmail = req.query.email || 'test@example.com';
         
-        console.log('ðŸ§ª Testing email service...');
+        console.log('🧪 Testing email service...');
         
         const result = await emailService.testEmailService(testEmail);
         
@@ -495,7 +493,7 @@ function isValidEmail(email) {
 
 // Save feedback to database with encrypted email
 function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
-    console.log('ðŸ’¾ Saving feedback with pledge and retention:', {
+    console.log('💾 Saving feedback with pledge and retention:', {
         userName: userData.name,
         hasEmail: !!userData.email,
         pledge: userData.pledge,
@@ -533,9 +531,9 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
             if (userData.email && isValidEmail(userData.email)) {
                 try {
                     encryptedEmail = auth.encryptEmail(userData.email);
-                    console.log('ðŸ”’ Email encrypted for new user');
+                    console.log('🔒 Email encrypted for new user');
                 } catch (error) {
-                    console.error('âŒ Email encryption failed:', error);
+                    console.error('❌ Email encryption failed:', error);
                     return callback(new Error('Email encryption failed'));
                 }
             }
@@ -549,7 +547,7 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
                         return callback(err);
                     }
                     const userId = this.lastID;
-                    console.log(`âœ… Created new user with ID: ${userId}${encryptedEmail ? ' (email encrypted)' : ''}`);
+                    console.log(`✅ Created new user with ID: ${userId}${encryptedEmail ? ' (email encrypted)' : ''}`);
                     saveFeedbackRecord(userId);
                 }
             );
@@ -567,9 +565,9 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
                     const encryptedEmail = auth.encryptEmail(userData.email);
                     updateQuery = 'UPDATE users SET visit_count = visit_count + 1, last_visit = CURRENT_TIMESTAMP, email_encrypted = ? WHERE id = ?';
                     params = [encryptedEmail, user.id];
-                    console.log(`ðŸ”’ Encrypting email for existing user ${user.id}`);
+                    console.log(`🔒 Encrypting email for existing user ${user.id}`);
                 } catch (error) {
-                    console.error('âŒ Email encryption failed:', error);
+                    console.error('❌ Email encryption failed:', error);
                     return callback(new Error('Email encryption failed'));
                 }
             } else {
@@ -583,7 +581,7 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
                     console.error('Error updating user:', err);
                     return callback(err);
                 }
-                console.log(`âœ… Updated user ${user.id}, visit count: ${user.visit_count + 1}${!user.email_encrypted && encryptedEmail ? ' (email encrypted)' : ''}`);
+                console.log(`✅ Updated user ${user.id}, visit count: ${user.visit_count + 1}${!user.email_encrypted && encryptedEmail ? ' (email encrypted)' : ''}`);
                 saveFeedbackRecord(user.id);
             });
         }
@@ -616,17 +614,17 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
                 }
                 
                 const feedbackId = this.lastID;
-                console.log(`âœ… Saved feedback with ID: ${feedbackId}, Retention: ${retention}, Pledge: ${userData.pledge ? 'Yes (' + userData.pledge.length + ' chars)' : 'No'}`);
+                console.log(`✅ Saved feedback with ID: ${feedbackId}, Retention: ${retention}, Pledge: ${userData.pledge ? 'Yes (' + userData.pledge.length + ' chars)' : 'No'}`);
                 console.log(`Raw Photo Path: ${photoPath}`);
                 console.log(`Processed Photo Path: ${processedPhotoPath}`);
                 
                 saveQuestionAnswers(userId, feedbackId, userData, (error) => {
                     if (error) {
-                        console.log('âš ï¸ Some answers could not be saved');
+                        console.log('⚠️ Some answers could not be saved');
                     }
-                    console.log(`ðŸ“Š Feedback saved successfully - User: ${userId}, Feedback: ${feedbackId}`);
-                    console.log(`ðŸ“ Pledge: ${userData.pledge ? userData.pledge.substring(0, 50) + '...' : 'None'}`);
-                    console.log(`ðŸ“… Retention: ${retention}`);
+                    console.log(`📊 Feedback saved successfully - User: ${userId}, Feedback: ${feedbackId}`);
+                    console.log(`📝 Pledge: ${userData.pledge ? userData.pledge.substring(0, 50) + '...' : 'None'}`);
+                    console.log(`📅 Retention: ${retention}`);
                     callback(null, { userId, feedbackId });
                 });
             }
@@ -636,15 +634,15 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
     // Save question answers (nested)
     function saveQuestionAnswers(userId, feedbackId, userData, callback) {
         const getQuestionsQuery = 'SELECT id, question_type FROM questions WHERE is_active = 1';
-        console.log('ðŸ“ Saving answers for feedback:', feedbackId);
+        console.log('📝 Saving answers for feedback:', feedbackId);
         
         db.all(getQuestionsQuery, [], (err, questions) => {
             if (err || !questions || questions.length === 0) {
-                console.log(err ? 'âŒ Error fetching questions' : 'âš ï¸ No questions');
+                console.log(err ? '❌ Error fetching questions' : '⚠️ No questions');
                 return callback(null);
             }
             
-            console.log(`ðŸ“‹ Saving ${questions.length} answers in parallel...`);
+            console.log(`📋 Saving ${questions.length} answers in parallel...`);
             
             const insertPromises = questions.map(question => {
                 let answerValue = userData.answers?.[question.id] || userData[`q${question.id}`];
@@ -656,10 +654,10 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
                             [feedbackId, question.id, String(answerValue)],
                             (err) => {
                                 if (err) {
-                                    console.error(`âŒ Q${question.id}:`, err.message);
+                                    console.error(`❌ Q${question.id}:`, err.message);
                                     reject(err);
                                 } else {
-                                    console.log(`âœ… Q${question.id} saved`);
+                                    console.log(`✅ Q${question.id} saved`);
                                     resolve();
                                 }
                             }
@@ -671,7 +669,7 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
             
             Promise.allSettled(insertPromises).then(results => {
                 const saved = results.filter(r => r.status === 'fulfilled').length;
-                console.log(`ðŸ“Š Saved ${saved}/${questions.length} answers`);
+                console.log(`📊 Saved ${saved}/${questions.length} answers`);
                 callback(null);
             });
         });
@@ -684,7 +682,7 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
 // ==================== 6. OVERLAY MANAGEMENT ROUTES ====================
 // Get all overlays for theme selection in feedback form
 router.get('/overlays', (req, res) => {
-    console.log('ðŸŽ¨ Fetching overlay data for feedback form...');
+    console.log('🎨 Fetching overlay data for feedback form...');
     
     // First, check if the overlays table exists
     const tableCheckQuery = `
@@ -696,7 +694,7 @@ router.get('/overlays', (req, res) => {
     
     db.get(tableCheckQuery, [], (err, table) => {
         if (err) {
-            console.error('âŒ Error checking overlays table:', err);
+            console.error('❌ Error checking overlays table:', err);
             return res.status(500).json({ 
                 success: false,
                 error: 'Database error: ' + err.message 
@@ -704,7 +702,7 @@ router.get('/overlays', (req, res) => {
         }
         
         if (!table) {
-            console.log('âš ï¸ Overlays table does not exist - using fallback');
+            console.log('⚠️ Overlays table does not exist - using fallback');
             return res.json({
                 success: true,
                 overlays: [],
@@ -728,14 +726,14 @@ router.get('/overlays', (req, res) => {
         
         db.all(query, [], (err, rows) => {
             if (err) {
-                console.error('âŒ Error fetching overlays:', err);
+                console.error('❌ Error fetching overlays:', err);
                 return res.status(500).json({ 
                     success: false,
                     error: 'Database error: ' + err.message 
                 });
             }
             
-            console.log(`âœ… Found ${rows.length} overlays for feedback form`);
+            console.log(`✅ Found ${rows.length} overlays for feedback form`);
             
             res.json({
                 success: true,
@@ -800,37 +798,7 @@ router.get('/', (req, res) => {
     });
 });
 
-// Get countdown timer setting for photo capture (DONE BY BERNISSA)
-router.get('/countdown-timer', (req, res) => {
-    console.log('⏱️ Fetching countdown timer setting for feedback form...');
-    
-    const query = `
-        SELECT countdown_seconds
-        FROM countdown_management
-        WHERE id = 1
-        LIMIT 1
-    `;
-    
-    db.get(query, [], (err, row) => {
-        if (err) {
-            console.error('❌ Error fetching countdown timer:', err);
-            // Return default value on error
-            return res.json({
-                success: true,
-                countdown_seconds: 3
-            });
-        }
-        
-        const seconds = row?.countdown_seconds;
-        const safeSeconds = Number.isInteger(seconds) && seconds >= 0 ? seconds : 3;
-        
-        console.log(`✅ Countdown timer setting: ${safeSeconds} seconds`);
-        
-        res.json({
-            success: true,
-            countdown_seconds: safeSeconds
-        });
-    });
-});
+
 
 module.exports = router;
+

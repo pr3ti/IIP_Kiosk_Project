@@ -11,11 +11,9 @@
 //    let currentDevice                - 'desktop' or 'mobile' device type (DONE BY PRETI)
 //    let inactivityTimer              - Timer for inactivity timeout (DONE BY PRETI)
 //    const INACTIVITY_TIMEOUT         - 5 minutes timeout duration (DONE BY PRETI)
-//    let countdownSeconds             - Photo capture countdown duration loaded from server
 //
 // 2. INITIALIZATION & SETUP FUNCTIONS
 //    async function loadDynamicQRCode() - Load dynamic QR code from server (DONE BY PRETI)
-//    async function loadCountdownTimer() - Load countdown timer setting from server
 //    function detectDeviceType()      - Detect mobile/desktop device (DONE BY PRETI)
 //    DOMContentLoaded                 - Application bootstrap
 
@@ -100,7 +98,8 @@ let photoData = null;
 let currentDevice = 'desktop'; // 'desktop' or 'mobile'
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 300000; // 5 minutes (300,000 milliseconds)
-let countdownSeconds = null; // Loaded from backend when needed
+let countdownSeconds = null; // Loaded from backend when needed (DONE BY BERNISSA)
+
 
 // ==================== 2. INITIALIZATION & SETUP FUNCTIONS ====================
 
@@ -283,7 +282,7 @@ function returnToLandingPage() {
     // Show notification
     showTimeoutNotification();
     
-    console.log('âœ… Successfully returned to landing page');
+    console.log('✅ Successfully returned to landing page');
 }
 
 // Show timeout notification message
