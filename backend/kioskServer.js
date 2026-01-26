@@ -1,4 +1,4 @@
-// kioskServer.js - Kiosk server (Feedback + Leaderboard + Tree) on PORT 3001
+// DONE BY PRETI
 
 require('dotenv').config();
 const express = require('express');
@@ -11,6 +11,7 @@ const os = require('os');
 const db = require('./db');
 const feedbackRoutes = require('./feedbackRoutes');
 const leaderboardRoutes = require('./leaderboardRoutes');
+const emailService = require('./emailService');
 
 const { router: treeRoutes, setDatabase: setTreeDatabase } = require('./treeRoutes');
 const dataRetentionCleanup = require('./dataRetentionCleanup');
@@ -211,6 +212,40 @@ app.get('/api/generate-qr', async (req, res) => {
   }
 });
 
+// Test database connection
+app.get('/api/test-db', (req, res) => {
+  db.query(
+    'SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = ?',
+    [process.env.DB_NAME || 'dp_kiosk_db'],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+      res.json({
+        message: 'MySQL database is working!',
+        tables: results.length > 0 ? results.map((r) => r.TABLE_NAME) : 'No tables found',
+        database: process.env.DB_NAME || 'dp_kiosk_db',
+      });
+    }
+  );
+});
+
+// Email test endpoint
+app.get('/api/test-email-service', (req, res) => {
+  const emailInitialized = emailService.initEmailService();
+  if (emailInitialized) {
+    res.json({
+      success: true,
+      message: 'Email service initialized',
+      smtpUser: process.env.SMTP_USER || 'Using default',
+    });
+  } else {
+    res.json({
+      success: false,
+      message: 'Email service failed to initialize',
+      error: 'Check SMTP credentials',
+    });
+  }
+});
+
 // ==================== PAGE ROUTES (KIOSK) ====================
 
 app.get('/feedback', (req, res) => {
@@ -255,5 +290,9 @@ function startServer() {
     app.listen(PORT, localIP, () => printServerInfo(false));
   }
 }
+
+// Initialize email service at startup
+const emailInitialized = emailService.initEmailService();
+console.log(emailInitialized ? '📧 Email service initialized successfully' : '⚠️ Email service not initialized');
 
 startServer();
