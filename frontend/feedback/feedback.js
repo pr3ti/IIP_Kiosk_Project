@@ -98,6 +98,8 @@ let photoData = null;
 let currentDevice = 'desktop'; // 'desktop' or 'mobile'
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 300000; // 5 minutes (300,000 milliseconds)
+let countdownSeconds = null; // Loaded from backend when needed (DONE BY BERNISSA)
+
 
 // ==================== 2. INITIALIZATION & SETUP FUNCTIONS ====================
 
@@ -143,6 +145,8 @@ function detectDeviceType() {
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    applyFormUIConfig();
+    
     // Check if mobile
     const isMobile = window.innerWidth <= 768;
     
@@ -325,7 +329,7 @@ function showTimeoutNotification() {
 // Load questions from the database
 async function loadFeedbackQuestions() {
     try {
-        const response = await fetch('/api/admin/questions');
+        const response = await fetch('/api/feedback/questions');
         const data = await response.json();
         
         if (data.success && data.questions.length > 0) {
@@ -817,7 +821,7 @@ async function initializeCamera() {
 }
 
 // Capture photo with countdown timer (desktop) or redirect to upload (mobile)
-function capturePhoto() {
+async function capturePhoto() {
     // For mobile, redirect to file upload
     if (currentDevice === 'mobile') {
         document.getElementById('photo-page').style.display = 'none';
@@ -839,15 +843,27 @@ function capturePhoto() {
         // Disable capture button during countdown
         captureBtn.disabled = true;
         
-        let countdown = 6;
+        // Load countdown from backend if not yet loaded
+        if (countdownSeconds === null) {
+            await loadCountdownTimer();
+        }
+        
+        let countdown = Number.isInteger(countdownSeconds) ? countdownSeconds : 0;
+        
+        // If admin set to 0, take photo immediately (no countdown overlay)
+        if (countdown === 0) {
+            takePhoto();
+            captureBtn.disabled = false;
+            return;
+        }
+        
+        // Show countdown overlay
         countdownText.textContent = countdown;
         countdownOverlay.style.display = 'flex';
-        console.log('Starting countdown...');
+        console.log('Starting countdown:', countdown);
 
         const countdownInterval = setInterval(() => {
             countdown--;
-            countdownText.textContent = countdown;
-            console.log('Countdown:', countdown);
             
             if (countdown <= 0) {
                 clearInterval(countdownInterval);
@@ -859,7 +875,11 @@ function capturePhoto() {
                 
                 // Re-enable capture button
                 captureBtn.disabled = false;
+                return;
             }
+            
+            countdownText.textContent = countdown;
+            console.log('Countdown:', countdown);
         }, 1000);
     } catch (error) {
         console.error('Error in capturePhoto:', error);
@@ -972,7 +992,7 @@ async function loadOverlayOptions() {
 
     try {
         // Fetch overlays from the API
-        const response = await fetch('/api/admin/overlays');
+        const response = await fetch('/api/feedback/overlays');
         const data = await response.json();
         
         if (data.success && data.overlays.length > 0) {
@@ -1532,3 +1552,54 @@ document.addEventListener('touchstart', resetInactivityTimer);
 function viewLeaderboard() {
     window.location.href = '/leaderboard';
 }
+
+// ==================== FORM UI CONFIGURATION ====================
+// Load and apply form UI settings from server config
+
+async function applyFormUIConfig() {
+  try {
+    const response = await fetch('/api/feedback/form-ui');
+    const config = await response.json();
+
+    // Apply background (CSS variable)
+    if (config.background) {
+      document.documentElement.style.setProperty('--form-bg', config.background);
+    }
+
+    // Apply landing page title
+    const titleElement = document.getElementById('form-landing-title');
+    if (titleElement && config.landingTitle) {
+      titleElement.textContent = config.landingTitle;
+    }
+
+    // Apply landing page subtitle
+    const subtitleElement = document.getElementById('form-landing-subtitle');
+    if (subtitleElement && config.landingSubtitle) {
+      subtitleElement.textContent = config.landingSubtitle;
+    }
+  } catch (error) {
+    console.error('Error applying form UI configuration:', error);
+  }
+}
+
+// Load countdown timer setting from server (DONE BY BERNISSA)
+async function loadCountdownTimer() {
+    try {
+        console.log('Loading countdown timer setting...');
+        const response = await fetch('/api/feedback/countdown-timer');
+        const data = await response.json();
+        
+        if (data.success && typeof data.countdown_seconds === 'number') {
+            countdownSeconds = data.countdown_seconds >= 0 ? data.countdown_seconds : 3;
+            console.log(`Countdown timer loaded: ${countdownSeconds} seconds`);
+        } else {
+            console.warn('Invalid countdown data, using default');
+            countdownSeconds = 3;
+        }
+    } catch (error) {
+        console.error('Error loading countdown timer:', error);
+        countdownSeconds = 3; // Fallback to default 3 seconds
+    }
+}
+
+//—-//

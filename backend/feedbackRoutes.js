@@ -678,7 +678,94 @@ function saveFeedbackToDatabase(userData, device, theme, retention, callback) {
 
 
 
-// ==================== 6. UTILITY ENDPOINTS ====================
+
+// ==================== 6. OVERLAY MANAGEMENT ROUTES ====================
+// Get all overlays for theme selection in feedback form
+router.get('/overlays', (req, res) => {
+    console.log('🎨 Fetching overlay data for feedback form...');
+    
+    // First, check if the overlays table exists
+    const tableCheckQuery = `
+        SELECT TABLE_NAME AS name
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+          AND table_name = 'overlays'
+    `;
+    
+    db.get(tableCheckQuery, [], (err, table) => {
+        if (err) {
+            console.error('❌ Error checking overlays table:', err);
+            return res.status(500).json({ 
+                success: false,
+                error: 'Database error: ' + err.message 
+            });
+        }
+        
+        if (!table) {
+            console.log('⚠️ Overlays table does not exist - using fallback');
+            return res.json({
+                success: true,
+                overlays: [],
+                message: 'Overlays table does not exist yet'
+            });
+        }
+        
+        // Table exists, now fetch the data
+        const query = `
+            SELECT 
+                id,
+                display_name,
+                theme_id,
+                desktop_filename,
+                mobile_filename,
+                display_order,
+                created_at
+            FROM overlays 
+            ORDER BY display_order ASC
+        `;
+        
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error('❌ Error fetching overlays:', err);
+                return res.status(500).json({ 
+                    success: false,
+                    error: 'Database error: ' + err.message 
+                });
+            }
+            
+            console.log(`✅ Found ${rows.length} overlays for feedback form`);
+            
+            res.json({
+                success: true,
+                overlays: rows
+            });
+        });
+    });
+});
+
+// ==================== 7. FORM UI CONFIGURATION ====================
+// Get form UI configuration (public)
+router.get('/form-ui', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    const configPath = path.join(__dirname, 'config', 'form-ui.json');
+
+    if (!fs.existsSync(configPath)) {
+      return res.json({});
+    }
+
+    const data = fs.readFileSync(configPath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error loading form UI configuration:', error);
+    res.status(500).json({ error: 'Failed to load form UI configuration' });
+  }
+});
+
+// ==================== 8. UTILITY ENDPOINTS ====================
+// UTILITY ENDPOINTS ====================
 // Test database connection endpoint
 router.get('/test-db', (req, res) => {
         db.get("SELECT TABLE_NAME AS name FROM information_schema.tables WHERE table_schema = DATABASE() LIMIT 1", (err, row) => {
@@ -711,4 +798,39 @@ router.get('/', (req, res) => {
     });
 });
 
+// Get countdown timer setting for photo capture (DONE BY BERNISSA)
+router.get('/countdown-timer', (req, res) => {
+    console.log('⏱️ Fetching countdown timer setting for feedback form...');
+    
+    const query = `
+        SELECT countdown_seconds
+        FROM countdown_management
+        WHERE id = 1
+        LIMIT 1
+    `;
+    
+    db.get(query, [], (err, row) => {
+        if (err) {
+            console.error('❌ Error fetching countdown timer:', err);
+            return res.json({
+                success: true,
+                countdown_seconds: 3
+            });
+        }
+        
+        const seconds = row?.countdown_seconds;
+        const safeSeconds = Number.isInteger(seconds) && seconds >= 0 ? seconds : 3;
+        
+        console.log(`✅ Countdown timer setting: ${safeSeconds} seconds`);
+        
+        res.json({
+            success: true,
+            countdown_seconds: safeSeconds
+        });
+    });
+});
+
 module.exports = router;
+
+//—-//
+
