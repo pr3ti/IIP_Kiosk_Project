@@ -1,4 +1,4 @@
-// kioskServer.js - Kiosk server (Feedback + Leaderboard + Tree) on PORT 3001 (DONE BY BERNISSA)
+// kioskServer.js - Kiosk server (Feedback + Leaderboard + Tree) on PORT 3001
 
 require('dotenv').config();
 const express = require('express');

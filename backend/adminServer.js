@@ -1,4 +1,4 @@
-// adminServer.js - Admin server (Admin UI + Admin API) on PORT 3002 (DONE BY BERNISSA)
+// adminServer.js - Admin server (Admin UI + Admin API) on PORT 3002
 
 require('dotenv').config();
 const express = require('express');
