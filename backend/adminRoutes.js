@@ -95,6 +95,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
+const emailService = require('./emailService');
+const emailConfigStore = require('./emailConfigStore');
 
 // ==================== 1. AUDIT LOGGING FUNCTIONS ====================
 
@@ -3875,7 +3877,148 @@ router.get('/saved-themes/active', auth.requireAuth, (req, res) => {
     });
 });
 
-// ==================== 17. TIMER COUNTDOWN MANAGEMENT ROUTES (DONE BY BERNISSA) ====================
+
+// ==================== 17. FORM UI CONFIGURATION ====================
+// Read + write feedback form UI settings 
+
+const FORM_UI_CONFIG_PATH = path.join(__dirname, 'config', 'form-ui.json');
+
+// GET /api/admin/form-ui
+// Load current form UI configuration
+router.get('/form-ui', auth.requireAuth, (req, res) => {
+  try {
+    if (!fs.existsSync(FORM_UI_CONFIG_PATH)) {
+      return res.json({
+        background: '',
+        landingTitle: '',
+        landingSubtitle: ''
+      });
+    }
+
+    const raw = fs.readFileSync(FORM_UI_CONFIG_PATH, 'utf8');
+    const data = JSON.parse(raw);
+    res.json(data);
+  } catch (error) {
+    console.error('❌ Error reading form-ui.json:', error);
+    res.status(500).json({ success: false, error: 'Failed to load form UI config' });
+  }
+});
+
+// PUT /api/admin/form-ui
+// Save/update form UI configuration
+router.put('/form-ui', auth.requireAuth, (req, res) => {
+  try {
+    const { background, landingTitle, landingSubtitle } = req.body;
+
+    // Basic validation (keeps it safe + prevents weird payloads)
+    if (typeof background !== 'string' || background.length > 300) {
+      return res.status(400).json({ success: false, error: 'Invalid background value' });
+    }
+    if (typeof landingTitle !== 'string' || landingTitle.length > 100) {
+      return res.status(400).json({ success: false, error: 'Invalid landing title' });
+    }
+    if (typeof landingSubtitle !== 'string' || landingSubtitle.length > 200) {
+      return res.status(400).json({ success: false, error: 'Invalid landing subtitle' });
+    }
+
+    const payload = {
+      background: background.trim(),
+      landingTitle: landingTitle.trim(),
+      landingSubtitle: landingSubtitle.trim()
+    };
+
+    // Ensure config folder exists
+    const dir = path.dirname(FORM_UI_CONFIG_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    fs.writeFileSync(FORM_UI_CONFIG_PATH, JSON.stringify(payload, null, 2), 'utf8');
+
+    // Optional: audit log (uses your existing audit logger)
+    if (req.session?.user?.username) {
+      logAudit('FORM_UI_UPDATED', req.session.user.username, 'config', 'form-ui', req);
+    }
+
+    res.json({ success: true, message: 'Form UI settings saved' });
+  } catch (error) {
+    console.error('❌ Error writing form-ui.json:', error);
+    res.status(500).json({ success: false, error: 'Failed to save form UI config' });
+  }
+});
+
+// ==================== 18. EMAIL MANAGEMENT ====================
+// Get/Update SMTP config (Gmail / Outlook / Custom) without restarting server
+
+router.get('/email-config', auth.requireAuth, (req, res) => {
+  try {
+    // Optional: return safe config (no real passwords)
+    const safe = emailConfigStore.getSafeEmailConfig
+      ? emailConfigStore.getSafeEmailConfig()
+      : emailConfigStore.getEmailConfig();
+
+    res.json({ success: true, config: safe });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.put('/email-config', auth.requireAuth, async (req, res) => {
+  try {
+    const incoming = req.body || {};
+
+    // If frontend sends masked password "********" or empty, keep existing password
+    const existing = emailConfigStore.getEmailConfig();
+    const merged = structuredClone(existing);
+
+    merged.provider = incoming.provider ?? merged.provider;
+    merged.senderEmail = incoming.senderEmail ?? merged.senderEmail;
+
+    if (merged.provider === 'gmail') {
+      merged.gmail.user = incoming.gmail?.user ?? merged.gmail.user;
+      const pass = incoming.gmail?.pass;
+      if (pass && pass !== '********') merged.gmail.pass = pass;
+    }
+
+    if (merged.provider === 'outlook') {
+      merged.outlook.user = incoming.outlook?.user ?? merged.outlook.user;
+      const pass = incoming.outlook?.pass;
+      if (pass && pass !== '********') merged.outlook.pass = pass;
+    }
+
+    if (merged.provider === 'custom') {
+      merged.custom.host = incoming.custom?.host ?? merged.custom.host;
+      merged.custom.port = incoming.custom?.port ?? merged.custom.port;
+      merged.custom.secure = incoming.custom?.secure ?? merged.custom.secure;
+      merged.custom.user = incoming.custom?.user ?? merged.custom.user;
+
+      const pass = incoming.custom?.pass;
+      if (pass && pass !== '********') merged.custom.pass = pass;
+    }
+
+    emailConfigStore.saveEmailConfig(merged);
+
+    if (emailService.reloadEmailService) {
+      await emailService.reloadEmailService(); // no restart
+    }
+
+    res.json({ success: true, message: 'Email config saved and reloaded.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/email-config/test', auth.requireAuth, async (req, res) => {
+  try {
+    const to = req.body?.to;
+    if (!to) return res.status(400).json({ success: false, error: 'Missing "to" email.' });
+
+    await emailService.testEmailService(to);
+    res.json({ success: true, message: 'Test email sent successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ==================== 19. TIMER COUNTDOWN MANAGEMENT ROUTES (DONE BY BERNISSA) ====================
 
  // GET /api/admin/countdown-management
  // Returns: { success: true, countdown_seconds: number }
@@ -3963,7 +4106,7 @@ router.put('/countdown-management', auth.requireAuth, (req, res) => {
     });
 });
 
-// ==================== 18. SERVER SCHEDULE MANAGEMENT ROUTES (DONE BY BERNISSA) ====================
+// ==================== 20. SERVER SCHEDULE MANAGEMENT ROUTES (DONE BY BERNISSA) ====================
 
 // SERVER SCHEDULE MANAGEMENT (Config File Based)
 
@@ -4374,5 +4517,6 @@ router.post('/server/stop', auth.requireAuth, (req, res) => {
     });
   });
 });
+
 
 module.exports = router;

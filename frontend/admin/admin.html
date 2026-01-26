@@ -1194,7 +1194,118 @@
                     </div>
                 </div>
                 
-                <!-- Timer Countdown Page (DONE BY BERNISSA) -->
+
+                <!-- Email Management Page (DONE BY NADHIRAH)-->
+                <div id="email-management-page" class="page">
+
+                    <div class="page-header">
+                        <h2>Email Management</h2>
+                        <p>Manage SMTP settings and email configurations</p>
+                    </div>
+
+                    <div class="overlay-section user-section">
+
+                        <div class="section-header">
+                            <h3>SMTP Configuration</h3>
+                            <div class="header-actions">
+                                <button class="btn-secondary" type="button" onclick="loadEmailConfig()">Reset</button>
+                                <button class="btn-primary" type="button" onclick="saveEmailConfig()">Save</button>
+                            </div>
+                        </div>
+
+                        <!-- Provider -->
+                        <div class="form-group">
+                            <label for="email-provider">Provider</label>
+                            <select id="email-provider" onchange="renderEmailFields()">
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook (Office365)</option>
+                                <option value="custom">Custom SMTP</option>
+                            </select>
+                        </div>
+
+                        <!-- Sender Email -->
+                        <div class="form-group">
+                            <label for="sender-email">Sender Email (From)</label>
+                            <input
+                                id="sender-email"
+                                type="email"
+                                placeholder="e.g. noreply@yourdomain.com"
+                            />
+                        </div>
+
+                        <!-- Dynamic Provider Fields -->
+                        <div id="email-fields"></div>
+
+                        <div class="email-divider"></div>
+
+                        <!-- Test Email -->
+                        <div class="form-group">
+                            <label for="email-test-to">Test Email (optional)</label>
+                            <div class="email-test-row">
+                                <input
+                                    id="email-test-to"
+                                    type="email"
+                                    placeholder="Send a test email to..."
+                                />
+                                <button
+                                    class="btn-secondary"
+                                    type="button"
+                                    onclick="sendTestEmail()"
+                                >
+                                    Send Test Email
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div id="email-status" style="margin-top: 12px;"></div>
+                    </div>
+                </div>
+
+                <div id="form-management-page" class="page">
+
+                    <div class="page-header">
+                        <h2>Form Management</h2>
+                        <p>Manage form background, landing title, and subtitle</p>
+                    </div>
+
+                    <!-- OUTER CARD (same as Question Management) -->
+                    <div class="overlay-section user-section">
+
+                        <div class="section-header">
+                            <h3>Form UI Settings</h3>
+                            <div class="header-actions">
+                                <button class="btn-secondary" onclick="loadFormUISettings()">Reset</button>
+                                <button class="btn-primary" onclick="saveFormUISettings()">Save</button>
+                            </div>
+                        </div>
+
+                        <!-- CONTENT MUST STAY INSIDE user-section -->
+                        <div class="form-group">
+                            <label for="fm-bg">Background</label>
+                            <select id="fm-bg">
+                                <option value="linear-gradient(135deg, #f0f4ff 0%, #f8f0ff 50%, #f0f9ff 100%)">
+                                Default Gradient
+                                </option>
+                                <option value="#ffffff">White</option>
+                                <option value="#f1f5f9">Light Gray</option>
+                                <option value="#0f172a">Dark</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fm-title">Landing Title</label>
+                            <input id="fm-title" type="text" maxlength="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fm-subtitle">Landing Subtitle</label>
+                            <input id="fm-subtitle" type="text" maxlength="200">
+                        </div>
+
+                        <div id="fm-status" class="fm-status fm-status--hidden" aria-live="polite"></div>
+                </div>
+
                 <div id="timer-countdown-page" class="page">
                     <div class="page-header">
                         <h2>Timer Countdown</h2>
@@ -1305,7 +1416,6 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h3 class="modal-title">Add New Schedule</h3>
-                            <button class="modal-close" onclick="closeModal('schedule-modal')">&times;</button>
                         </div>
                         <div class="modal-body">
                             <form id="schedule-form" onsubmit="event.preventDefault(); saveSchedule();">
@@ -1406,7 +1516,6 @@
                     </div>
                 </div>
 
-                <!-- Server status modal (DONE BY BERNISSA) -->
                 <div id="server-status-modal" class="modal" style="display: none;">
                     <div class="modal-content" style="max-width: 500px;">
                         <div class="modal-header">
@@ -1443,6 +1552,7 @@
 
                 <!-- Notification container (DONE BY BERNISSA) -->
                 <div id="notification-container"></div>
+            </main>
     <script src="admin.js"></script>
 </body>
 </html>

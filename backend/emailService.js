@@ -1,55 +1,88 @@
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const { getEmailConfig } = require('./emailConfigStore');
 
 // ==================== EMAIL CONFIGURATION ====================
 let emailTransporter;
 let SENDER_EMAIL;
 
-// Initialize email transporter
-function initEmailService() {
-    try {
-        // Use environment variables for security
-        const smtpUser = process.env.SMTP_USER || 'fyptestingg1@gmail.com';
-        const smtpPass = process.env.SMTP_PASS || 'fyatjrlyybhzepxs';
-        
-        console.log('🔧 Initializing email service...');
-        
-        if (!smtpUser || !smtpPass) {
-            console.warn('⚠️ SMTP credentials not configured. Email functionality will be disabled.');
-            return false;
-        }
-        
-        emailTransporter = nodemailer.createTransport({
+// Initialize / reload email transporter from config file
+async function reloadEmailService() {
+    const cfg = getEmailConfig();
+    const provider = (cfg.provider || '').toLowerCase();
+
+    let transporter;
+    let senderEmail;
+
+    if (provider === 'gmail') {
+        const user = cfg.gmail?.user;
+        const pass = cfg.gmail?.pass;
+        if (!user || !pass) throw new Error('Gmail config missing user/pass');
+
+        transporter = nodemailer.createTransport({
             service: 'gmail',
-            auth: {
-                user: smtpUser,
-                pass: smtpPass
-            },
-            tls: {
-                rejectUnauthorized: false
-            }
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false }
         });
-        
-        SENDER_EMAIL = smtpUser;
-        
-        // Verify connection asynchronously
-        emailTransporter.verify((err, success) => {
-            if (err) {
-                console.error('❌ Email transporter error:', err.message);
-                return false;
-            } else {
-                console.log('✅ Email transporter is ready to send emails');
-                return true;
-            }
+
+        senderEmail = cfg.senderEmail || user;
+    } 
+    else if (provider === 'outlook') {
+        const user = cfg.outlook?.user;
+        const pass = cfg.outlook?.pass;
+        if (!user || !pass) throw new Error('Outlook config missing user/pass');
+
+        transporter = nodemailer.createTransport({
+            host: 'smtp.office365.com',
+            port: 587,
+            secure: false,
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false }
         });
-        
-        console.log('📧 Email service initialized with user:', smtpUser);
-        return true;
-    } catch (error) {
-        console.error('❌ Error initializing email service:', error.message);
-        return false;
+
+        senderEmail = cfg.senderEmail || user;
+    } 
+    else if (provider === 'custom') {
+        const host = cfg.custom?.host;
+        const port = cfg.custom?.port;
+        const secure = !!cfg.custom?.secure;
+        const user = cfg.custom?.user;
+        const pass = cfg.custom?.pass;
+
+        if (!host || !port || !user || !pass) {
+            throw new Error('Custom config missing host/port/user/pass');
+        }
+
+        transporter = nodemailer.createTransport({
+            host,
+            port,
+            secure,
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false }
+        });
+
+        senderEmail = cfg.senderEmail || user;
+    } 
+    else {
+        throw new Error(`Unknown provider: ${provider}`);
     }
+
+    emailTransporter = transporter;
+    SENDER_EMAIL = senderEmail;
+
+    console.log(`✅ Email service reloaded using provider: ${provider}`);
+    return true;
+}
+
+// Backward-compatible init (server.js likely calls initEmailService())
+function initEmailService() {
+    reloadEmailService().catch(err => {
+        console.error('❌ Failed to init email service:', err.message);
+        emailTransporter = null;
+        SENDER_EMAIL = null;
+    });
+    return true;
 }
 
 // Send thank you email with photo attachment
@@ -58,12 +91,17 @@ async function sendThankYouEmail(name, email, photoFilename) {
         console.log(`📧 Preparing to send email to ${email}...`);
         
         if (!emailTransporter) {
-            console.error('❌ Email transporter not initialized');
-            return {
-                success: false,
-                error: 'Email transporter not initialized. Please check SMTP configuration.'
-            };
+            try {
+                await reloadEmailService();
+            } catch (e) {
+                console.error('❌ Email transporter not initialized and reload failed:', e.message);
+                return {
+                    success: false,
+                    error: 'Email transporter not initialized. Please check SMTP configuration.'
+                };
+            }
         }
+
         
         if (!email || !email.includes('@')) {
             console.error('❌ Invalid email address:', email);
@@ -310,13 +348,7 @@ async function testEmailService(testEmail = 'test@example.com') {
         
         if (!emailTransporter) {
             console.log('🔄 Initializing email service...');
-            const initialized = initEmailService();
-            if (!initialized) {
-                return {
-                    success: false,
-                    error: 'Failed to initialize email service'
-                };
-            }
+            await reloadEmailService();
         }
         
         // Verify connection
@@ -371,22 +403,18 @@ async function testEmailService(testEmail = 'test@example.com') {
 async function checkEmailService() {
     try {
         if (!emailTransporter) {
-            const initialized = initEmailService();
-            if (!initialized) {
-                return {
-                    available: false,
-                    error: 'Email service not initialized'
-                };
-            }
+            await reloadEmailService();
         }
         
         const isVerified = await emailTransporter.verify();
+        const cfg = getEmailConfig();
         return {
             available: true,
             verified: isVerified,
             sender: SENDER_EMAIL,
-            service: 'gmail'
+            service: cfg.provider
         };
+
     } catch (error) {
         return {
             available: false,
@@ -398,10 +426,9 @@ async function checkEmailService() {
 
 module.exports = {
     initEmailService,
+    reloadEmailService,
     sendThankYouEmail,
     sendEmailAndUpdateFlag,
     testEmailService,
-    checkEmailService,
-    emailTransporter,
-    SENDER_EMAIL
+    checkEmailService
 };

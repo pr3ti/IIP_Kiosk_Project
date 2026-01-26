@@ -143,6 +143,8 @@ function detectDeviceType() {
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    applyFormUIConfig();
+    
     // Check if mobile
     const isMobile = window.innerWidth <= 768;
     
@@ -1532,3 +1534,33 @@ document.addEventListener('touchstart', resetInactivityTimer);
 function viewLeaderboard() {
     window.location.href = '/leaderboard';
 }
+
+// ==================== FORM UI CONFIGURATION ====================
+// Load and apply form UI settings from server config
+
+async function applyFormUIConfig() {
+  try {
+    const response = await fetch('/api/feedback/form-ui');
+    const config = await response.json();
+
+    // Apply background (CSS variable)
+    if (config.background) {
+      document.documentElement.style.setProperty('--form-bg', config.background);
+    }
+
+    // Apply landing page title
+    const titleElement = document.getElementById('form-landing-title');
+    if (titleElement && config.landingTitle) {
+      titleElement.textContent = config.landingTitle;
+    }
+
+    // Apply landing page subtitle
+    const subtitleElement = document.getElementById('form-landing-subtitle');
+    if (subtitleElement && config.landingSubtitle) {
+      subtitleElement.textContent = config.landingSubtitle;
+    }
+  } catch (error) {
+    console.error('Error applying form UI configuration:', error);
+  }
+}
+
