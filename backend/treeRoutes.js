@@ -1,57 +1,103 @@
-// treeRoutes.js
 const express = require('express');
 const router = express.Router();
 
 let db;
 
-// Called from server.js to inject the shared SQLite connection
 function setDatabase(database) {
     db = database;
 }
 
-// TREE GROWING ROUTE
+/**
+ * GET /api/tree
+ * Returns ARRAY of visitors from users table
+ */
 router.get('/', (req, res) => {
     if (!db) {
-        return res.status(500).json({ error: 'Database not initialized' });
+        console.error('❌ TreeRoutes: DB not initialized');
+        return res.status(500).json([]);
     }
 
-    const currentYear = new Date().getFullYear();
-
-    // Query 1: Fetch individual submissions for leaves
-    const leavesSql = `
-        SELECT 
-            u.name, 
-            u.visit_count, 
-            DATE_FORMAT(f.created_at, '%Y-%m-%dT%H:%i:%s') as created_at
-        FROM feedback f
-        JOIN users u ON f.user_id = u.id
-        WHERE YEAR(f.created_at) = ?
-          AND u.name IS NOT NULL
-        ORDER BY f.created_at ASC
+    // 1️⃣ Get all ACTIVE VIP names
+    const vipQuery = `
+        SELECT name
+        FROM vip_management
+        WHERE is_deleted = 0
     `;
 
-    // Query 2: Fetch total count to determine tree stage
-    const countSql = `SELECT COUNT(*) as total FROM feedback WHERE YEAR(created_at) = ?`;
-
-    db.query(leavesSql, [currentYear], (err, leaves) => {
-        if (err) {
-            console.error('Error fetching leaves:', err);
-            return res.status(500).json({ error: 'Database error' });
+    db.all(vipQuery, [], (vipErr, vipRows) => {
+        if (vipErr) {
+            console.error('❌ VIP fetch error:', vipErr);
+            return res.status(500).json([]);
         }
 
-        db.query(countSql, [currentYear], (err, countResult) => {
-            if (err) {
-                console.error('Error fetching count:', err);
-                return res.status(500).json({ error: 'Database error' });
+        // Normalize VIP names for safe matching
+        const vipSet = new Set(
+            vipRows.map(v => (v.name || '').trim().toLowerCase())
+        );
+
+        // 2️⃣ Get all visitors
+        const userQuery = `
+            SELECT
+                name,
+                visit_count,
+                created_at
+            FROM users
+            ORDER BY created_at ASC
+        `;
+
+        db.all(userQuery, [], (userErr, rows) => {
+            if (userErr) {
+                console.error('❌ Tree route DB error:', userErr);
+                return res.status(500).json([]);
             }
 
-            // Return both datasets to the frontend
-            res.json({
-                visitors: leaves,
-                totalSubmissions: countResult[0].total
+            const visitors = rows.map(r => {
+                const name = (r.name || '').trim();
+                return {
+                    name,
+                    visit_count: Number(r.visit_count) || 1,
+                    created_at: r.created_at,
+                    isVip: vipSet.has(name.toLowerCase()) // ✅ REAL VIP CHECK
+                };
             });
+
+            res.json(visitors);
         });
     });
-}); 
+});
 
-module.exports = { router, setDatabase };
+/**
+ * GET /api/tree/vip-names
+ * Returns ACTIVE VIP names from vip_management
+ */
+router.get('/vip-names', (req, res) => {
+    if (!db) {
+        console.error('❌ TreeRoutes: DB not initialized');
+        return res.status(500).json({ success: false, vipNames: [] });
+    }
+
+    const sql = `
+        SELECT name
+        FROM vip_management
+        WHERE is_deleted = 0
+        ORDER BY created_at DESC
+    `;
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+            console.error('❌ VIP names DB error:', err);
+            return res.status(500).json({ success: false, vipNames: [] });
+        }
+
+        const vipNames = (Array.isArray(rows) ? rows : [])
+            .map(r => (r.name || '').trim())
+            .filter(Boolean);
+
+        return res.json({ success: true, vipNames });
+    });
+});
+
+module.exports = {
+    router,
+    setDatabase
+};

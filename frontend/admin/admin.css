@@ -59,6 +59,15 @@ USER MANAGEMENT PAGE STYLES
   - Deleted users section styling (DONE BY PRETI)
   - Badge and button styles for soft delete (DONE BY PRETI)
 
+VIP MANAGEMENT PAGE STYLES
+  - VIP page container and layout (DONE BY ZAH)
+  - VIP card design (distinct from User Management) (DONE BY ZAH)
+  - VIP header, subtext, and add button styling (DONE BY ZAH)
+  - VIP info row and golden leaf indicator pill (DONE BY ZAH)
+  - VIP list grid layout and responsive behavior (DONE BY ZAH)
+  - Individual VIP item styling (name, date, badge) (DONE BY ZAH)
+  - VIP empty / loading state styling (DONE BY ZAH)
+
 AUDIT LOGS PAGE STYLES
   - Audit section and empty states (DONE BY PRETI)
   - Loading spinner (DONE BY PRETI)
@@ -1354,6 +1363,144 @@ body {
     background: #f8fafc !important;
     color: #64748b;
     cursor: not-allowed;
+}
+
+/* ==================== VIP MANAGEMENT PAGE STYLES (DONE BY ZAH) ==================== */
+
+#vip-page {
+    min-height: 100%;
+    padding: 30px;
+}
+
+/* A different look from User Management */
+#vip-page .vip-card {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    padding: 22px;
+    max-width: 900px;
+}
+
+/* Header */
+#vip-page .vip-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+#vip-page .vip-card-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+#vip-page .vip-subtext {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* Add VIP Button (unique) */
+#vip-page .vip-add-btn {
+    border: none;
+    background: #111827;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#vip-page .vip-add-btn:hover {
+    opacity: 0.92;
+}
+
+/* Info row */
+#vip-page .vip-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+#vip-page .vip-info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#vip-page .vip-count {
+    color: #334155;
+    font-size: 13px;
+}
+
+/* VIP list layout */
+#vip-page .vip-list {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 700px) {
+    #vip-page .vip-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* VIP item */
+#vip-page .vip-item {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#vip-page .vip-name {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+#vip-page .vip-date {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+#vip-page .vip-badge {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Empty state */
+#vip-page .vip-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 26px;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
 }
 
 /* ==================== AUDIT LOGS PAGE STYLES ==================== */

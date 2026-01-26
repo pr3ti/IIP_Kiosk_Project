@@ -279,7 +279,19 @@
 //     function updateLeaderboardPaginationControls() - Update leaderboard pagination controls (DONE BY PRETI)
 //     function prevLeaderboardPage()  - Navigate to previous leaderboard page (DONE BY PRETI)
 //     function nextLeaderboardPage()  - Navigate to next leaderboard page (DONE BY PRETI)
-//
+// 
+// 27. VIP MANAGEMENT (DONE BY ZAH)
+//     let vipData                   - Store ACTIVE VIP records only (DONE BY ZAH)
+//     const VIP_API                 - VIP API endpoint helpers (DONE BY ZAH)
+//     function getVipElements()     - Get VIP page DOM elements (DONE BY ZAH)
+//     function escapeHtmlSafe()     - Escape HTML for safe rendering (DONE BY ZAH)
+//     function formatVipDate()      - Format VIP created_at timestamp (DONE BY ZAH)
+//     async function fetchVipJson() - Fetch wrapper for VIP API calls (DONE BY ZAH)
+//     function renderVipList()      - Render VIP list cards in the VIP page (DONE BY ZAH)
+//     async function loadVipData()  - Load ACTIVE VIP data from API and update UI (DONE BY ZAH)
+//     function loadVipManagementData() - Called when opening VIP page via showPage('vip') (DONE BY ZAH)
+//     async function addVip()       - Add VIP name to database and refresh list (DONE BY ZAH)
+
 
 // ==================== 1. GLOBAL VARIABLES & STATE MANAGEMENT ====================
 
@@ -448,7 +460,7 @@ function updateUIForUser(username, role) {
     }
     
     // ADMINISTRATION section: ONLY visible for system_admin
-    // Contains: Overlay Management, Question Management, User Management, Archive, Audit Logs, Data Export
+    // Contains: Overlay Management, Question Management, User Management, VIP Management, Archive, Audit Logs, Data Export
     const adminSection = document.getElementById('admin-section');
     if (role === 'system_admin') {
         if (adminSection) adminSection.style.display = 'block';
@@ -5394,7 +5406,7 @@ function showPage(pageName) {
     const userRole = sessionStorage.getItem('userRole');
     
     // Check if user is trying to access admin pages without system_admin role
-    const adminPages = ['overlay', 'users', 'audit', 'questions', 'archive', 'data-export'];
+    const adminPages = ['overlay', 'users', 'audit', 'questions', 'vip', 'archive', 'data-export'];
     if (adminPages.includes(pageName) && userRole !== 'system_admin') {
         alert('Access denied. System Administrator privileges required.');
         return;
@@ -5438,6 +5450,8 @@ function showPage(pageName) {
         loadOverlayData();
     } else if (pageName === 'users') {
         loadUserManagementData();
+    } else if (pageName === 'vip') {
+        loadVipManagementData();
     } else if (pageName === 'questions') {
         loadQuestionManagementData();
     } else if (pageName === 'audit') {
@@ -8458,3 +8472,173 @@ function nextLeaderboardPage() {
         renderLeaderboardPage();
     }
 }
+
+// ==================== 27. VIP MANAGEMENT (DONE BY ZAH) ====================
+
+// VIP Data (Active only)
+let vipData = [];
+
+// API base (same origin)
+const VIP_API_BASE = "/api/admin";
+
+/*
+    Expected API (ACTIVE ONLY for this UI):
+    GET  /api/admin/vips?status=active
+    POST /api/admin/vips   { name }
+*/
+const VIP_API = {
+    listActive: () => {
+        return `${VIP_API_BASE}/vips?status=active`;
+    },
+    create: () => {
+        return `${VIP_API_BASE}/vips`;
+    }
+};
+
+// DOM helpers (NEW VIP UI)
+function getVipElements() {
+    return {
+        vipPage: document.getElementById("vip-page"),
+        vipList: document.getElementById("vip-list"),
+        vipCount: document.getElementById("vip-count")
+    };
+}
+
+// Safe HTML escape (fallback if global helper not available)
+function escapeHtmlSafe(value) {
+    if (typeof window.escapeHtml === "function") {
+        return window.escapeHtml(value);
+    }
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+// Date formatter
+function formatVipDate(value) {
+    if (!value) return "-";
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+
+    return d.toLocaleString();
+}
+
+// Fetch helper
+async function fetchVipJson(url, options = {}) {
+    const res = await fetch(url, options);
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} - ${text}`);
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+        return {};
+    }
+
+    return res.json();
+}
+
+// Render VIP list (NEW UI)
+function renderVipList() {
+    const { vipList, vipCount } = getVipElements();
+    if (!vipList || !vipCount) return;
+
+    vipCount.textContent = `${vipData.length} VIP(s)`;
+
+    if (!vipData.length) {
+        vipList.innerHTML = `
+            <div class="vip-empty">
+                No VIP names yet.
+            </div>
+        `;
+        return;
+    }
+
+    vipList.innerHTML = vipData.map((vip) => {
+        const name = escapeHtmlSafe(vip.name ?? "");
+        const createdAt = formatVipDate(vip.created_at ?? vip.createdAt);
+
+        return `
+            <div class="vip-item">
+                <div class="vip-item-left">
+                    <div class="vip-name">👑 ${name}</div>
+                    <div class="vip-date">Added: ${createdAt}</div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+// Load VIPs (Active only)
+async function loadVipData() {
+    const { vipList, vipCount } = getVipElements();
+    if (!vipList || !vipCount) return;
+
+    vipCount.textContent = "Loading...";
+    vipList.innerHTML = `
+        <div class="vip-empty">
+            Loading VIPs...
+        </div>
+    `;
+
+    try {
+        const res = await fetchVipJson(VIP_API.listActive());
+
+        // Support formats: [ ... ] OR { vips: [...] } OR { data: [...] }
+        vipData = Array.isArray(res) ? res : (res.vips || res.data || []);
+
+        renderVipList();
+    } catch (err) {
+        console.error("VIP load error:", err);
+        vipCount.textContent = "Error";
+        vipList.innerHTML = `
+            <div class="vip-empty" style="color:#ef4444;">
+                Failed to load VIPs.
+            </div>
+        `;
+    }
+}
+
+// Loader used by showPage('vip')
+function loadVipManagementData() {
+    loadVipData();
+}
+
+window.loadVipManagementData = loadVipManagementData;
+
+// Add VIP (NEW UI)
+async function addVip() {
+    const name = prompt("Enter VIP name (exact match):");
+    if (!name) return;
+
+    const trimmed = name.trim();
+    if (trimmed.length < 2) {
+        alert("VIP name is too short.");
+        return;
+    }
+
+    try {
+        await fetchVipJson(VIP_API.create(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: trimmed })
+        });
+
+        // Refresh list
+        loadVipData();
+    } catch (err) {
+        console.error("Add VIP error:", err);
+        alert("Failed to add VIP.");
+    }
+}
+
+// Expose for HTML onclick
+window.addVip = addVip;
+
