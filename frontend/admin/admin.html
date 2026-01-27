@@ -1382,7 +1382,7 @@
                                 </label>
 
                                 <input type="text" id="timer-countdown-seconds" class="filter-input" min="0" step="1" oninput="validateTimerCountdown()"/>
-                                <p class="text-muted font-size-13">
+                                <p>
                                     Whole numbers only. Use <strong>0</strong> to disable countdown.
                                 </p>
                             </div>
@@ -1472,8 +1472,7 @@
                             <form id="schedule-form" onsubmit="event.preventDefault(); saveSchedule();">
                                 <div class="form-group">
                                     <label for="schedule-name">Schedule Name *</label>
-                                    <input type="text" id="schedule-name" name="schedule-name" 
-                                        placeholder="e.g., Morning Start Schedule" required>
+                                    <input type="text" id="schedule-name" name="schedule-name" placeholder="e.g., Morning Start Schedule" maxlength="50" required>
                                 </div>
                                 
                                 <div class="form-row">

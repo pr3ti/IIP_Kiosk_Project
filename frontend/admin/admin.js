@@ -9009,16 +9009,6 @@ function validateTimerCountdown() {
 let schedulesData = [];
 let currentScheduleId = null;
 
-// Initialize schedule management when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📅 Initializing server schedule management...');
-    
-    // Load schedules if we're on the schedule page
-    if (document.getElementById('server-schedule-page')) {
-        loadSchedules();
-    }
-});
-
 // Schedule loading function
 
 function loadSchedules() {
@@ -9038,12 +9028,12 @@ function loadSchedules() {
             schedulesData = data.schedules;
             renderSchedulesTable(data.schedules);
         } else {
-            showError('#schedules-table-body', 'Failed to load schedules');
+            showNotification('Error loading schedules', 'error');
         }
     })
     .catch(error => {
         console.error('❌ Error loading schedules:', error);
-        showError('#schedules-table-body', 'Error loading schedules');
+        showNotification('Error loading schedules', 'error');
     });
 }
 
@@ -9456,30 +9446,46 @@ function getScheduleTypeBadge(type) {
 
 function formatDaysDisplay(daysString, scheduleType, specificDate) {
     if (scheduleType === 'specific_date' && specificDate) {
-        // Format the date nicely
         const date = new Date(specificDate);
-        return date.toLocaleDateString('en-US', { 
-            weekday: 'short', 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     }
-    
+
     if (scheduleType !== 'weekly' || !daysString) {
         return scheduleType === 'daily' ? 'Everyday' : '-';
     }
-    
+
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const days = daysString.split(',').map(d => parseInt(d.trim()));
-    
-    if (days.length === 7) return 'Everyday';
-    if (days.length === 5 && days.includes(2) && days.includes(3) && 
-        days.includes(4) && days.includes(5) && days.includes(6)) {
+    const days = daysString.split(',').map(d => parseInt(d.trim(), 10));
+
+    if (days.length === 7) {
+        return 'Everyday';
+    }
+
+    if (
+        days.length === 5 &&
+        days.includes(2) &&
+        days.includes(3) &&
+        days.includes(4) &&
+        days.includes(5) &&
+        days.includes(6)
+    ) {
         return 'Weekdays';
     }
-    
-    return days.map(day => dayNames[day - 1] || day).join(', ');
+
+    if (days.length === 2 && days.includes(1) 
+        && days.includes(7)) {
+        return 'Weekend';
+    }
+
+    return days
+        .sort((a, b) => a - b)
+        .map(day => dayNames[day - 1] || day)
+        .join(', ');
 }
 
 function updateFormFields() {
@@ -9735,33 +9741,3 @@ async function addVip() {
 
 // Expose for HTML onclick
 window.addVip = addVip;
-
-// ==================== KIOSK AUTO-RELOAD ON START/STOP ====================
-
-let lastKioskActive = null;
-
-async function watchKioskService() {
-  try {
-    const res = await fetch('/api/admin/kiosk-status', { cache: 'no-store' });
-    const { active } = await res.json();
-
-    // first run: store state only
-    if (lastKioskActive === null) {
-      lastKioskActive = active;
-      return;
-    }
-
-    // state changed => reload
-    if (active !== lastKioskActive) {
-      console.log('🔄 Kiosk state changed, reloading...');
-      location.reload();
-    }
-
-    lastKioskActive = active;
-  } catch (err) {
-    console.error('❌ kiosk-status check failed:', err);
-  }
-}
-
-setInterval(watchKioskService, 3000);
-watchKioskService();

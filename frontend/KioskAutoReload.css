@@ -1,0 +1,39 @@
+/* Offline screen for kiosk */
+
+#kiosk-offline-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647; /* max */
+
+    background: #000000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: Arial, sans-serif;
+    color: #ffffff;
+    text-align: center;
+}
+
+#kiosk-offline-overlay .kiosk-offline-box {
+    max-width: 520px;
+    padding: 24px;
+}
+
+#kiosk-offline-overlay .kiosk-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+#kiosk-offline-overlay .kiosk-subtitle {
+    font-size: 16px;
+    margin-bottom: 14px;
+    opacity: 0.9;
+}
+
+#kiosk-offline-overlay .kiosk-text {
+    font-size: 12px;
+    opacity: 0.7;
+}

@@ -20,6 +20,9 @@ const QRCode = require('qrcode');
 const app = express();
 const PORT = 3001;
 
+const serverBootId = Date.now().toString(); // DONE BY BERNISSA
+const sseClients = new Set(); // DONE BY BERNISSA
+
 // ==================== NETWORK INTERFACE FUNCTIONS ====================
 
 function getAllNetworkIPs() {
@@ -160,6 +163,36 @@ app.use('/assets', express.static(path.join(__dirname, '../assets')));
 // Wire DB into tree routes
 setTreeDatabase(db);
 
+// Auto reload API routes (DONE BY BERNISSA)
+app.get('/api/server-status', (req, res) => {
+    res.json({
+        ok: true,
+        bootId: serverBootId,
+        startedAt: new Date(Number(serverBootId)).toISOString(),
+    });
+});
+
+app.get('/api/reload-stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    res.write(`event: boot\ndata: ${serverBootId}\n\n`);
+    sseClients.add(res);
+
+    req.on('close', () => {
+        sseClients.delete(res);
+    });
+});
+
+function broadcastBoot() {
+    for (const res of sseClients) {
+        try {
+            res.write(`event: boot\ndata: ${serverBootId}\n\n`);
+        } catch {}
+    }
+}
+
 // ==================== API ROUTES (KIOSK) ====================
 
 app.use('/api/feedback', feedbackRoutes);
@@ -283,12 +316,18 @@ function printServerInfo(isHttps) {
 }
 
 function startServer() {
-  if (sslOptions) {
-    const server = https.createServer(sslOptions, app);
-    server.listen(PORT, localIP, () => printServerInfo(true));
-  } else {
-    app.listen(PORT, localIP, () => printServerInfo(false));
-  }
+    if (sslOptions) {
+        const server = https.createServer(sslOptions, app);
+        server.listen(PORT, localIP, () => {
+            printServerInfo(true);
+            broadcastBoot();
+        });
+    } else {
+        app.listen(PORT, localIP, () => {
+            printServerInfo(false);
+            broadcastBoot();
+        });
+    }
 }
 
 // Initialize email service at startup
