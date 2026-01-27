@@ -1487,15 +1487,19 @@ body {
 #vip-page {
     min-height: 100%;
     padding: 30px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* A different look from User Management */
 #vip-page .vip-card {
     background: #ffffff;
     border-radius: 18px;
     border: 1px solid #e5e7eb;
     padding: 22px;
-    max-width: 900px;
+
+    width: 100%;         
+    max-width: none;      
+    box-sizing: border-box;
 }
 
 /* Header */
@@ -1619,6 +1623,7 @@ body {
     border: 1px dashed #cbd5e1;
     border-radius: 14px;
 }
+
 
 /* ==================== AUDIT LOGS PAGE STYLES ==================== */
 

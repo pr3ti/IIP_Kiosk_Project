@@ -8,9 +8,9 @@
 //   - init()                           - Initialize tree and load data
 //   - loadTreeImage()                  - Load tree images with promises
 //   - normalizeName()                  - Normalize names for VIP matching
-//   - fetchVipNames()                  - Fetch ACTIVE VIP names from API
-//   - isVipName()                      - Check if a visitor name is VIP
-//   - fetchVisitorData()               - Fetch visitor data from API
+//   - fetchVipNames()                  - Fetch VIP names from API (/api/tree/vip-names)
+//   - isVipName()                      - Check if a visitor name is VIP (using vipNames Set)
+//   - fetchVisitorData()               - Fetch visitor data from API (/api/tree)
 //
 // TREE VISUALIZATION
 //   - createLeaves()                   - Create leaf elements for visitors

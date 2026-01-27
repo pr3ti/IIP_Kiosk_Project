@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS admin_users;
 DROP TABLE IF EXISTS audit_logs;
 DROP TABLE IF EXISTS overlays;
 DROP TABLE IF EXISTS countdown_management;
+DROP TABLE IF EXISTS vip_management;
 
 -- ============================================================
 -- USERS TABLE (DONE BY PRETI)
@@ -208,6 +209,22 @@ CREATE TABLE countdown_management (
 INSERT INTO countdown_management (id, countdown_seconds, updated_by)
 VALUES (1, 3, 'system')
 ON DUPLICATE KEY UPDATE countdown_seconds = countdown_seconds;
+
+-- ============================================================
+-- VIP MANAGEMENT TABLE (DONE BY ZAH)
+-- ============================================================
+-- Stores VIP names that will appear as GOLDEN LEAF in the tree
+
+CREATE TABLE vip_management (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Generated lowercase version for case-insensitive uniqueness
+    name_lower VARCHAR(255) GENERATED ALWAYS AS (LOWER(name)) STORED,
+    -- Prevent duplicate VIP names (case-insensitive)
+    UNIQUE KEY uniq_vip_name (name_lower),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
 -- INSERT INITIAL DATA (DONE BY PRETI)
