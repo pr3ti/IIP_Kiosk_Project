@@ -9577,16 +9577,12 @@ const VIP_API_BASE = "/api/admin";
 
 /*
     Expected API (ACTIVE ONLY for this UI):
-    GET  /api/admin/vips?status=active
+    GET  /api/admin/vips
     POST /api/admin/vips   { name }
 */
 const VIP_API = {
-    listActive: () => {
-        return `${VIP_API_BASE}/vips?status=active`;
-    },
-    create: () => {
-        return `${VIP_API_BASE}/vips`;
-    }
+    list: () => `${VIP_API_BASE}/vips`,
+    create: () => `${VIP_API_BASE}/vips`
 };
 
 // DOM helpers (NEW VIP UI)
@@ -9657,6 +9653,8 @@ function renderVipList() {
 
     vipList.innerHTML = vipData.map((vip) => {
         const name = escapeHtmlSafe(vip.name ?? "");
+
+        // Support different backend field names
         const createdAt = formatVipDate(vip.created_at ?? vip.createdAt);
 
         return `
@@ -9670,7 +9668,7 @@ function renderVipList() {
     }).join("");
 }
 
-// Load VIPs (Active only)
+// Load VIPs 
 async function loadVipData() {
     const { vipList, vipCount } = getVipElements();
     if (!vipList || !vipCount) return;
@@ -9683,7 +9681,7 @@ async function loadVipData() {
     `;
 
     try {
-        const res = await fetchVipJson(VIP_API.listActive());
+        const res = await fetchVipJson(VIP_API.list());
 
         // Support formats: [ ... ] OR { vips: [...] } OR { data: [...] }
         vipData = Array.isArray(res) ? res : (res.vips || res.data || []);
@@ -9729,12 +9727,19 @@ async function addVip() {
         loadVipData();
     } catch (err) {
         console.error("Add VIP error:", err);
-        alert("Failed to add VIP.");
+
+        // If backend returns duplicate key, show nicer message
+        if (String(err.message).includes("409")) {
+            alert("VIP already exists.");
+        } else {
+            alert("Failed to add VIP.");
+        }
     }
 }
 
 // Expose for HTML onclick
 window.addVip = addVip;
+
 
 // ==================== KIOSK AUTO-RELOAD ON START/STOP ====================
 

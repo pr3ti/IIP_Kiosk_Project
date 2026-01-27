@@ -10,6 +10,7 @@ function setDatabase(database) {
 /**
  * GET /api/tree
  * Returns ARRAY of visitors from users table
+ * Adds isVip based on vip_management table (case-insensitive)
  */
 router.get('/', (req, res) => {
     if (!db) {
@@ -17,11 +18,10 @@ router.get('/', (req, res) => {
         return res.status(500).json([]);
     }
 
-    // 1️⃣ Get all ACTIVE VIP names
+    // 1) Get ALL VIP names (no is_deleted column anymore)
     const vipQuery = `
         SELECT name
         FROM vip_management
-        WHERE is_deleted = 0
     `;
 
     db.all(vipQuery, [], (vipErr, vipRows) => {
@@ -30,12 +30,11 @@ router.get('/', (req, res) => {
             return res.status(500).json([]);
         }
 
-        // Normalize VIP names for safe matching
         const vipSet = new Set(
-            vipRows.map(v => (v.name || '').trim().toLowerCase())
+            (vipRows || []).map(v => String(v.name || '').trim().toLowerCase()).filter(Boolean)
         );
 
-        // 2️⃣ Get all visitors
+        // 2) Get all visitors
         const userQuery = `
             SELECT
                 name,
@@ -51,24 +50,24 @@ router.get('/', (req, res) => {
                 return res.status(500).json([]);
             }
 
-            const visitors = rows.map(r => {
-                const name = (r.name || '').trim();
+            const visitors = (rows || []).map(r => {
+                const name = String(r.name || '').trim();
                 return {
                     name,
                     visit_count: Number(r.visit_count) || 1,
                     created_at: r.created_at,
-                    isVip: vipSet.has(name.toLowerCase()) // ✅ REAL VIP CHECK
+                    isVip: vipSet.has(name.toLowerCase())
                 };
             });
 
-            res.json(visitors);
+            return res.json(visitors);
         });
     });
 });
 
 /**
  * GET /api/tree/vip-names
- * Returns ACTIVE VIP names from vip_management
+ * Returns VIP names from vip_management
  */
 router.get('/vip-names', (req, res) => {
     if (!db) {
@@ -79,18 +78,18 @@ router.get('/vip-names', (req, res) => {
     const sql = `
         SELECT name
         FROM vip_management
-        WHERE is_deleted = 0
         ORDER BY created_at DESC
     `;
 
-    db.query(sql, (err, rows) => {
+    // IMPORTANT: db.query needs (sql, params, callback)
+    db.query(sql, [], (err, rows) => {
         if (err) {
             console.error('❌ VIP names DB error:', err);
             return res.status(500).json({ success: false, vipNames: [] });
         }
 
         const vipNames = (Array.isArray(rows) ? rows : [])
-            .map(r => (r.name || '').trim())
+            .map(r => String(r.name || '').trim())
             .filter(Boolean);
 
         return res.json({ success: true, vipNames });
