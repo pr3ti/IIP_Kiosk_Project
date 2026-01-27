@@ -252,7 +252,7 @@ app.get('/feedback', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/feedback/feedback.html'));
 });
 
-app.get('/leaderboard', (req, res) => {
+app.get('/pledgeboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/Leaderboard/Leaderboard.html'));
 });
 
@@ -274,7 +274,7 @@ function printServerInfo(isHttps) {
   console.log(`📡 IP: ${localIP}`);
   console.log(`🚀 URL: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}`);
   console.log(`📊 Feedback: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/feedback`);
-  console.log(`🏆 Leaderboard: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/leaderboard`);
+  console.log(`🏆 Pledgeboard: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/pledgeboard`);
   console.log(`🌳 Tree: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/tree`);
   console.log(`📅 Started: ${new Date().toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}`);
   console.log('============================================\n');
