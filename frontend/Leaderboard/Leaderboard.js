@@ -51,7 +51,7 @@ let userIdentifier = '';
 // ==================== 2. INITIALIZATION ====================
 // Initialize leaderboard when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🏆 Leaderboard page loaded');
+    console.log('🏆 Pledgeboard page loaded');
     
     // Generate or retrieve user identifier for tracking likes
     userIdentifier = getUserIdentifier();
@@ -64,12 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Generate a unique identifier for the user to track likes
 function getUserIdentifier() {
     // Try to get existing identifier from sessionStorage
-    let identifier = sessionStorage.getItem('leaderboard_user_id');
+    let identifier = sessionStorage.getItem('pledgeboard_user_id');
     
     if (!identifier) {
         // Generate new identifier using timestamp and random string
         identifier = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        sessionStorage.setItem('leaderboard_user_id', identifier);
+        sessionStorage.setItem('pledgeboard_user_id', identifier);
     }
     
     console.log('👤 User identifier:', identifier);
@@ -80,7 +80,7 @@ function getUserIdentifier() {
 // Fetch all pledges from the server and render them
 async function loadLeaderboard() {
     try {
-        console.log('📡 Fetching leaderboard data...');
+        console.log('📡 Fetching pledgeboard data...');
         
         const response = await fetch('/api/leaderboard/pledges');
         const data = await response.json();
@@ -99,11 +99,11 @@ async function loadLeaderboard() {
                 renderLeaderboard();
             }
         } else {
-            console.error('❌ Failed to load leaderboard:', data.error);
-            showError('Failed to load leaderboard data');
+            console.error('❌ Failed to load pledgeboard:', data.error);
+            showError('Failed to load pledgeboard data');
         }
     } catch (error) {
-        console.error('❌ Error loading leaderboard:', error);
+        console.error('❌ Error loading pledgeboard:', error);
         showError('Failed to connect to server');
     }
 }
