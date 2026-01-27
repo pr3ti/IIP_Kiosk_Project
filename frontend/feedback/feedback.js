@@ -86,7 +86,7 @@
 //     document.addEventListener('touchstart') - Reset inactivity timer (DONE BY PRETI)
 //
 // 11. LEADERBOARD NAVIGATION
-//     function viewLeaderboard()       - Navigate to leaderboard page (DONE BY PRETI)
+//     function viewPledgeboard()       - Navigate to pledgeboard page (DONE BY PRETI)
 
 //
 // ==================== 1. GLOBAL VARIABLES & CONSTANTS ====================
@@ -1549,8 +1549,8 @@ document.addEventListener('touchstart', resetInactivityTimer);
 // ==================== 11. LEADERBOARD NAVIGATION ====================
 
 // Navigate to leaderboard page
-function viewLeaderboard() {
-    window.location.href = '/leaderboard';
+function viewPledgeboard() {
+    window.location.href = '/pledgeboard';
 }
 
 // ==================== FORM UI CONFIGURATION ====================
