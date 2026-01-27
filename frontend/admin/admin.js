@@ -5791,7 +5791,7 @@ const themeConfig = {
         { id: 'dashboard-page', name: 'Dashboard', icon: '📊' },
         { id: 'feedback-data-page', name: 'Feedback Data', icon: '💬' },
         { id: 'digital-tree-page', name: 'Digital Tree', icon: '🌳' },
-        { id: 'leaderboard-page', name: 'Leaderboard', icon: '🏆' },
+        { id: 'leaderboard-page', name: 'Pledgeboard', icon: '🏆' },
         { id: 'overlay-page', name: 'Overlay Management', icon: '🎨', requiredRole: 'system_admin' },
         { id: 'questions-page', name: 'Question Management', icon: '❓', requiredRole: 'system_admin' },
         { id: 'users-page', name: 'User Management', icon: '👥', requiredRole: 'system_admin' },
@@ -8424,7 +8424,7 @@ async function loadAdminLeaderboard() {
             leaderboardCurrentPage = 1;
             renderLeaderboardPage();
         } else {
-            console.error('Failed to load leaderboard:', data.message);
+            console.error('Failed to load pledgeboard:', data.message);
         }
     } catch (error) {
         console.error('Error loading leaderboard:', error);
