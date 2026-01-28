@@ -250,4 +250,3 @@ SELECT COUNT(*) as overlays FROM overlays;
 SELECT COUNT(*) as questions FROM questions;
 SELECT COUNT(*) as saved_themes FROM saved_themes;
 SELECT COUNT(*) as pledge_likes FROM pledge_likes;
-SELECT COUNT(*) as countdown_management FROM countdown_management;

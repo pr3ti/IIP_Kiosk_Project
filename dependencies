@@ -13,3 +13,4 @@ npm install mysql2
 npm install dotenv
 npm install bcrypt
 -----------------------
+npm install bad-words
