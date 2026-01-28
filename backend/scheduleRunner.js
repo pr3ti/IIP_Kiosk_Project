@@ -1,4 +1,4 @@
-// scheduleRunner.js - Config-based schedule checker (DONE BY BERNISSA)
+// Config-based schedule checker (DONE BY BERNISSA)
 // Runs every minute via cron to check if kiosk should be running
 
 const fs = require('fs');
@@ -30,9 +30,7 @@ function execCmd(cmd) {
     });
 }
 
-/**
- * Load schedules from JSON config file
- */
+// Load schedules from JSON config file
 function loadSchedules() {
     try {
         if (!fs.existsSync(CONFIG_PATH)) {
@@ -48,18 +46,15 @@ function loadSchedules() {
     }
 }
 
-/**
- * Decision logic:
- * - If NO active schedules exist => kiosk should run by default
- * - If active schedules exist => kiosk runs only when one matches now
- */
+// If no active schedules exist, kiosk should run by default
+// If active schedules exist, kiosk runs only when one matches now
 function getKioskRunDecision() {
     const config = loadSchedules();
     const now = new Date();
 
     const activeSchedules = (config.schedules || []).filter(s => s.is_active);
 
-    // ✅ If there are NO active schedules, kiosk should ALWAYS run
+    // If there are no active schedules, kiosk should always run
     if (activeSchedules.length === 0) {
         log('ℹ️ No active schedules found — kiosk should run by default');
         return { shouldRun: true, hasActiveSchedules: false };
@@ -69,8 +64,7 @@ function getKioskRunDecision() {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentTime = currentHour * 60 + currentMinute; // minutes since midnight
-
-    const currentDayOfWeek = now.getDay() + 1; // 1=Sunday, 7=Saturday (MySQL format)
+    const currentDayOfWeek = now.getDay() + 1; // 1=Sunday, 7=Saturday
     const currentDate = now.toLocaleDateString('sv-SE'); // YYYY-MM-DD
 
     log(`🔍 Checking ACTIVE schedules at ${now.toLocaleTimeString()}`);
@@ -79,7 +73,6 @@ function getKioskRunDecision() {
         // Parse start and end times
         const [startHour, startMin] = schedule.start_time.split(':').map(Number);
         const [endHour, endMin] = schedule.end_time.split(':').map(Number);
-
         const startTime = startHour * 60 + startMin;
         const endTime = endHour * 60 + endMin;
 
@@ -104,7 +97,7 @@ function getKioskRunDecision() {
         if (schedule.schedule_type === 'daily') {
             matchesSchedule = true;
         } else if (schedule.schedule_type === 'weekly') {
-            // days_of_week is comma-separated: "1,3,5" for Sun,Tue,Thu
+            // days_of_week is separated by comma like "1,3,5" for Sun,Tue,Thu
             const activeDays = schedule.days_of_week?.split(',').map(Number) || [];
             matchesSchedule = activeDays.includes(currentDayOfWeek);
         } else if (schedule.schedule_type === 'specific_date') {

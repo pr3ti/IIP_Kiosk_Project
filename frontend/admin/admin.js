@@ -8851,7 +8851,7 @@ async function loadTimerCountdownSetting() {
         return;
     }
 
-    // Handle REFRESH button state
+    // Handle refresh button state
     refreshBtn.disabled = true;
     refreshBtn.textContent = '⏳ Loading...';
 
@@ -8898,7 +8898,7 @@ async function loadTimerCountdownSetting() {
         input.dataset.originalValue = "3";
         validateTimerCountdown();
     } finally {
-        // Restore REFRESH button to normal
+        // Restore Refresh button to normal
         refreshBtn.disabled = false;
         refreshBtn.textContent = '🔄 Refresh';
         
@@ -9504,8 +9504,6 @@ function updateFormFields() {
     }
 }
 
-// Helper functions
-
 function showNotification(message, type = 'info') {
     // Remove any existing notification
     const existingNotification = document.querySelector('.notification');
@@ -9557,9 +9555,7 @@ function closeModal(modalId) {
     }
 }
 
-// Initialisation
-
-// Export functions for use in other modules
+// Export functions
 window.serverScheduleManager = {
     loadSchedules,
     showAddScheduleModal,

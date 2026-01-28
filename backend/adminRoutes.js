@@ -4339,7 +4339,7 @@ function normalizeScheduleName(name) {
         .replace(/\s+/g, '');
 }
 
-// Collapse whitespace for storing/display
+// Collapse whitespace for storing and display
 // Example: "  test     3  " -> "test 3"
 function collapseScheduleName(name) {
     return String(name || '')
@@ -4458,7 +4458,7 @@ router.post('/server-schedules', auth.requireAuth, (req, res) => {
     // Collapse for storage/display so HTML shows what is stored
     const storedScheduleName = collapseScheduleName(schedule_name);
 
-    // Duplicate key for comparison only
+    // Normalized name for comparison only
     const newKey = normalizeScheduleName(storedScheduleName);
     const displayName = storedScheduleName;
 
@@ -4484,7 +4484,7 @@ router.post('/server-schedules', auth.requireAuth, (req, res) => {
             });
         }
 
-        // Create new schedule (store collapsed version)
+        // Create new schedule (store collapsed schedule name)
         const newSchedule = {
             id: Date.now(), // ID generation
             schedule_name: storedScheduleName,
@@ -4556,7 +4556,6 @@ router.put('/server-schedules/:id', auth.requireAuth, (req, res) => {
 
             const newKey = normalizeScheduleName(storedScheduleName);
             const currentKey = normalizeScheduleName(currentSchedule.schedule_name);
-            const displayName = storedScheduleName;
 
             if (!newKey) {
                 return res.status(400).json({
@@ -4579,7 +4578,7 @@ router.put('/server-schedules/:id', auth.requireAuth, (req, res) => {
             }
         }
 
-        // Update schedule (store collapsed schedule_name if provided)
+        // Update schedule (stores collapsed schedule name)
         config.schedules[scheduleIndex] = {
             ...currentSchedule,
             schedule_name: schedule_name !== undefined

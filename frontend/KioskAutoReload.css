@@ -4,13 +4,10 @@
     position: fixed;
     inset: 0;
     z-index: 2147483647; /* max */
-
     background: #000000;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     font-family: Arial, sans-serif;
     color: #ffffff;
     text-align: center;
