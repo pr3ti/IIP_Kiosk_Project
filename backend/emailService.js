@@ -86,7 +86,7 @@ function initEmailService() {
 }
 
 // Send thank you email with photo attachment
-async function sendThankYouEmail(name, email, photoFilename) {
+async function sendThankYouEmail(name, email, photoFilename, pledgeText) {
     try {
         console.log(`📧 Preparing to send email to ${email}...`);
         
@@ -173,6 +173,9 @@ Dear ${name},
 Thank you for taking the time to visit our ESG Experience Centre and sharing your feedback.
 Attached below is your commemorative photo from your visit.
 
+Your pledge:
+"${pledgeText || '—'}"
+
 We hope your experience has inspired you to take meaningful steps towards sustainability.
 
 Warm regards,
@@ -181,6 +184,26 @@ Republic Polytechnic
 
 This is an automated email sent from the RP ESG kiosk system. Please do not reply to this message.
         `;
+
+        // Pledge text
+        const safePledgeText = pledgeText
+  ? pledgeText.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+  : '';
+
+        const pledgeHtml = pledgeText
+  ? `<p style="
+        font-size:14px;
+        color:#444;
+        margin-top:14px;
+        font-style:italic;
+        text-align:center;
+      ">
+        &ldquo;${safePledgeText}&rdquo;
+     </p>`
+  : '';
+
 
         // HTML email template
         const htmlBody = `
@@ -209,6 +232,7 @@ This is an automated email sent from the RP ESG kiosk system. Please do not repl
                 <div style="text-align:center; margin:24px 0; padding:16px; background:#f9f9f9; border-radius:4px;">
                     <p style="font-size:13px; color:#666; margin:0 0 12px 0; font-weight:600;">Your ESG Centre Memory</p>
                     <img src="cid:visit_photo" alt="Your RP ESG Centre memory" style="max-width:100%; height:auto; border-radius:4px; border:1px solid #ddd; max-height:400px;" />
+                    ${pledgeHtml}
                 </div>
 
                 <p style="font-size:13px; color:#555; line-height:1.5; margin:0 0 16px 0;">
@@ -276,7 +300,7 @@ This is an automated email sent from the RP ESG kiosk system. Please do not repl
 }
 
 // Send email and update database flag
-async function sendEmailAndUpdateFlag(db, name, email, photoFilename) {
+async function sendEmailAndUpdateFlag(db, name, email, photoFilename, pledgeText) {
     try {
         console.log(`📧 Starting email process for ${email} with photo ${photoFilename}`);
         
@@ -288,7 +312,7 @@ async function sendEmailAndUpdateFlag(db, name, email, photoFilename) {
             };
         }
         
-        const result = await sendThankYouEmail(name, email, photoFilename);
+        const result = await sendThankYouEmail(name, email, photoFilename, pledgeText);
         
         if (result.success) {
             // Update email_sent flag in database
