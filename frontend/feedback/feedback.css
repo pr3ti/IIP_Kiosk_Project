@@ -282,6 +282,52 @@ h1 {
     line-height: 1.6;
 }
 
+/* Pledge examples */
+.pledge-examples {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.examples-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0369a1;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.examples-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.examples-list li {
+    font-size: 15px;
+    color: #0c4a6e;
+    padding: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.examples-list li::before {
+    content: '•';
+    position: absolute;
+    left: 8px;
+    color: #0284c7;
+    font-size: 18px;
+    font-weight: bold;
+}
+
 /* Retention options grid */
 .retention-options {
     display: grid;
