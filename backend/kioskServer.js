@@ -1,4 +1,5 @@
 // DONE BY PRETI
+// Modified: Now runs on port 3003 (behind gateway on 3001)
 
 require('dotenv').config();
 const express = require('express');
@@ -18,7 +19,7 @@ const dataRetentionCleanup = require('./dataRetentionCleanup');
 const QRCode = require('qrcode');
 
 const app = express();
-const PORT = 3001;
+const PORT = 3003; // CHANGED: Now runs on 3003 (behind gateway on 3001)
 
 // ==================== NETWORK INTERFACE FUNCTIONS ====================
 
@@ -97,6 +98,7 @@ const interfaceName = getInterfaceForIP(localIP);
 
 // ==================== SSL CERTIFICATE CONFIGURATION ====================
 
+// NOTE: SSL is handled by gateway server, but we keep this for direct access if needed
 const certsDir = path.join(__dirname, 'certs');
 const certPath = path.join(certsDir, 'selfsigned.pem');
 const keyPath = path.join(certsDir, 'selfsigned.key');
@@ -191,11 +193,12 @@ app.get('/api/server-info', (req, res) => {
   });
 });
 
-// QR code (for feedback URL)
+// QR code (for feedback URL) - Now generates for gateway port 3001
 app.get('/api/generate-qr', async (req, res) => {
   try {
     const protocol = sslOptions ? 'https' : 'http';
-    const url = `${protocol}://${localIP}:${PORT}/feedback`;
+    // CHANGED: Generate QR for gateway port 3001
+    const url = `${protocol}://${localIP}:3001/feedback`;
 
     const qrSvg = await QRCode.toString(url, {
       type: 'svg',
@@ -205,7 +208,7 @@ app.get('/api/generate-qr', async (req, res) => {
       color: { dark: '#000000', light: '#ffffff' },
     });
 
-    res.json({ success: true, qrSvg, url, ip: localIP, interface: interfaceName, port: PORT });
+    res.json({ success: true, qrSvg, url, ip: localIP, interface: interfaceName, port: 3001 });
   } catch (error) {
     console.error('Error generating QR code:', error);
     res.status(500).json({ success: false, error: 'Failed to generate QR code' });
@@ -268,27 +271,23 @@ app.get('/', (req, res) => {
 
 function printServerInfo(isHttps) {
   console.log('\n🌐 ============================================');
-  console.log('   KIOSK SERVER (Feedback/Leaderboard/Tree)');
+  console.log('   KIOSK SERVER (Schedule-Controlled)');
   console.log('============================================');
   console.log(`📡 Interface: ${interfaceName}`);
   console.log(`📡 IP: ${localIP}`);
-  console.log(`🚀 URL: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}`);
-  console.log(`📊 Feedback: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/feedback`);
-  console.log(`🏆 Pledgeboard: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/pledgeboard`);
-  console.log(`🌳 Tree: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/tree`);
+  console.log(`🔌 Internal Port: ${PORT} (proxied through gateway on 3001)`);
+  console.log(`📊 Direct Access: http://localhost:${PORT}/feedback`);
   console.log(`📅 Started: ${new Date().toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}`);
+  console.log('============================================');
+  console.log('💡 Users access via gateway: https://${localIP}:3001');
   console.log('============================================\n');
 
   dataRetentionCleanup.initializeCleanup();
 }
 
 function startServer() {
-  if (sslOptions) {
-    const server = https.createServer(sslOptions, app);
-    server.listen(PORT, localIP, () => printServerInfo(true));
-  } else {
-    app.listen(PORT, localIP, () => printServerInfo(false));
-  }
+  // For simplicity, run kiosk server on HTTP (gateway handles SSL)
+  app.listen(PORT, 'localhost', () => printServerInfo(false));
 }
 
 // Initialize email service at startup

@@ -1357,7 +1357,7 @@
                         <div id="fm-status" class="fm-status fm-status--hidden" aria-live="polite"></div>
                 </div>
                 </div>
-
+                <!-- Timer Countdown Page (DONE BY BERNISSA) -->
                 <div id="timer-countdown-page" class="page">
                     <div class="page-header">
                         <h2>Timer Countdown</h2>
@@ -1442,22 +1442,55 @@
                             </table>
                         </div>
 
-                        <!-- Quick actions (DONE BY BERNISSA) -->
+                        <!-- Server control mode (DONE BY BERNISSA) -->
+                        <div class="server-mode-control">
+                            <h4>Server Control Mode</h4>
+                            <div class="mode-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="auto-mode-toggle" onchange="toggleServerMode()" checked>
+                                    <span class="slider"></span>
+                                </label>
+                                <div class="mode-info">
+                                    <span id="mode-status" class="mode-auto">🤖 AUTO MODE</span>
+                                    <p id="mode-description">Schedules control the server automatically</p>
+                                </div>
+                            </div>
+                            <div class="status-indicator" id="server-status-indicator">
+                                <span class="status-loading">⏳ Checking status...</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick actions -->
                         <div class="quick-actions">
                             <h4>Quick Actions</h4>
-                            <div class="action-buttons">
-                                <button class="btn-secondary" onclick="enableAllSchedules()">
-                                    ✅ Enable All
-                                </button>
-                                <button class="btn-secondary" onclick="disableAllSchedules()">
-                                    ⏸️ Disable All
-                                </button>
-                                <button class="btn-secondary" onclick="startServer()">
-                                    ▶️ Start Server
-                                </button>
-                                <button class="btn-danger" onclick="stopServer()">
-                                    ⏹️ Stop Server
-                                </button>
+                            
+                            <!-- Schedule control buttons -->
+                            <div class="action-section">
+                                <p class="section-label">Schedule Control:</p>
+                                <div class="action-buttons">
+                                    <button class="btn-secondary" onclick="enableAllSchedules()">
+                                        ✅ Enable All Schedules
+                                    </button>
+                                    <button class="btn-secondary" onclick="disableAllSchedules()">
+                                        ⏸️ Disable All Schedules
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Server control buttons -->
+                            <div class="action-section">
+                                <p class="section-label">Manual Server Control:</p>
+                                <div class="action-buttons">
+                                    <button class="btn-secondary" onclick="startServer()" id="start-btn" disabled>
+                                        ▶️ Start Server
+                                    </button>
+                                    <button class="btn-danger" onclick="stopServer()" id="stop-btn" disabled>
+                                        ⏹️ Stop Server
+                                    </button>
+                                </div>
+                                <p class="mode-hint" id="mode-hint">
+                                    ⚠️ Switch to MANUAL MODE to use Start/Stop buttons
+                                </p>
                             </div>
                         </div>
                     </div>

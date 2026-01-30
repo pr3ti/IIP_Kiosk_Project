@@ -3916,13 +3916,182 @@ input[type="color"]::-webkit-color-swatch {
     color: #64748b;
 }
 
+/* ==================== SERVER CONTROL MODE (DONE BY BERNISSA) ==================== */
+
+.server-mode-control {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.server-mode-control h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mode-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+/* Toggle switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #FF6B6B;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Mode info */
+.mode-info {
+    flex: 1;
+}
+
+.mode-info #mode-status {
+    display: block;
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.mode-auto {
+    color: #4CAF50;
+}
+
+.mode-manual {
+    color: #FF6B6B;
+}
+
+.mode-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* Status indicator */
+.status-indicator {
+    padding: 12px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 14px;
+}
+
+.status-indicator .status-running {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.status-indicator .status-stopped {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.status-indicator .status-loading {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.status-indicator .status-error {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* ==================== QUICK ACTIONS ==================== */
+
 .quick-actions {
-    margin-top: 30px;
-    padding: 25px;
+    margin-top: 20px;
+    padding: 20px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
 }
 
 .quick-actions h4 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.action-section {
     margin-bottom: 20px;
+}
+
+.action-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin: 0 0 10px 0;
 }
 
 .action-buttons {
@@ -3931,7 +4100,31 @@ input[type="color"]::-webkit-color-swatch {
     flex-wrap: wrap;
 }
 
-/* Status badges (used in table + server status modal) */
+.action-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    border-color: #dee2e6 !important;
+}
+
+.action-buttons button:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.mode-hint {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #004085;
+    line-height: 1.4;
+}
+
+/* Status badges */
 .status-badge {
     padding: 4px 12px;
     border-radius: 20px;
@@ -4184,6 +4377,12 @@ input[type="color"]::-webkit-color-swatch {
     border-left-color: #3b82f6;
 }
 
+.notification-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-left-color: #f59e0b;
+}
+
 .notification-content {
     display: flex;
     align-items: center;
@@ -4208,4 +4407,3 @@ input[type="color"]::-webkit-color-swatch {
 .notification-close:hover {
     opacity: 1;
 }
-

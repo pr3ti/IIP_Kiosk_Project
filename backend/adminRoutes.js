@@ -4211,6 +4211,9 @@ router.put('/countdown-management', auth.requireAuth, (req, res) => {
 // Config file location (readable/ writable by both Node.js and the schedule runner)
 const SCHEDULE_CONFIG_PATH = process.env.SCHEDULE_CONFIG_PATH || path.join(__dirname, 'kiosk-schedules.json');
 
+// Mode file location (for manual/auto mode control)
+const MODE_FILE = path.join(__dirname, 'server-control-mode.json');
+
 // Helper: Read schedules from config file
 function readSchedulesConfig() {
   try {
@@ -4238,6 +4241,38 @@ function writeSchedulesConfig(config) {
     return true;
   } catch (err) {
     console.error('❌ Error writing schedules config:', err);
+    return false;
+  }
+}
+
+// Helper: Read server control mode configuration
+function readModeConfig() {
+  try {
+    if (fs.existsSync(MODE_FILE)) {
+      const data = fs.readFileSync(MODE_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('❌ Error reading mode file:', err);
+  }
+  
+  // Default to auto mode
+  return {
+    mode: 'auto',
+    last_updated: new Date().toISOString(),
+    updated_by: 'system'
+  };
+}
+
+// Helper: Write server control mode configuration
+function writeModeConfig(config) {
+  try {
+    config.last_updated = new Date().toISOString();
+    fs.writeFileSync(MODE_FILE, JSON.stringify(config, null, 2));
+    console.log(`✅ Mode file updated: ${config.mode}`);
+    return true;
+  } catch (err) {
+    console.error('❌ Error writing mode file:', err);
     return false;
   }
 }
@@ -4315,19 +4350,25 @@ router.post('/server-schedules', auth.requireAuth, (req, res) => {
   try {
     const config = readSchedulesConfig();
     
-    // Check for duplicate names
-    const duplicate = config.schedules.find(s => s.schedule_name === schedule_name);
+    // Trim and normalize the schedule name
+    const trimmedName = schedule_name.trim().replace(/\s+/g, ' '); // Remove extra spaces
+    
+    // Check for duplicate names (case-insensitive and whitespace-normalized)
+    const duplicate = config.schedules.find(s => 
+      s.schedule_name.trim().replace(/\s+/g, ' ').toLowerCase() === trimmedName.toLowerCase()
+    );
+    
     if (duplicate) {
       return res.status(400).json({
         success: false,
-        error: `Schedule with name "${schedule_name}" already exists`
+        error: `Schedule with name "${trimmedName}" already exists`
       });
     }
     
-    // Create new schedule
+    // Create new schedule (use trimmed name)
     const newSchedule = {
       id: Date.now(), // ID generation
-      schedule_name,
+      schedule_name: trimmedName, // Use trimmed name
       schedule_type,
       start_time,
       end_time,
@@ -4386,6 +4427,30 @@ router.put('/server-schedules/:id', auth.requireAuth, (req, res) => {
         success: false,
         error: 'Schedule not found'
       });
+    }
+    
+    // Check for duplicate name (excluding current schedule)
+    if (schedule_name) {
+      // Trim and normalize the new name
+      const trimmedName = schedule_name.trim().replace(/\s+/g, ' ');
+      const currentName = config.schedules[scheduleIndex].schedule_name.trim().replace(/\s+/g, ' ');
+      
+      if (trimmedName.toLowerCase() !== currentName.toLowerCase()) {
+        const duplicate = config.schedules.find(s => 
+          s.schedule_name.trim().replace(/\s+/g, ' ').toLowerCase() === trimmedName.toLowerCase() && 
+          s.id !== scheduleId
+        );
+        
+        if (duplicate) {
+          return res.status(400).json({
+            success: false,
+            error: `Schedule with name "${trimmedName}" already exists`
+          });
+        }
+      }
+      
+      // Use trimmed name for update
+      schedule_name = trimmedName;
     }
     
     // Update schedule
@@ -4616,5 +4681,82 @@ router.post('/server/stop', auth.requireAuth, (req, res) => {
   });
 });
 
+// ==================== SERVER CONTROL MODE ROUTES ====================
+
+// GET /api/admin/server/mode
+// Get current server control mode (auto or manual)
+router.get('/server/mode', auth.requireAuth, (req, res) => {
+  console.log('📡 Getting server control mode');
+  
+  const config = readModeConfig();
+  
+  res.json({
+    success: true,
+    mode: config.mode,
+    last_updated: config.last_updated,
+    updated_by: config.updated_by
+  });
+});
+
+// POST /api/admin/server/mode
+// Set server control mode (auto or manual)
+router.post('/server/mode', auth.requireAuth, (req, res) => {
+  const { mode } = req.body;
+  
+  console.log(`🔄 Changing server control mode to: ${mode}`);
+  
+  // Validate mode
+  if (!mode || !['auto', 'manual'].includes(mode)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid mode. Must be "auto" or "manual"'
+    });
+  }
+  
+  try {
+    const config = {
+      mode: mode,
+      updated_by: req.session.username || 'unknown'
+    };
+    
+    if (!writeModeConfig(config)) {
+      throw new Error('Failed to write mode configuration');
+    }
+    
+    console.log(`✅ Server mode changed to: ${mode.toUpperCase()}`);
+    
+    res.json({
+      success: true,
+      mode: mode,
+      message: `Switched to ${mode.toUpperCase()} mode`
+    });
+    
+  } catch (err) {
+    console.error('❌ Error changing mode:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to change server mode'
+    });
+  }
+});
+
+// GET /api/admin/server/status
+// Get current kiosk service status
+router.get('/server/status', auth.requireAuth, (req, res) => {
+  const { exec } = require('child_process');
+  
+  exec('systemctl is-active kiosk.service', (err, stdout, stderr) => {
+    const status = stdout.trim();
+    const isActive = status === 'active';
+    
+    console.log(`📊 Kiosk service status: ${status}`);
+    
+    res.json({
+      success: true,
+      kiosk_running: isActive,
+      status: status
+    });
+  });
+});
 
 module.exports = router;
