@@ -5451,6 +5451,10 @@ function showPage(pageName) {
         loadTimerCountdownSetting();
     } else if (pageName === 'server-schedule') {
         loadSchedules();
+    } else if (pageName === 'form-management') {
+    loadFormUISettings();
+    } else if (pageName === 'email-management') {
+    loadEmailConfig();
     }
     
     
@@ -9016,6 +9020,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load schedules if we're on the schedule page
     if (document.getElementById('server-schedule-page')) {
         loadSchedules();
+        loadServerMode();
+        checkServerStatus();
+        
+        // Refresh status every 10 seconds
+        if (window.statusCheckInterval) {
+            clearInterval(window.statusCheckInterval);
+        }
+        window.statusCheckInterval = setInterval(checkServerStatus, 10000);
     }
 });
 
@@ -9399,17 +9411,163 @@ function disableAllSchedules() {
     });
 }
 
+// ==================== SERVER CONTROL MODE FUNCTIONS (BERNISSA) ====================
+
+// Load current server control mode on page load
+async function loadServerMode() {
+    try {
+        const response = await fetch('/api/admin/server/mode');
+        const data = await response.json();
+        
+        if (data.success) {
+            const isAuto = data.mode === 'auto';
+            const toggle = document.getElementById('auto-mode-toggle');
+            if (toggle) {
+                toggle.checked = isAuto;
+                updateModeUI(isAuto);
+            }
+            
+            console.log(`✅ Loaded server mode: ${data.mode.toUpperCase()}`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading server mode:', error);
+        showNotification('Failed to load server mode', 'error');
+    }
+}
+
+// Toggle between auto and manual mode
+async function toggleServerMode() {
+    const toggle = document.getElementById('auto-mode-toggle');
+    if (!toggle) return;
+    
+    const isAuto = toggle.checked;
+    const newMode = isAuto ? 'auto' : 'manual';
+    
+    console.log(`🔄 Switching to ${newMode.toUpperCase()} mode...`);
+    
+    try {
+        const response = await fetch('/api/admin/server/mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: newMode })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`Switched to ${newMode.toUpperCase()} mode`, 'success');
+            updateModeUI(isAuto);
+            
+            // Refresh server status
+            checkServerStatus();
+            
+            if (!isAuto) {
+                showNotification('Manual mode: Start/Stop buttons now available', 'info');
+            } else {
+                showNotification('Auto mode: Schedules will control the server', 'info');
+            }
+        } else {
+            showNotification(data.error || 'Failed to change mode', 'error');
+            // Revert toggle
+            toggle.checked = !isAuto;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error changing mode:', error);
+        showNotification('Error changing mode', 'error');
+        // Revert toggle
+        toggle.checked = !isAuto;
+    }
+}
+
+// Update UI based on current mode
+function updateModeUI(isAuto) {
+    const modeStatus = document.getElementById('mode-status');
+    const modeDesc = document.getElementById('mode-description');
+    const modeHint = document.getElementById('mode-hint');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    
+    if (!modeStatus || !modeDesc) return;
+    
+    if (isAuto) {
+        // AUTO MODE
+        modeStatus.textContent = '🤖 AUTO MODE';
+        modeStatus.className = 'mode-auto';
+        modeDesc.textContent = 'Schedules control the server automatically';
+        if (modeHint) {
+            modeHint.textContent = '⚠️ Switch to MANUAL MODE to use Start/Stop buttons';
+            modeHint.style.color = '#856404';
+        }
+        if (startBtn) startBtn.disabled = true;
+        if (stopBtn) stopBtn.disabled = true;
+    } else {
+        // MANUAL MODE
+        modeStatus.textContent = '✋ MANUAL MODE';
+        modeStatus.className = 'mode-manual';
+        modeDesc.textContent = 'You control the server with Start/Stop buttons';
+        if (modeHint) {
+            modeHint.textContent = '💡 Manual mode active - schedules are temporarily disabled';
+            modeHint.style.color = '#004085';
+        }
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = false;
+    }
+}
+
+// Check current kiosk service status
+async function checkServerStatus() {
+    try {
+        const response = await fetch('/api/admin/server/status');
+        const data = await response.json();
+        
+        const statusIndicator = document.getElementById('server-status-indicator');
+        
+        if (!statusIndicator) return;
+        
+        if (data.success) {
+            if (data.kiosk_running) {
+                statusIndicator.innerHTML = '<span class="status-running">🟢 Kiosk Running</span>';
+            } else {
+                statusIndicator.innerHTML = '<span class="status-stopped">🔴 Kiosk Stopped</span>';
+            }
+        } else {
+            statusIndicator.innerHTML = '<span class="status-error">⚠️ Status Unknown</span>';
+        }
+        
+    } catch (error) {
+        console.error('❌ Error checking status:', error);
+        const statusIndicator = document.getElementById('server-status-indicator');
+        if (statusIndicator) {
+            statusIndicator.innerHTML = '<span class="status-error">⚠️ Cannot check status</span>';
+        }
+    }
+}
+
+// Start/stop server functions with manual mode check
 function startServer() {
+    // Check if in manual mode
+    const toggle = document.getElementById('auto-mode-toggle');
+    const isAuto = toggle ? toggle.checked : true;
+    
+    if (isAuto) {
+        showNotification('Switch to MANUAL MODE first to manually control the server', 'warning');
+        return;
+    }
+    
+    console.log('▶️ Starting server manually...');
+    
     fetch('/api/admin/server/start', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             showNotification('Server started successfully', 'success');
+            // Wait a moment then check status
+            setTimeout(() => checkServerStatus(), 2000);
         } else {
             showNotification(data.error || 'Failed to start server', 'error');
         }
@@ -9421,18 +9579,29 @@ function startServer() {
 }
 
 function stopServer() {
+    // Check if in manual mode
+    const toggle = document.getElementById('auto-mode-toggle');
+    const isAuto = toggle ? toggle.checked : true;
+    
+    if (isAuto) {
+        showNotification('Switch to MANUAL MODE first to manually control the server', 'warning');
+        return;
+    }
+    
     if (!confirm('Are you sure you want to stop the server?')) return;
+    
+    console.log('⏹️ Stopping server manually...');
     
     fetch('/api/admin/server/stop', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             showNotification('Server stopped successfully', 'success');
+            // Wait a moment then check status
+            setTimeout(() => checkServerStatus(), 2000);
         } else {
             showNotification(data.error || 'Failed to stop server', 'error');
         }
@@ -9512,7 +9681,7 @@ function showNotification(message, type = 'info') {
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
         <div class="notification-content">
-            <span class="notification-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+            <span class="notification-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
             <span>${message}</span>
         </div>
         <button class="notification-close" onclick="this.parentElement.remove()">×</button>
@@ -9564,7 +9733,10 @@ window.serverScheduleManager = {
     enableAllSchedules,
     disableAllSchedules,
     startServer,
-    stopServer
+    stopServer,
+    loadServerMode,
+    toggleServerMode,
+    checkServerStatus
 };
 
 // ==================== 31. VIP MANAGEMENT (DONE BY ZAH) ====================
