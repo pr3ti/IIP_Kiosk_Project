@@ -256,17 +256,21 @@ function getQuestionIds(callback) {
 
 // Create uploads directories if they don't exist
 function ensureDirectories() {
-    const photosDir = path.join(__dirname, '..', 'uploads', 'photos');
-    const processedDir = path.join(__dirname, '..', 'uploads', 'processed');
+    const photosDir = path.join(__dirname, '..', '..', 'uploads', 'photos');
+    const processedDir = path.join(__dirname, '..', '..', 'uploads', 'processed');
     
     if (!fs.existsSync(photosDir)) {
         fs.mkdirSync(photosDir, { recursive: true });
         console.log('✅ Created /uploads/photos directory');
+    } else {
+        console.log('✅ Using existing /uploads/photos directory');
     }
     
     if (!fs.existsSync(processedDir)) {
         fs.mkdirSync(processedDir, { recursive: true });
         console.log('✅ Created /uploads/processed directory');
+    } else {
+        console.log('✅ Using existing /uploads/processed directory');
     }
 }
 
@@ -416,8 +420,8 @@ async function generateTestData() {
                 const overlayTheme = randomElement(overlayThemes);
                 const processedPhotoFilename = `${name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}_${i}_${overlayTheme}_Theme.png`;
                 
-                const rawPhotoPath = path.join(__dirname, '..', 'uploads', 'photos', rawPhotoFilename);
-                const processedPhotoPath = path.join(__dirname, '..', 'uploads', 'processed', processedPhotoFilename);
+                const rawPhotoPath = path.join(__dirname, '..', '..', 'uploads', 'photos', rawPhotoFilename);
+                const processedPhotoPath = path.join(__dirname, '..', '..', 'uploads', 'processed', processedPhotoFilename);
                 
                 createBlankPNG(400, 300, `Test Photo ${i}`, rawPhotoPath);
                 createBlankPNG(400, 300, `${overlayTheme} Overlay`, processedPhotoPath);
