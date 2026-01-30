@@ -272,7 +272,8 @@ router.post('/submit-feedback', async (req, res) => {
                                 const emailResult = await emailService.sendThankYouEmail(
                                     userData.name,
                                     userData.email,
-                                    photoToSend
+                                    photoToSend,
+                                    userData.pledge || ''
                                 );
                                 
                                 if (emailResult.success) {
@@ -330,7 +331,7 @@ router.post('/submit-feedback', async (req, res) => {
 // Send email endpoint (manual)
 router.post('/send-email', async (req, res) => {
     try {
-        const { name, email, photoFilename } = req.body;
+        const { name, email, photoFilename, pledgeText } = req.body;
         
         if (!name || !email || !photoFilename) {
             return res.status(400).json({
@@ -340,9 +341,15 @@ router.post('/send-email', async (req, res) => {
         }
         
         console.log(`📧 Manual email request for ${email} with photo ${photoFilename}`);
-        
-        const result = await emailService.sendEmailAndUpdateFlag(db, name, email, photoFilename);
-        
+
+        const result = await emailService.sendEmailAndUpdateFlag(
+        db,
+        name,
+        email,
+        photoFilename,
+        pledgeText || ''
+        );
+
         if (result.success) {
             res.json({
                 success: true,
