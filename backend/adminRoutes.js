@@ -4350,25 +4350,25 @@ router.post('/server-schedules', auth.requireAuth, (req, res) => {
   try {
     const config = readSchedulesConfig();
     
-    // Trim and normalize the schedule name
-    const trimmedName = schedule_name.trim().replace(/\s+/g, ' '); // Remove extra spaces
-    
-    // Check for duplicate names (case-insensitive and whitespace-normalized)
-    const duplicate = config.schedules.find(s => 
-      s.schedule_name.trim().replace(/\s+/g, ' ').toLowerCase() === trimmedName.toLowerCase()
-    );
-    
-    if (duplicate) {
-      return res.status(400).json({
-        success: false,
-        error: `Schedule with name "${trimmedName}" already exists`
-      });
+    // Check for duplicate names (case-insensitive, trimmed)
+    if (schedule_name) {
+      const trimmedName = schedule_name.trim().replace(/\s+/g, ' ');
+      const duplicate = config.schedules.find(s => 
+        s.schedule_name.trim().replace(/\s+/g, ' ').toLowerCase() === trimmedName.toLowerCase()
+      );
+      
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          error: `Schedule with name "${trimmedName}" already exists`
+        });
+      }
     }
     
-    // Create new schedule (use trimmed name)
+    // Create new schedule
     const newSchedule = {
       id: Date.now(), // ID generation
-      schedule_name: trimmedName, // Use trimmed name
+      schedule_name: schedule_name.trim().replace(/\s+/g, ' '),
       schedule_type,
       start_time,
       end_time,
@@ -4430,33 +4430,31 @@ router.put('/server-schedules/:id', auth.requireAuth, (req, res) => {
     }
     
     // Check for duplicate name (excluding current schedule)
+    let updatedScheduleName = config.schedules[scheduleIndex].schedule_name;
     if (schedule_name) {
       // Trim and normalize the new name
       const trimmedName = schedule_name.trim().replace(/\s+/g, ' ');
-      const currentName = config.schedules[scheduleIndex].schedule_name.trim().replace(/\s+/g, ' ');
       
-      if (trimmedName.toLowerCase() !== currentName.toLowerCase()) {
-        const duplicate = config.schedules.find(s => 
-          s.schedule_name.trim().replace(/\s+/g, ' ').toLowerCase() === trimmedName.toLowerCase() && 
-          s.id !== scheduleId
-        );
-        
-        if (duplicate) {
-          return res.status(400).json({
-            success: false,
-            error: `Schedule with name "${trimmedName}" already exists`
-          });
-        }
+      // Check if any OTHER schedule has this name (case-insensitive)
+      const duplicate = config.schedules.find(s => 
+        s.id !== scheduleId && 
+        s.schedule_name.trim().replace(/\s+/g, ' ').toLowerCase() === trimmedName.toLowerCase()
+      );
+      
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          error: `Schedule with name "${trimmedName}" already exists`
+        });
       }
       
-      // Use trimmed name for update
-      schedule_name = trimmedName;
+      updatedScheduleName = trimmedName;
     }
     
     // Update schedule
     config.schedules[scheduleIndex] = {
       ...config.schedules[scheduleIndex],
-      schedule_name: schedule_name || config.schedules[scheduleIndex].schedule_name,
+      schedule_name: updatedScheduleName,
       schedule_type: schedule_type || config.schedules[scheduleIndex].schedule_type,
       start_time: start_time || config.schedules[scheduleIndex].start_time,
       end_time: end_time || config.schedules[scheduleIndex].end_time,
@@ -4754,6 +4752,23 @@ router.get('/server/status', auth.requireAuth, (req, res) => {
     res.json({
       success: true,
       kiosk_running: isActive,
+      status: status
+    });
+  });
+});
+
+// GET /api/admin/kiosk-status
+// Simple endpoint to check if kiosk service is active (for watchKioskService polling)
+// This is called every 3 seconds by the frontend to detect service state changes
+router.get('/kiosk-status', auth.requireAuth, (req, res) => {
+  const { exec } = require('child_process');
+  
+  exec('systemctl is-active kiosk.service', (err, stdout, stderr) => {
+    const status = stdout.trim();
+    const isActive = status === 'active';
+    
+    res.json({
+      active: isActive,
       status: status
     });
   });
