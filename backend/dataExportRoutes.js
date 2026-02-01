@@ -1,5 +1,6 @@
-
-// DATAEXPORTROUTES.JS - TABLE OF CONTENTS
+// ============================================================
+// DATAEXPORTROUTES.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
+// ============================================================
 // 
 // 1. IMPORTS & CONFIGURATION
 //    const express                    - Express framework (DONE BY PRETI)
@@ -49,6 +50,7 @@
 // 12. MODULE EXPORTS
 //     module.exports = router         - Export router (DONE BY PRETI)
 //
+// ============================================================
 
 const express = require('express');
 const router = express.Router();
@@ -433,9 +435,9 @@ function getFeedbackData(archiveFilter) {
 }
 
 // Generate Excel file from feedback data
-// Now uses DECRYPTED emails from the feedback array
+
 async function generateFeedbackExcel(data, title) {
-    // Convert to CSV (you can add xlsx library for true Excel)
+    // Convert to CSV 
     const rows = [];
     
     // Build headers
@@ -462,12 +464,12 @@ async function generateFeedbackExcel(data, title) {
     
     rows.push(headers);
     
-    // Add data rows emails are already decrypted at this point
+    
     data.feedback.forEach(f => {
         const row = [
             f.feedback_id,
             f.user_name,
-            f.email_encrypted || 'No email provided', // This is now decrypted
+            f.email_encrypted || 'No email provided', 
             f.visit_count,
             f.comment || 'N/A',
             f.data_retention,
@@ -480,7 +482,7 @@ async function generateFeedbackExcel(data, title) {
             f.feedback_created
         ];
         
-        // Add answers
+        
         const feedbackAnswers = data.answersByFeedback[f.feedback_id] || [];
         data.questions.forEach(q => {
             const answer = feedbackAnswers.find(a => a.question_id === q.id);
