@@ -1,25 +1,25 @@
 // WHOLE FILE DONE BY PRETI
 
 // ============================================================
-// DATASTORE_ASSEMBLY.JS - TABLE OF CONTENTS
+// DATASTORE_ASSEMBLY.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
 // 1. IMPORTS & CONFIGURATION
-//    const mysql                      - MySQL2 promise library (DONE BY PRETI)
-//    const fs                         - File system operations (DONE BY PRETI)
-//    const path                       - Path utilities (DONE BY PRETI)
-//    const readline                   - Terminal input interface (DONE BY PRETI)
-//    require('dotenv')                - Load environment variables (DONE BY PRETI)
-//    const rl                         - Readline interface instance (DONE BY PRETI)
+//    const mysql                          - MySQL2 promise library (DONE BY PRETI)
+//    const fs                             - File system operations (DONE BY PRETI)
+//    const path                           - Path utilities (DONE BY PRETI)
+//    const readline                       - Terminal input interface (DONE BY PRETI)
+//    require('dotenv')                    - Load environment variables (DONE BY PRETI)
+//    const rl                             - Readline interface instance (DONE BY PRETI)
 //
 // 2. HELPER FUNCTIONS
-//    function question()              - Prompt user for input (async wrapper) (DONE BY PRETI)
+//    function question()                  - Prompt user for input (async wrapper) (DONE BY PRETI)
 //
 // 3. DATABASE SETUP
-//    async function setup()           - Main setup orchestration function (DONE BY PRETI)
+//    async function setup()               - Main setup orchestration function (DONE BY PRETI)
 //
 // 4. SCRIPT EXECUTION
-//    setup()                          - Execute main setup function (DONE BY PRETI)
+//    setup()                              - Execute main setup function (DONE BY PRETI)
 //
 // ============================================================
 // Automated database setup script that creates the complete
@@ -29,8 +29,7 @@
 // REQUIREMENT: MySQL server running with root access
 // ============================================================
 
-// ==================== 1. IMPORTS & CONFIGURATION ====================
-
+// =================== 1. IMPORTS & CONFIGURATION =================== 
 // MySQL2 promise library for database operations
 const mysql = require('mysql2/promise');
 
@@ -52,9 +51,8 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-// ==================== 2. HELPER FUNCTIONS ====================
-
-// Prompt user for input (async wrapper for readline)
+// =================== 2. HELPER FUNCTIONS =================== 
+// Prompt user for input with async wrapper for readline
 function question(prompt) {
     return new Promise((resolve) => {
         rl.question(prompt, (answer) => {
@@ -63,8 +61,7 @@ function question(prompt) {
     });
 }
 
-// ==================== 3. DATABASE SETUP ====================
-
+// =================== 3. DATABASE SETUP =================== 
 // Main setup orchestration function
 async function setup() {
     console.log('\n╔═══════════════════════════════════════════════════╗');
@@ -201,7 +198,7 @@ async function setup() {
         }
         console.log('');
 
-        // Verify archive management features (column, procedure, event)
+        // Verify archive management features
         console.log('📚 [7/9] Verifying archive management...');
         
         const [feedbackColumns] = await userConnection.query(`
@@ -269,7 +266,7 @@ async function setup() {
         
         console.log('');
 
-        // Verify initial data was inserted (admin users, overlays, questions)
+        // Verify initial data was inserted
         console.log('📊 [9/9] Verifying data...');
 
         const [[adminCount]] = await userConnection.query(
@@ -298,7 +295,7 @@ async function setup() {
 
         await userConnection.end();
 
-        // Display setup completion message and important information
+        // Display setup completion message
         console.log('\n╔═══════════════════════════════════════════════════╗');
         console.log('║              🎉 SETUP COMPLETE! 🎉               ║');
         console.log('╚═══════════════════════════════════════════════════╝\n');
@@ -348,7 +345,6 @@ async function setup() {
     }
 }
 
-// ==================== 4. SCRIPT EXECUTION ====================
-
+// =================== 4. SCRIPT EXECUTION =================== 
 // Execute main setup function
 setup();
