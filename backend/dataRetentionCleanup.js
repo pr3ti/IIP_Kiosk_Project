@@ -1,30 +1,36 @@
 // ============================================================
-// DATARETENTIONCLEANUP.JS - TABLE OF CONTENTS
+// DATARETENTIONCLEANUP.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
-// 1. CORE CLEANUP FUNCTIONS
-//    function isExpired()             - Calculate if data has expired based on Singapore timezone (DONE BY PRETI)
-//    function deletePhotoFile()       - Delete photo files from filesystem (DONE BY PRETI)
-//    function cleanupExpiredData()    - Main cleanup function - removes expired emails and photos (DONE BY PRETI)
-//    function cleanupAuditLogs()      - Cleanup audit logs older than 1 year (DONE BY PRETI)
+// 1. IMPORTS & DEPENDENCIES
+//    const db                             - Database module (DONE BY PRETI)
+//    const fs                             - File system module (DONE BY PRETI)
+//    const path                           - Path module (DONE BY PRETI)
 //
-// 2. INITIALIZATION & SCHEDULING
-//    function initializeCleanup()     - Initialize cleanup system with scheduled intervals (DONE BY PRETI)
-//    function runManualCleanup()      - Manual cleanup function (DONE BY PRETI)
+// 2. CORE CLEANUP FUNCTIONS
+//    function isExpired()                 - Calculate if data has expired based on Singapore timezone (DONE BY PRETI)
+//    function deletePhotoFile()           - Delete photo files from filesystem (DONE BY PRETI)
+//    function cleanupExpiredData()        - Main cleanup function - removes expired emails and photos (DONE BY PRETI)
+//    function cleanupAuditLogs()          - Cleanup audit logs older than 1 year (DONE BY PRETI)
 //
-// 3. MODULE EXPORTS
-//    module.exports                   - Export cleanup functions (DONE BY PRETI)
+// 3. INITIALIZATION & SCHEDULING
+//    function initializeCleanup()         - Initialize cleanup system with scheduled intervals (DONE BY PRETI)
+//    function runManualCleanup()          - Manual cleanup function (DONE BY PRETI)
 //
+// 4. MODULE EXPORTS
+//    module.exports                       - Export cleanup functions (DONE BY PRETI)
+//
+// ============================================================
 
+// =================== 1. IMPORTS & DEPENDENCIES =================== 
 const db = require('./db');
 const fs = require('fs');
 const path = require('path');
 
-// ==================== 1. CORE CLEANUP FUNCTIONS ====================
-
+// =================== 2. CORE CLEANUP FUNCTIONS =================== 
 // Calculate if data has expired based on Singapore timezone
 function isExpired(createdAt, retentionPeriod, feedbackId) {
-    if (retentionPeriod === 'indefinite') {
+    if (retentionPeriod === 'longterm') {
         return false;
     }
 
@@ -39,7 +45,7 @@ function isExpired(createdAt, retentionPeriod, feedbackId) {
             now.getTime() + (singaporeOffset + localOffset) * 60000
         );
 
-        // Days difference
+        // Calculate days difference
         const daysDifference = Math.floor(
             (singaporeTime - created) / (1000 * 60 * 60 * 24)
         );
@@ -128,27 +134,27 @@ function cleanupExpiredData() {
                     deletePhotoFile(feedback.processed_photo_path);
                 }
 
-                // Check if user has any indefinite feedback before clearing email
-                const hasIndefiniteQuery = `
+                // Check if user has any longterm feedback before clearing email
+                const hasLongtermQuery = `
                     SELECT COUNT(*) AS count
                     FROM feedback
                     WHERE user_id = ?
-                      AND data_retention = 'indefinite'
+                      AND data_retention = 'longterm'
                       AND is_active = 1
                 `;
 
-                db.get(hasIndefiniteQuery, [feedback.user_id], (checkErr, row) => {
+                db.get(hasLongtermQuery, [feedback.user_id], (checkErr, row) => {
                     if (checkErr) {
                         console.error(
-                            `   ❌ Error checking indefinite feedback for user ${feedback.user_id}:`,
+                            `   ❌ Error checking longterm feedback for user ${feedback.user_id}:`,
                             checkErr.message
                         );
                     } else if (row && row.count > 0) {
                         console.log(
-                            `   ℹ️  Skipping email clear for user ${feedback.user_id} (has indefinite feedback)`
+                            `   ℹ️  Skipping email clear for user ${feedback.user_id} (has longterm feedback)`
                         );
                     } else {
-                        // Clear encrypted email for user with no indefinite feedback
+                        // Clear encrypted email for user with no longterm feedback
                         const updateUserQuery = `
                             UPDATE users
                             SET email_encrypted = NULL
@@ -249,8 +255,7 @@ function cleanupAuditLogs() {
     });
 }
 
-// ==================== 2. INITIALIZATION & SCHEDULING ====================
-
+// =================== 3. INITIALIZATION & SCHEDULING =================== 
 // Initialize cleanup system with scheduled intervals
 function initializeCleanup() {
     console.log('\n🚀 ============================================');
@@ -302,8 +307,7 @@ function runManualCleanup() {
     }, 2000);
 }
 
-// ==================== 3. MODULE EXPORTS ====================
-
+// =================== 4. MODULE EXPORTS =================== 
 module.exports = {
     initializeCleanup,
     runManualCleanup,
