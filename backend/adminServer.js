@@ -1,3 +1,62 @@
+// ============================================================
+// ADMINSERVER.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
+// ============================================================
+// 
+// 1. DEPENDENCIES & CONFIGURATION
+//    require('dotenv').config()       - Load environment variables (DONE BY PRETI)
+//    const express                    - Express framework import (DONE BY PRETI)
+//    const https                      - HTTPS server module (DONE BY PRETI)
+//    const fs                         - File system operations (DONE BY PRETI)
+//    const path                       - Path utilities (DONE BY PRETI)
+//    const session                    - Express session middleware (DONE BY PRETI)
+//    const os                         - Operating system utilities (DONE BY PRETI)
+//    const db                         - Database connection (DONE BY PRETI)
+//    const adminRoutes                - Admin routes module (DONE BY PRETI)
+//    const dataExportRoutes           - Data export routes module (DONE BY PRETI)
+//    const emailService               - Email service utilities (DONE BY PRETI)
+//    const pledgeboardRoutes          - Pledgeboard routes module (DONE BY PRETI)
+//    const treeRoutes                 - Tree routes module (DONE BY PRETI)
+//    const app                        - Express application instance (DONE BY PRETI)
+//    const PORT                       - Server port number (3002) (DONE BY PRETI)
+//
+// 2. NETWORK INTERFACE FUNCTIONS
+//    function getAllNetworkIPs()      - Get all available network IP addresses (DONE BY PRETI)
+//    function getSelectedIP()         - Determine which IP address to use for server (DONE BY PRETI)
+//    function getInterfaceForIP()     - Get network interface name for given IP (DONE BY PRETI)
+//    const localIP                    - Selected local IP address (DONE BY PRETI)
+//    const interfaceName              - Network interface name (DONE BY PRETI)
+//
+// 3. SSL CERTIFICATE CONFIGURATION
+//    const certsDir                   - SSL certificates directory path (DONE BY PRETI)
+//    const certPath                   - SSL certificate file path (DONE BY PRETI)
+//    const keyPath                    - SSL private key file path (DONE BY PRETI)
+//    let sslOptions                   - SSL configuration options (DONE BY PRETI)
+//
+// 4. MIDDLEWARE CONFIGURATION
+//    app.use(express.json())          - JSON body parser middleware (DONE BY PRETI)
+//    app.use(express.urlencoded())    - URL-encoded body parser middleware (DONE BY PRETI)
+//    app.use(session())               - Session middleware configuration (DONE BY PRETI)
+//    app.use(express.static())        - Static file serving for frontend (DONE BY PRETI)
+//    app.use('/uploads'               - Static file serving for uploads (DONE BY PRETI)
+//    app.use('/assets'                - Static file serving for assets (DONE BY PRETI)
+//
+// 5. API ROUTES (ADMIN)
+//    app.use('/api/admin'             - Admin API routes (DONE BY PRETI)
+//    app.use('/api/admin/data-export' - Data export API routes (DONE BY PRETI)
+//    app.use('/api/tree'              - Tree data fetching routes (DONE BY PRETI)
+//    app.use('/api/pledgeboard'       - Pledgeboard data fetching routes (DONE BY PRETI)
+//    app.get('/api/test-db'           - Test database connection endpoint (DONE BY PRETI)
+//    app.get('/api/test-email-service' - Test email service endpoint (DONE BY PRETI)
+//
+// 6. PAGE ROUTES (ADMIN)
+//    app.get('/admin'                 - Serve admin HTML page (DONE BY PRETI)
+//    app.get('/'                      - Redirect root to /admin (DONE BY PRETI)
+//
+// 7. SERVER STARTUP FUNCTIONS
+//    function printServerInfo()       - Display server information on startup (DONE BY PRETI)
+//    function startServer()           - Start HTTPS or HTTP server (DONE BY PRETI)
+//    const emailInitialized           - Email service initialization status (DONE BY PRETI)
+
 // adminServer.js - Admin server (Admin UI + Admin API) on PORT 3002
 
 require('dotenv').config();
@@ -13,8 +72,8 @@ const adminRoutes = require('./adminRoutes');
 const dataExportRoutes = require('./dataExportRoutes');
 const emailService = require('./emailService');
 
-// Data fetching for Tree + Leaderboard routes
-const leaderboardRoutes = require('./leaderboardRoutes');
+// Data fetching for Tree + Pledgeboard routes
+const pledgeboardRoutes = require('./pledgeboardRoutes');
 const { router: treeRoutes, setDatabase: setTreeDatabase } = require('./treeRoutes');
 
 const app = express();
@@ -157,7 +216,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/assets', express.static(path.join(__dirname, '../assets')));
 
-// Wire DB into treeRoutes (this is often why server.js works but adminServer doesn’t)
+// Wire DB into treeRoutes 
 setTreeDatabase(db);
 
 // ==================== API ROUTES (ADMIN) ====================
@@ -168,10 +227,10 @@ app.use('/api/admin/data-export', dataExportRoutes);
 // Tree data fetching for Digital Tree tab
 app.use('/api/tree', treeRoutes);
 
-// Leaderboard data fetching for Leaderboard tab
-app.use('/api/leaderboard', leaderboardRoutes);
+// Pledgeboard data fetching for Pledgeboard tab
+app.use('/api/pledgeboard', pledgeboardRoutes);
 
-// Optional test route (same as your server.js)
+// Optional test route 
 app.get('/api/test-db', (req, res) => {
   db.query(
     'SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = ?',
@@ -187,7 +246,7 @@ app.get('/api/test-db', (req, res) => {
   );
 });
 
-// Email test (same as your server.js)
+// Email test 
 app.get('/api/test-email-service', (req, res) => {
   const emailInitialized = emailService.initEmailService();
   if (emailInitialized) {
@@ -239,7 +298,7 @@ function startServer() {
   }
 }
 
-// Initialize email service at startup (like your server.js)
+// Initialize email service at startup 
 const emailInitialized = emailService.initEmailService();
 console.log(emailInitialized ? '📧 Email service initialized successfully' : '⚠️ Email service not initialized');
 
