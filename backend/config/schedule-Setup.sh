@@ -1,9 +1,4 @@
 #!/bin/bash
-# complete-gateway-schedule-setup.sh - Complete setup for schedule system + gateway with offline page
-# UPDATED: Copies server files from backend directory (not config directory)
-# Script location: /IIP_Kiosk_Project/backend/config
-# Server files location: /IIP_Kiosk_Project/backend (one level up)
-
 set -e  # Exit on error
 
 # Colors
@@ -33,8 +28,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Script location: $SCRIPT_DIR"
 echo ""
 
-# Since script is in /IIP_Kiosk_Project/backend/config
-# Backend is one level up
 BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_DIR="$(dirname "$BACKEND_DIR")"
 
