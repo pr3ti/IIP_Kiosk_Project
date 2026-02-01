@@ -1,3 +1,68 @@
+// ============================================================
+// KIOSKSERVER.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
+// ============================================================
+// 
+// 1. DEPENDENCIES & CONFIGURATION
+//    require('dotenv').config()       - Load environment variables (DONE BY PRETI)
+//    const express                    - Express framework import (DONE BY PRETI)
+//    const https                      - HTTPS server module (DONE BY PRETI)
+//    const fs                         - File system operations (DONE BY PRETI)
+//    const path                       - Path utilities (DONE BY PRETI)
+//    const session                    - Express session middleware (DONE BY PRETI)
+//    const os                         - Operating system utilities (DONE BY PRETI)
+//    const db                         - Database connection (DONE BY PRETI)
+//    const feedbackRoutes             - Feedback routes module (DONE BY PRETI)
+//    const pledgeboardRoutes          - Pledgeboard routes module (DONE BY PRETI)
+//    const emailService               - Email service utilities (DONE BY PRETI)
+//    const treeRoutes                 - Tree routes module (DONE BY PRETI)
+//    const dataRetentionCleanup       - Data retention cleanup module (DONE BY PRETI)
+//    const QRCode                     - QR code generation library (DONE BY PRETI)
+//    const app                        - Express application instance (DONE BY PRETI)
+//    const PORT                       - Server port number (3003, behind gateway on 3001) (DONE BY PRETI)
+//
+// 2. NETWORK INTERFACE FUNCTIONS
+//    function getAllNetworkIPs()      - Get all available network IP addresses (DONE BY PRETI)
+//    function getSelectedIP()         - Determine which IP address to use for server (DONE BY PRETI)
+//    function getInterfaceForIP()     - Get network interface name for given IP (DONE BY PRETI)
+//    const localIP                    - Selected local IP address (DONE BY PRETI)
+//    const interfaceName              - Network interface name (DONE BY PRETI)
+//
+// 3. SSL CERTIFICATE CONFIGURATION
+//    const certsDir                   - SSL certificates directory path (DONE BY PRETI)
+//    const certPath                   - SSL certificate file path (DONE BY PRETI)
+//    const keyPath                    - SSL private key file path (DONE BY PRETI)
+//    let sslOptions                   - SSL configuration options (DONE BY PRETI)
+//
+// 4. MIDDLEWARE CONFIGURATION
+//    app.use(express.json())          - JSON body parser middleware (DONE BY PRETI)
+//    app.use(express.urlencoded())    - URL-encoded body parser middleware (DONE BY PRETI)
+//    app.use(session())               - Session middleware configuration (DONE BY PRETI)
+//    app.use(express.static())        - Static file serving for frontend (DONE BY PRETI)
+//    app.use('/uploads'               - Static file serving for uploads (DONE BY PRETI)
+//    app.use('/assets'                - Static file serving for assets (DONE BY PRETI)
+//
+// 5. API ROUTES (KIOSK)
+//    app.use('/api/feedback'          - Feedback submission and management routes (DONE BY PRETI)
+//    app.use('/api/pledgeboard'       - Pledgeboard data routes (DONE BY PRETI)
+//    app.use('/api/tree'              - Tree data fetching routes (DONE BY PRETI)
+//    app.get('/api/network-interfaces' - Get network interface information (DONE BY PRETI)
+//    app.get('/api/server-info'       - Get server configuration information (DONE BY PRETI)
+//    app.get('/api/generate-qr'       - Generate QR code for gateway URL (port 3001) (DONE BY PRETI)
+//    app.get('/api/test-db'           - Test database connection endpoint (DONE BY PRETI)
+//    app.get('/api/test-email-service' - Test email service endpoint (DONE BY PRETI)
+//    app.get('/api/status'            - Server status for offline.html auto-refresh (DONE BY PRETI)
+//
+// 6. PAGE ROUTES (KIOSK)
+//    app.get('/feedback'              - Serve feedback HTML page (DONE BY PRETI)
+//    app.get('/pledgeboard'           - Serve pledgeboard HTML page (DONE BY PRETI)
+//    app.get('/tree'                  - Serve tree HTML page (DONE BY PRETI)
+//    app.get('/'                      - Redirect root to /feedback (DONE BY PRETI)
+//
+// 7. SERVER STARTUP FUNCTIONS
+//    function printServerInfo()       - Display server information on startup (DONE BY PRETI)
+//    function startServer()           - Start HTTP server on localhost:3003 (DONE BY PRETI)
+//    const emailInitialized           - Email service initialization status (DONE BY PRETI)
+
 // DONE BY PRETI
 // Modified: Now runs on port 3003 (behind gateway on 3001)
 
@@ -11,7 +76,7 @@ const os = require('os');
 
 const db = require('./db');
 const feedbackRoutes = require('./feedbackRoutes');
-const leaderboardRoutes = require('./leaderboardRoutes');
+const pledgeboardRoutes = require('./pledgeboardRoutes');
 const emailService = require('./emailService');
 
 const { router: treeRoutes, setDatabase: setTreeDatabase } = require('./treeRoutes');
@@ -138,7 +203,6 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Optional: kiosk may not need session, but safe to keep if any route uses it
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
@@ -165,7 +229,7 @@ setTreeDatabase(db);
 // ==================== API ROUTES (KIOSK) ====================
 
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/pledgeboard', pledgeboardRoutes);
 app.use('/api/tree', treeRoutes);
 
 // Network info
@@ -249,6 +313,17 @@ app.get('/api/test-email-service', (req, res) => {
   }
 });
 
+// ==================== Offline Auto Refresh ===================
+// Status endpoint - for offline.html to detect when server is back online
+app.get('/api/status', (req, res) => {
+  res.json({
+    online: true,
+    status: 'running',
+    message: 'Kiosk server is online',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ==================== PAGE ROUTES (KIOSK) ====================
 
 app.get('/feedback', (req, res) => {
@@ -256,7 +331,7 @@ app.get('/feedback', (req, res) => {
 });
 
 app.get('/pledgeboard', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/Leaderboard/Leaderboard.html'));
+  res.sendFile(path.join(__dirname, '../frontend/Pledgeboard/Pledgeboard.html'));
 });
 
 app.get('/tree', (req, res) => {
