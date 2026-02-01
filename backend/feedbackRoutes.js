@@ -1,37 +1,52 @@
 // ============================================================
-// FEEDBACKROUTES.JS - TABLE OF CONTENTS 
+// FEEDBACKROUTES.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
-// 1. DIRECTORY SETUP
+// 1. DEPENDENCIES & CONFIGURATION
+//    const express                    - Express framework import (DONE BY PRETI)
+//    const router                     - Express router instance (DONE BY PRETI)
+//    const path                       - Path utilities (DONE BY PRETI)
+//    const fs                         - File system operations (DONE BY PRETI)
+//    const db                         - Database connection (DONE BY PRETI)
+//    const emailService               - Email service utilities (DONE BY NADH)
+//    const auth                       - Authentication and encryption utilities (DONE BY PRETI)
+//
+// 2. DIRECTORY SETUP
 //    const uploadsDir                 - Upload directory for photos (DONE BY PRETI)
 //    const processedDir               - Directory for processed photos (DONE BY PRETI)
 //
-// 2. QUESTION MANAGEMENT ROUTES
+// 3. QUESTION MANAGEMENT ROUTES
 //    router.get('/questions'          - Get active questions for feedback form (DONE BY PRETI)
 //
-// 3. PHOTO UPLOAD ROUTES
+// 4. PHOTO UPLOAD ROUTES
 //    router.post('/save-photo'        - Upload and save raw photo (DONE BY PRETI)
 //    router.post('/save-processed-photo' - Save processed photo with overlay (DONE BY PRETI)
 //
-// 4. FEEDBACK SUBMISSION ROUTES
+// 5. FEEDBACK SUBMISSION ROUTES
 //    router.post('/submit-feedback'   - Submit complete feedback with retention and email (DONE BY PRETI)
-//    router.post('/send-email'        - Send email endpoint (manual) 
-//    router.post('/feedback/:id/retry-email' - Retry sending email for feedback entry 
-//    router.get('/test-email'         - Test email endpoint 
-//    router.get('/email-status'       - Check email service status 
+//    router.post('/send-email'        - Send email endpoint (manual) (DONE BY PRETI)
+//    router.post('/feedback/:id/retry-email' - Retry sending email for feedback entry (DONE BY PRETI)
+//    router.get('/test-email'         - Test email endpoint (DONE BY PRETI)
+//    router.get('/email-status'       - Check email service status (DONE BY PRETI)
 //
-// 5. DATABASE OPERATIONS
+// 6. DATABASE OPERATIONS
 //    function isValidEmail()          - Validate email format (DONE BY PRETI)
 //    function saveFeedbackToDatabase() - Save feedback to database with encrypted email (DONE BY PRETI)
-//    function saveFeedbackRecord()    - Save feedback record (nested) (DONE BY PRETI)
-//    function saveQuestionAnswers()   - Save question answers (nested) (DONE BY PRETI)
+//    function saveFeedbackRecord()    - Save feedback record (nested function) (DONE BY PRETI)
+//    function saveQuestionAnswers()   - Save question answers (nested function) (DONE BY PRETI)
 //
-// 6. UTILITY ENDPOINTS
+// 7. OVERLAY MANAGEMENT ROUTES
+//    router.get('/overlays'           - Get all available overlay themes (DONE BY PRETI)
+//
+// 8. FORM UI CONFIGURATION
+//    router.get('/form-ui'            - Get form UI settings (DONE BY NADH)
+//
+// 9. UTILITY ENDPOINTS
 //    router.get('/test-db'            - Test database connection endpoint (DONE BY PRETI)
 //    router.get('/'                   - Root endpoint for feedback routes (DONE BY PRETI)
+//    router.get('/countdown-timer'    - Get countdown timer setting for photo capture (DONE BY BERNISSA)
 
 
-// feedbackRoutes.js Enhanced with database storage while keeping all functionality
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -772,7 +787,7 @@ router.get('/form-ui', (req, res) => {
 });
 
 // ==================== 8. UTILITY ENDPOINTS ====================
-// UTILITY ENDPOINTS ====================
+
 // Test database connection endpoint
 router.get('/test-db', (req, res) => {
         db.get("SELECT TABLE_NAME AS name FROM information_schema.tables WHERE table_schema = DATABASE() LIMIT 1", (err, row) => {
@@ -838,6 +853,3 @@ router.get('/countdown-timer', (req, res) => {
 });
 
 module.exports = router;
-
-//—-//
-
