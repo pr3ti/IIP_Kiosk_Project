@@ -1,36 +1,35 @@
 // ============================================================
-// DB.JS - TABLE OF CONTENTS 
+// DB.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
 // 1. DATABASE CONFIGURATION
-//    const mysql = require('mysql2')  - MySQL database driver (DONE BY PRETI)
-//    const path = require('path')     - Path utility module (DONE BY PRETI)
-//    const pool = mysql.createPool()  - MySQL connection pool configuration (DONE BY PRETI)
+//    const mysql = require('mysql2')      - MySQL database driver (DONE BY PRETI)
+//    const path = require('path')         - Path utility module (DONE BY PRETI)
+//    const pool = mysql.createPool()      - MySQL connection pool configuration (DONE BY PRETI)
 //
 // 2. DATABASE CONNECTION TEST
-//    pool.getConnection()             - Test database connection on startup (DONE BY PRETI)
+//    pool.getConnection()                 - Test database connection on startup (DONE BY PRETI)
 //
 // 3. SQLITE-COMPATIBLE WRAPPER FUNCTIONS 
-//    function get()                   - Execute query and return single row (SQLite db.get) (DONE BY PRETI)
-//    function all()                   - Execute query and return all rows (SQLite db.all) (DONE BY PRETI)
-//    function run()                   - Execute INSERT/UPDATE/DELETE (SQLite db.run) (DONE BY PRETI)
+//    function get()                       - Execute query and return single row (SQLite db.get) (DONE BY PRETI)
+//    function all()                       - Execute query and return all rows (SQLite db.all) (DONE BY PRETI)
+//    function run()                       - Execute INSERT/UPDATE/DELETE (SQLite db.run) (DONE BY PRETI)
 //
 // 4. TRANSACTION FUNCTIONS
-//    function beginTransaction()      - Begin database transaction (DONE BY PRETI)
-//    function commit()                - Commit database transaction (DONE BY PRETI)
-//    function rollback()              - Rollback database transaction (DONE BY PRETI)
+//    function beginTransaction()          - Begin database transaction (DONE BY PRETI)
+//    function commit()                    - Commit database transaction (DONE BY PRETI)
+//    function rollback()                  - Rollback database transaction (DONE BY PRETI)
 //
 // 5. MODULE EXPORTS
-//    module.exports                   - Export pool and SQLite-compatible functions (DONE BY PRETI)
+//    module.exports                       - Export pool and SQLite-compatible functions (DONE BY PRETI)
 //
-// db.js - MySQL Database Connection 
+// ============================================================
 
-// ==================== 1. DATABASE CONFIGURATION ====================
-
+// =================== 1. DATABASE CONFIGURATION =================== 
 const mysql = require('mysql2');
 const path = require('path');
 
-// Default credentials
+// Create MySQL connection pool with default credentials
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'kiosk_user',
@@ -43,8 +42,7 @@ const pool = mysql.createPool({
     keepAliveInitialDelay: 0
 });
 
-// ==================== 2. DATABASE CONNECTION TEST ====================
-
+// =================== 2. DATABASE CONNECTION TEST =================== 
 // Test connection on startup
 pool.getConnection((err, connection) => {
     if (err) {
@@ -60,13 +58,8 @@ pool.getConnection((err, connection) => {
     }
 });
 
-// ==================== 3. SQLITE-COMPATIBLE WRAPPER FUNCTIONS ====================
-/**
- * Execute query and return single row 
- * @param {string} sql - SQL query
- * @param {array} params - Query parameters
- * @param {function} callback - Callback(err, row)
- */
+// =================== 3. SQLITE-COMPATIBLE WRAPPER FUNCTIONS =================== 
+// Execute query and return single row (mimics SQLite db.get)
 function get(sql, params, callback) {
     // Handle missing callback
     if (typeof callback !== 'function') {
@@ -78,17 +71,12 @@ function get(sql, params, callback) {
         if (error) {
             return callback(error, null);
         }
-        // Return first row or null (mimics SQLite behavior)
+        // Return first row or null
         callback(null, results[0] || null);
     });
 }
 
-/**
- * Execute query and return all rows (like SQLite db.all)
- * @param {string} sql - SQL query
- * @param {array} params - Query parameters
- * @param {function} callback - Callback(err, rows)
- */
+// Execute query and return all rows (mimics SQLite db.all)
 function all(sql, params, callback) {
     // Handle missing callback
     if (typeof callback !== 'function') {
@@ -105,14 +93,9 @@ function all(sql, params, callback) {
     });
 }
 
-/**
- * Execute INSERT/UPDATE/DELETE (like SQLite db.run)
- * @param {string} sql - SQL query
- * @param {array} params - Query parameters
- * @param {function} callback - Callback with 'this' context
- */
+// Execute INSERT/UPDATE/DELETE queries (mimics SQLite db.run)
 function run(sql, params, callback) {
-    // Handle missing callback - FIXED
+    // Handle missing callback
     if (typeof callback !== 'function') {
         // If no callback, just execute the query
         pool.query(sql, params, (error) => {
@@ -138,25 +121,23 @@ function run(sql, params, callback) {
     });
 }
 
-// ==================== 4. TRANSACTION FUNCTIONS ====================
-
-// Begin transaction
+// =================== 4. TRANSACTION FUNCTIONS =================== 
+// Begin database transaction
 function beginTransaction(callback) {
     pool.query('START TRANSACTION', callback);
 }
 
-// Commit transaction
+// Commit database transaction
 function commit(callback) {
     pool.query('COMMIT', callback);
 }
 
-// Rollback transaction
+// Rollback database transaction
 function rollback(callback) {
     pool.query('ROLLBACK', callback);
 }
 
-// ==================== 5. MODULE EXPORTS ====================
-
+// =================== 5. MODULE EXPORTS =================== 
 // Export both the pool and SQLite-compatible functions
 module.exports = {
     pool,           // Raw MySQL pool for advanced usage
