@@ -1,7 +1,6 @@
 // WHOLE FILE DONE BY PRETI
-
 // ============================================================
-// SIMULATION_GENERATOR.JS - TABLE OF CONTENTS 
+// SIMULATION_GENERATOR.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
 // 1. IMPORTS & CONFIGURATION
@@ -428,13 +427,13 @@ async function generateTestData() {
                 imagesCreated += 2;
                 
                 const userQuery = `
-                    INSERT INTO users (name, email_encrypted, visit_count, created_at) 
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO users (name, email_encrypted, visit_count, created_at, last_visit) 
+                    VALUES (?, ?, ?, ?, ?)
                 `;
                 
                 db.query(
                     userQuery,
-                    [name, encryptedEmail, visitCount, submittedDate],
+                    [name, encryptedEmail, visitCount, submittedDate, submittedDate],
                     (err, userResult) => {
                         if (err) {
                             console.log(`❌ Failed to create user ${i}:`, err.message);
