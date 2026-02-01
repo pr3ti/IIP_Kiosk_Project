@@ -1,82 +1,93 @@
 // ============================================================
-// ADMINROUTES.JS - TABLE OF CONTENTS 
+// ADMINROUTES.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
-// 1. AUDIT LOGGING FUNCTIONS
+// 1. DEPENDENCIES & CONFIGURATION
+//    const express                    - Express framework import (DONE BY PRETI)
+//    const router                     - Express router instance (DONE BY PRETI)
+//    const auth                       - Authentication middleware (DONE BY PRETI)
+//    const db                         - Database connection (DONE BY PRETI)
+//    const multer                     - File upload middleware (DONE BY PRETI)
+//    const path                       - Path utilities (DONE BY PRETI)
+//    const fs                         - File system operations (DONE BY PRETI)
+//    const archiver                   - ZIP archive creation (DONE BY PRETI)
+//    const emailService               - Email service utilities (DONE BY NADH)
+//    const emailConfigStore           - Email configuration storage (DONE BY NADH)
+//
+// 2. AUDIT LOGGING FUNCTIONS
 //    function logAudit()              - Log admin actions to database with IP and user agent (DONE BY PRETI)
 //
-// 2. FILE UPLOAD CONFIGURATION
-//    const storage = multer.diskStorage - Configure multer storage for overlay file uploads (DONE BY PRETI)
-//    const upload = multer            - Handle PNG file uploads with validation (DONE BY PRETI)
+// 3. FILE UPLOAD CONFIGURATION
+//    const storage                    - Configure multer storage for overlay file uploads (DONE BY PRETI)
+//    const upload                     - Handle PNG file uploads with validation (DONE BY PRETI)
 //
-// 3. AUTHENTICATION ROUTES
+// 4. AUTHENTICATION ROUTES
 //    router.post('/login'             - Admin login with audit logging (DONE BY PRETI)
 //    router.post('/logout-audit'      - Log admin logout with audit trail (DONE BY PRETI)
+//    router.post('/keep-alive'        - Keep session alive with heartbeat (DONE BY PRETI)
 //
-// 4. DASHBOARD ROUTES
+// 5. DASHBOARD ROUTES
 //    router.get('/dashboard'          - Get dashboard statistics for last 1 month and recent activity (DONE BY PRETI)
+//    router.get('/feedback-stats'     - Get feedback distribution statistics (DONE BY PRETI)
+//    router.get('/visitor-trends'     - Get visitor trends data for charts (DONE BY PRETI)
 //    router.get('/test-db'            - Test database connection and table counts (DONE BY PRETI)
 //
-// 5. FEEDBACK MANAGEMENT ROUTES
+// 6. FEEDBACK MANAGEMENT ROUTES
 //    router.get('/feedback'           - Get all feedback with answers and pagination (DONE BY PRETI)
 //    router.put('/feedback/:id'       - Update feedback entry with admin notes (DONE BY PRETI)
 //    router.delete('/feedback/:id'    - Delete feedback with cascade and photo cleanup (DONE BY PRETI)
 //    router.get('/feedback/:id/questions' - Get all feedback questions and answers (DONE BY PRETI)
 // 
-// 6. ARCHIVE MANAGEMENT ROUTES
+// 7. ARCHIVE MANAGEMENT ROUTES
 //    router.get('/archive'            - Get archived feedback (older than 3 months) (DONE BY PRETI)
 //    router.post('/archive/update-status' - Manually trigger archive status update (DONE BY PRETI)
-//    router.get('/archive/stats'      - Archive Statistics [CHECK IF ITS NEEDED] (DONE BY PRETI)
+//    router.get('/archive/stats'      - Archive Statistics (DONE BY PRETI)
 //    router.post('/bulk-decrypt-archive' - Bulk decrypt archived emails with admin verification (DONE BY PRETI)
 //    router.post('/download-archive-photos' - Download archived photos as ZIP (DONE BY PRETI)
 //    router.get('/download-file/:filename' - Serve downloaded files from temp directory (DONE BY PRETI)
 // 
-// 7. ARCHIVE DELETION ROUTES (System Admin Only)
+// 8. ARCHIVE DELETION ROUTES (System Admin Only)
 //    router.post('/archive/preview-deletion' - Preview deletion count before executing (System Admin only) (DONE BY PRETI)
 //    router.post('/archive/delete-selected' - Permanently delete selected archived feedback (System Admin only) (DONE BY PRETI)
 //    router.post('/archive/delete-by-date' - Permanently delete archived feedback by date range (System Admin only) (DONE BY PRETI)
 // 
-// 8. PHOTO ACCESS & EMAIL DECRYPTION ROUTES
+// 9. PHOTO ACCESS & EMAIL DECRYPTION ROUTES
 //    router.post('/verify-photo-access' - Verify system admin password for photo access (DONE BY PRETI)
 //    router.post('/decrypt-email'     - Decrypt email with system admin verification (DONE BY PRETI)
+//    router.post('/decrypt-emails'    - Bulk decrypt multiple emails (DONE BY PRETI)
 //
-// 9. ADMIN USER MANAGEMENT ROUTES 
-//    router.get('/users'              - Get all ACTIVE admin users (excludes soft-deleted) (DONE BY PRETI)
-//    router.get('/users/deleted'      - Get all DELETED admin users (soft-deleted only) (DONE BY PRETI)
-//    router.post('/users')            - Add new admin user with password hashing and full_name (DONE BY PRETI)
-//    router.delete('/users/:id'       - Soft delete admin user (mark as deleted) (DONE BY PRETI)
-//    router.post('/users/:id/restore' - Restore soft-deleted admin user (DONE BY PRETI)
-//    router.delete('/users/:id/permanent' - Permanently delete soft-deleted user from database (DONE BY PRETI)
-//    router.put('/users/:id'          - Update admin user details with validation (DONE BY PRETI)
+// 10. ADMIN USER MANAGEMENT ROUTES 
+//     router.get('/users'              - Get all ACTIVE admin users (excludes soft-deleted) (DONE BY PRETI)
+//     router.get('/users/deleted'      - Get all DELETED admin users (soft-deleted only) (DONE BY PRETI)
+//     router.post('/users'             - Add new admin user with password hashing and full_name (DONE BY PRETI)
+//     router.delete('/users/:id'       - Soft delete admin user (mark as deleted) (DONE BY PRETI)
+//     router.post('/users/:id/restore' - Restore soft-deleted admin user (DONE BY PRETI)
+//     router.delete('/users/:id/permanent' - Permanently delete soft-deleted user from database (DONE BY PRETI)
+//     router.put('/users/:id'          - Update admin user details with validation (DONE BY PRETI)
 //
-// 10. DATA EXPORT MANAGEMENT ROUTES
-//    router.post('/data-export/unlock' - Unlock data export with password verification (System Admin only) (DONE BY PRETI)
+// 11. DATA EXPORT MANAGEMENT ROUTES
+//     router.post('/data-export/unlock' - Unlock data export with password verification (System Admin only) (DONE BY PRETI)
 //
-// 11. EXPORT/IMPORT ROUTES
+// 12. EXPORT/DOWNLOAD ROUTES
 //     router.get('/download-excel'    - Download feedback as CSV with decrypted emails (DONE BY PRETI)
 //     router.get('/download-archive-excel' - Download archived feedback as CSV with decryption (DONE BY PRETI)
 //     router.get('/download-photos'   - Download photos as ZIP archive (DONE BY PRETI)
+//     router.get('/download-audit-excel' - Download audit logs as CSV (DONE BY PRETI)
 //
-// 12. OVERLAY MANAGEMENT ROUTES
+// 13. OVERLAY MANAGEMENT ROUTES
 //     router.get('/overlays'          - Get all overlay themes with display order (DONE BY PRETI)
 //     router.post('/overlays'         - Add new overlay with file uploads (System Admin only) (DONE BY PRETI)
+//     router.get('/overlay/:id'       - Get overlay image by ID (DONE BY PRETI)
 //     router.delete('/overlays/:id'   - Delete overlay and associated image files (DONE BY PRETI)
 //
-// 13. QUESTION MANAGEMENT ROUTES
+// 14. QUESTION MANAGEMENT ROUTES
 //     router.get('/questions'         - Get all active questions with options (DONE BY PRETI)
 //     router.post('/questions'        - Add new question with multiple choice options (DONE BY PRETI)
 //     router.delete('/questions/:id'  - Delete question with soft/hard delete based on answers (DONE BY PRETI)
 //     router.put('/questions/:id'     - Update question safely without breaking answers (DONE BY PRETI)
 //
-// 14. AUDIT LOGS ROUTES
+// 15. AUDIT LOGS ROUTES
 //     router.get('/audit-logs'        - Get audit log entries with pagination (DONE BY PRETI)
-//
-// 15. HELPER FUNCTIONS
-//     function deleteUserPhotos()     - Delete user photo files from filesystem (DONE BY PRETI)
-//     function deleteOverlayFiles()   - Delete overlay image files from assets directory (DONE BY PRETI)
-//     function checkDirectoryForPhotos() - Check if directory contains image files (DONE BY PRETI)
-//     function createUploadsZip()     - Create ZIP archive of uploads directory (DONE BY PRETI)
-//     function convertToCSV()         - Convert data array to CSV format (DONE BY PRETI)
 //
 // 16. SAVED THEMES ROUTES
 //     router.get('/saved-themes'      - Get all saved themes for the current logged-in user (DONE BY PRETI)
@@ -88,10 +99,50 @@
 //     router.get('/saved-themes/active' - Get the currently active theme for the logged-in user (DONE BY PRETI)
 //
 // 17. VIP MANAGEMENT ROUTES
-//     router.get('/vips'                - Get VIP list by status (active / deleted) with table check (DONE BY ZAH)
-//     router.post('/vips'               - Add new VIP name (duplicate-safe, case-insensitive) (DONE BY ZAH)
-//     router.patch('/vips/:id/delete'   - Soft delete VIP (mark is_deleted = 1) (DONE BY ZAH)
-//     router.patch('/vips/:id/restore'  - Restore deleted VIP (mark is_deleted = 0) (DONE BY ZAH)
+//     router.get('/vips'              - Get VIP list by status (active / deleted) with table check (DONE BY ZAH)
+//     router.post('/vips'             - Add new VIP name (duplicate-safe, case-insensitive) (DONE BY ZAH)
+//
+// 18. FORM UI CONFIGURATION ROUTES (DONE BY NADH)
+//     router.get('/form-ui'           - Get form UI settings
+//     router.put('/form-ui'           - Update form UI settings 
+//
+// 19. EMAIL CONFIGURATION ROUTES (DONE BY NADH)
+//     router.get('/email-config'      - Get email configuration 
+//     router.put('/email-config'      - Update email configuration 
+//     router.post('/email-config/test' - Test email configuration 
+//
+// 20. COUNTDOWN TIMER MANAGEMENT ROUTES (DONE BY BERNISSA)
+//     router.get('/countdown-management' - Get countdown timer setting 
+//     router.put('/countdown-management' - Update countdown timer setting 
+//
+// 21. SERVER SCHEDULE MANAGEMENT ROUTES (DONE BY BERNISSA)
+//     router.get('/server-schedules'  - Get all server schedules 
+//     router.post('/server-schedules' - Create new server schedule 
+//     router.put('/server-schedules/:id' - Update server schedule 
+//     router.delete('/server-schedules/:id' - Delete server schedule 
+//     router.put('/server-schedules/:id/toggle' - Toggle schedule active status 
+//     router.post('/server-schedules/enable-all' - Enable all schedules 
+//     router.post('/server-schedules/disable-all' - Disable all schedules 
+//
+// 22. SERVER CONTROL ROUTES (DONE BY BERNISSA)
+//     router.post('/server/start'     - Start kiosk server 
+//     router.post('/server/stop'      - Stop kiosk server 
+//     router.get('/server/mode'       - Get server control mode (auto/manual) 
+//     router.post('/server/mode'      - Set server control mode 
+//     router.get('/server/status'     - Get current server status 
+//     router.get('/kiosk-status'      - Get kiosk server status 
+//
+// 23. HELPER FUNCTIONS
+//     function deleteUserPhotos()     - Delete user photo files from filesystem (DONE BY PRETI)
+//     function deleteOverlayFiles()   - Delete overlay image files from assets directory (DONE BY PRETI)
+//     function checkDirectoryForPhotos() - Check if directory contains image files (DONE BY PRETI)
+//     async function createUploadsZip() - Create ZIP archive of uploads directory (DONE BY PRETI)
+//     function convertToCSV()         - Convert data array to CSV format (DONE BY PRETI)
+//     function readSchedulesConfig()  - Read schedules configuration from JSON file (DONE BY BERNISSA)
+//     function writeSchedulesConfig() - Write schedules configuration to JSON file (DONE BY BERNISSA)
+//     function readModeConfig()       - Read server control mode from JSON file (DONE BY BERNISSA)
+//     function writeModeConfig()      - Write server control mode to JSON file (DONE BY BERNISSA)
+
 
 const express = require('express');
 const router = express.Router();
@@ -236,102 +287,303 @@ router.post('/logout-audit', (req, res) => {
     });
 });
 
+// ==================== SESSION KEEP-ALIVE ENDPOINT ====================
+
+// Keep-alive endpoint - refreshes session timeout
+// Called by frontend when user clicks "Stay Logged In" on timeout warning
+router.post('/keep-alive', auth.requireAuth, (req, res) => {
+    // Simply responding to an authenticated request refreshes the session
+    // The auth middleware and session middleware handle the session refresh automatically
+    
+    const username = req.session?.user?.username || 'unknown';
+    console.log(`🔄 Session keep-alive for user: ${username}`);
+    
+    // Optional: Touch the session to ensure it's refreshed
+    req.session.touch();
+    
+    res.json({ 
+        success: true, 
+        message: 'Session refreshed',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // ==================== 4. DASHBOARD ROUTES ====================
 
-// Dashboard data endpoint - to show only last 1 month of data
+// Dashboard data endpoint - FEEDBACK ONLY (matches Feedback Data page filters)
 router.get('/dashboard', (req, res) => {
-    console.log('📊 Fetching dashboard data (current month only)...');
+    console.log('📊 Fetching dashboard data (feedback only, SGT timezone)...');
     
-    // Calculate current month start and end dates
-    const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    // ── All queries now use DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) for consistency ──
+    // This ensures all date comparisons happen in Singapore timezone
     
-    const currentMonthStartISO = currentMonthStart.toISOString();
-    const currentMonthEndISO = currentMonthEnd.toISOString();
+    // ── Queries (FEEDBACK ONLY) ──────────────────────────────────────────
+    // Feedback submitted today (SGT) - matches "Today" filter
+    const feedbackTodayQuery = `
+        SELECT COUNT(*) as count 
+        FROM feedback 
+        WHERE DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '+08:00'))
+          AND is_active = 1 
+          AND archive_status = 'not_archived'
+    `;
     
-    // Get total visitors count (current month only)
-    const totalVisitorsQuery = 'SELECT COUNT(*) as count FROM users WHERE last_visit >= ? AND last_visit <= ?';
+    // Feedback submitted this week (SGT) - matches "This Week" filter (Mon-Today)
+    // WEEKDAY() returns 0=Monday, 6=Sunday
+    const feedbackThisWeekQuery = `
+        SELECT COUNT(*) as count 
+        FROM feedback 
+        WHERE DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) >= DATE_SUB(DATE(CONVERT_TZ(NOW(), '+00:00', '+08:00')), INTERVAL WEEKDAY(CONVERT_TZ(NOW(), '+00:00', '+08:00')) DAY)
+          AND DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) <= DATE(CONVERT_TZ(NOW(), '+00:00', '+08:00'))
+          AND is_active = 1 
+          AND archive_status = 'not_archived'
+    `;
     
-    // Get today's visitors count
-    const today = new Date().toISOString().split('T')[0];
-    const todaysVisitorsQuery = 'SELECT COUNT(*) as count FROM users WHERE DATE(last_visit) = ?';
-    
-    // Get total feedback submissions (current month only)
-    const feedbackSubmissionsQuery = 'SELECT COUNT(*) as count FROM feedback WHERE is_active = 1 AND created_at >= ? AND created_at <= ?';
-    
-    // Get users with email (current month only)
-    const usersWithEmailQuery = 'SELECT COUNT(*) as count FROM users WHERE email_encrypted IS NOT NULL AND email_encrypted != "" AND last_visit >= ? AND last_visit <= ?';
-    
-    // Get recent submissions (last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentSubmissionsQuery = 'SELECT COUNT(*) as count FROM feedback WHERE created_at >= ? AND is_active = 1';
+    // Feedback submitted this month (SGT) - matches "This Month" filter (1st-Today)
+    const feedbackThisMonthQuery = `
+        SELECT COUNT(*) as count 
+        FROM feedback 
+        WHERE YEAR(CONVERT_TZ(created_at, '+00:00', '+08:00')) = YEAR(CONVERT_TZ(NOW(), '+00:00', '+08:00'))
+          AND MONTH(CONVERT_TZ(created_at, '+00:00', '+08:00')) = MONTH(CONVERT_TZ(NOW(), '+00:00', '+08:00'))
+          AND DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) <= DATE(CONVERT_TZ(NOW(), '+00:00', '+08:00'))
+          AND is_active = 1 
+          AND archive_status = 'not_archived'
+    `;
+    // ─────────────────────────────────────────────────────────────────────
 
-    // Execute all queries
-    db.get(totalVisitorsQuery, [currentMonthStartISO, currentMonthEndISO], (err, totalVisitors) => {
+    // Execute queries
+    db.get(feedbackTodayQuery, [], (err, feedbackToday) => {
         if (err) {
-            console.error('❌ Error fetching total visitors:', err);
-            return res.status(500).json({ error: 'Database error: ' + err.message });
+            console.error('❌ Error fetching today\'s feedback:', err);
+            feedbackToday = { count: 0 };
         }
         
-        db.get(todaysVisitorsQuery, [today], (err, todaysVisitors) => {
+        db.get(feedbackThisWeekQuery, [], (err, feedbackThisWeek) => {
             if (err) {
-                console.error('❌ Error fetching today\'s visitors:', err);
-                todaysVisitors = { count: 0 };
+                console.error('❌ Error fetching this week\'s feedback:', err);
+                feedbackThisWeek = { count: 0 };
             }
             
-            db.get(feedbackSubmissionsQuery, [currentMonthStartISO, currentMonthEndISO], (err, feedbackSubmissions) => {
+            db.get(feedbackThisMonthQuery, [], (err, feedbackThisMonth) => {
                 if (err) {
-                    console.error('❌ Error fetching feedback submissions:', err);
-                    feedbackSubmissions = { count: 0 };
+                    console.error('❌ Error fetching this month\'s feedback:', err);
+                    feedbackThisMonth = { count: 0 };
                 }
                 
-                db.get(usersWithEmailQuery, [currentMonthStartISO, currentMonthEndISO], (err, usersWithEmail) => {
-                    if (err) {
-                        console.error('❌ Error fetching users with email:', err);
-                        usersWithEmail = { count: 0 };
-                    }
-                    
-                    db.get(recentSubmissionsQuery, [sevenDaysAgo.toISOString()], (err, recentSubmissions) => {
-                        if (err) {
-                            console.error('❌ Error fetching recent submissions:', err);
-                            recentSubmissions = { count: 0 };
-                        }
-                        
-                        // Compile stats (current month only)
-                        const stats = {
-                            totalVisitors: totalVisitors?.count || 0,
-                            todaysVisitors: todaysVisitors?.count || 0,
-                            feedbackSubmissions: feedbackSubmissions?.count || 0,
-                            usersWithEmail: usersWithEmail?.count || 0,
-                            recentSubmissions: recentSubmissions?.count || 0
-                        };
-                        
-                        console.log(`📊 Dashboard stats (${currentMonthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}):`, stats);
-                        
-                        const recentActivity = {
-                            systemStatus: [
-                                { label: 'Kiosk Status', value: 'ONLINE', badgeType: 'online' },
-                                { label: 'Database', value: 'CONNECTED', badgeType: 'connected' },
-                            ],
-                            dataManagement: [
-                                { label: 'Recent Submissions', value: stats.recentSubmissions + ' REQ', badgeType: 'warning' },
-                                { label: 'Cleanup Status', value: 'ACTIVE', badgeType: 'active' }
-                            ]
-                        };
-                        
-                        res.json({
-                            success: true,
-                            stats: stats,
-                            recentActivity: recentActivity
-                        });
-                    });
+                // Compile stats - FEEDBACK ONLY
+                const stats = {
+                    feedbackToday: feedbackToday?.count || 0,
+                    feedbackThisWeek: feedbackThisWeek?.count || 0,
+                    feedbackThisMonth: feedbackThisMonth?.count || 0,
+                    // Keep feedbackSubmissions for backward compatibility
+                    feedbackSubmissions: feedbackThisMonth?.count || 0,
+                    // Timezone info for debugging
+                    timezone: 'Asia/Singapore (UTC+8) - using DATE(CONVERT_TZ) for all queries'
+                };
+                
+                console.log('📊 Dashboard stats (feedback only, SGT DATE filtering):', {
+                    feedbackToday: stats.feedbackToday,
+                    feedbackThisWeek: stats.feedbackThisWeek,
+                    feedbackThisMonth: stats.feedbackThisMonth
+                });
+                
+                res.json({
+                    success: true,
+                    stats: stats
                 });
             });
         });
     });
 });
+
+// ==================== REAL DATA CHART ENDPOINTS (ADDED FOR LIVE DASHBOARD) ====================
+
+// Get real feedback statistics for distribution chart
+router.get('/feedback-stats', (req, res) => {
+    console.log('📊 Fetching REAL feedback statistics for charts...');
+    
+    const queries = {
+        withEmail: `
+            SELECT COUNT(DISTINCT f.id) as count 
+            FROM feedback f
+            JOIN users u ON f.user_id = u.id
+            WHERE f.is_active = 1 
+            AND f.archive_status = 'not_archived'
+            AND u.email_encrypted IS NOT NULL 
+            AND u.email_encrypted != ''
+        `,
+        withoutEmail: `
+            SELECT COUNT(DISTINCT f.id) as count 
+            FROM feedback f
+            JOIN users u ON f.user_id = u.id
+            WHERE f.is_active = 1 
+            AND f.archive_status = 'not_archived'
+            AND (u.email_encrypted IS NULL OR u.email_encrypted = '')
+        `,
+        withPhoto: `
+            SELECT COUNT(*) as count 
+            FROM feedback 
+            WHERE is_active = 1 
+            AND archive_status = 'not_archived'
+            AND (photo_path IS NOT NULL OR processed_photo_path IS NOT NULL)
+        `,
+        withoutPhoto: `
+            SELECT COUNT(*) as count 
+            FROM feedback 
+            WHERE is_active = 1 
+            AND archive_status = 'not_archived'
+            AND photo_path IS NULL 
+            AND processed_photo_path IS NULL
+        `,
+        longterm: `
+            SELECT COUNT(*) as count 
+            FROM feedback 
+            WHERE is_active = 1 
+            AND archive_status = 'not_archived'
+            AND data_retention = 'longterm'
+        `,
+        temporary: `
+            SELECT COUNT(*) as count 
+            FROM feedback 
+            WHERE is_active = 1 
+            AND archive_status = 'not_archived'
+            AND data_retention = 'temporary'
+        `
+    };
+    
+    const results = {};
+    const queryKeys = Object.keys(queries);
+    let completed = 0;
+    
+    queryKeys.forEach(key => {
+        db.get(queries[key], [], (err, result) => {
+            if (err) {
+                console.error(`❌ Error fetching ${key}:`, err);
+                results[key] = 0;
+            } else {
+                results[key] = result.count || 0;
+            }
+            
+            completed++;
+            
+            if (completed === queryKeys.length) {
+                console.log('✅ Feedback statistics (REAL DATA):', results);
+                res.json({
+                    success: true,
+                    stats: results
+                });
+            }
+        });
+    });
+});
+
+// Get real feedback trends for line chart (FEEDBACK ONLY)
+router.get('/visitor-trends', (req, res) => {
+    const range = req.query.range || 'week';
+    let days = 7;
+    
+    if (range === 'month') days = 30;
+    if (range === 'year') days = 365;
+    
+    console.log(`📈 Fetching REAL feedback trends for last ${days} days (SGT)...`);
+    
+    // SGT offset
+    const SGT_OFFSET_MS = 8 * 60 * 60 * 1000;
+    
+    // Query feedback data grouped by date (in SGT)
+    // CONVERT_TZ converts from UTC to SGT for proper day grouping
+    // Use SGT-based date filtering to match chart iteration
+    const feedbackQuery = `
+        SELECT 
+            DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '+08:00'), '%Y-%m-%d') as date,
+            COUNT(*) as feedback
+        FROM feedback
+        WHERE DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) >= DATE(DATE_SUB(CONVERT_TZ(NOW(), '+00:00', '+08:00'), INTERVAL ? DAY))
+        AND is_active = 1
+        AND archive_status = 'not_archived'
+        GROUP BY DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '+08:00'), '%Y-%m-%d')
+        ORDER BY date ASC
+    `;
+    
+    db.pool.query(feedbackQuery, [days], (err, feedbackResults) => {
+        if (err) {
+            console.error('❌ Error fetching feedback trends:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: err.message 
+            });
+        }
+        
+        console.log(`📊 Raw feedback results: ${feedbackResults ? feedbackResults.length : 0} rows`);
+        if (feedbackResults && feedbackResults.length > 0) {
+            console.log('   Sample:', feedbackResults[0]);
+        }
+        
+        // Build feedback map
+        const feedbackMap = {};
+        if (feedbackResults && feedbackResults.length > 0) {
+            feedbackResults.forEach(r => {
+                let dateStr;
+                if (r.date instanceof Date) {
+                    const year = r.date.getUTCFullYear();
+                    const month = String(r.date.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(r.date.getUTCDate()).padStart(2, '0');
+                    dateStr = `${year}-${month}-${day}`;
+                } else if (typeof r.date === 'string') {
+                    dateStr = r.date.split(' ')[0];
+                } else {
+                    console.warn('⚠️  Unexpected date format:', typeof r.date, r.date);
+                    return;
+                }
+                feedbackMap[dateStr] = parseInt(r.feedback) || 0;
+            });
+        }
+        
+        console.log('📊 Feedback map keys:', Object.keys(feedbackMap));
+        console.log('📊 Feedback map FULL:', feedbackMap);
+
+        // Build labels and data arrays using SGT dates
+        const labels = [];
+        const feedbackData = [];
+        
+        // Use SGT for date iteration
+        const sgtNow = new Date(Date.now() + SGT_OFFSET_MS);
+        
+        for (let i = days - 1; i >= 0; i--) {
+            // Calculate date in SGT
+            const sgtDate = new Date(sgtNow);
+            sgtDate.setUTCDate(sgtDate.getUTCDate() - i);
+            
+            const dateStr = sgtDate.getUTCFullYear() + '-' +
+                           String(sgtDate.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                           String(sgtDate.getUTCDate()).padStart(2, '0');
+            
+            // Format label
+            const dayName = new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'short' });
+            const dateLabel = new Date(dateStr + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            labels.push(`${dayName}\n${dateLabel}`);
+            
+            const feedback = feedbackMap[dateStr] || 0;
+            feedbackData.push(feedback);
+        }
+        
+        // Calculate total for debugging
+        const totalFeedback = feedbackData.reduce((a, b) => a + b, 0);
+        
+        console.log(`✅ Found REAL feedback trends: ${feedbackResults.length} days with data`);
+        console.log(`📈 Total feedback in range: ${totalFeedback}`);
+        console.log('📊 Final feedback data:', feedbackData);
+        
+        res.json({
+            success: true,
+            data: {
+                labels,
+                feedbackData
+                // No visitorData - feedback only
+            }
+        });
+    });
+});
+
 
 // Database test endpoint
 router.get('/test-db', (req, res) => {
@@ -373,13 +625,14 @@ router.get('/test-db', (req, res) => {
     });
 });
 
+
 // ==================== 5. FEEDBACK MANAGEMENT ROUTES ====================
 
-// Get all feedback data - UPDATED with pagination (25 items per page)
 router.get('/feedback', (req, res) => {
     console.log('🔍 Fetching ALL feedback data (pagination handled by frontend)...');
     
     // Get ALL feedback data (no LIMIT/OFFSET - frontend handles pagination like archive page)
+    // DATE_FORMAT returns SGT datetime as string for consistent display
     const query = `
         SELECT 
             f.id,
@@ -390,7 +643,7 @@ router.get('/feedback', (req, res) => {
             f.data_retention,
             f.photo_path,
             f.processed_photo_path,
-            f.created_at as date,
+            DATE_FORMAT(CONVERT_TZ(f.created_at, '+00:00', '+08:00'), '%Y-%m-%d %H:%i:%s') as date,
             f.admin_notes
         FROM feedback f
         JOIN users u ON f.user_id = u.id
@@ -470,7 +723,7 @@ router.get('/feedback', (req, res) => {
 // Update feedback
 router.put('/feedback/:id', (req, res) => {
     const { id } = req.params;
-    const { comment, admin_notes } = req.body;  // Keep comment for pledge
+    const { comment, admin_notes } = req.body;  
     const query = 'UPDATE feedback SET comment = ?, admin_notes = ? WHERE id = ?';
     db.run(query, [comment, admin_notes, id], function(err) {
         if (err) {
@@ -664,6 +917,7 @@ router.get('/feedback/:id/questions', (req, res) => {
 router.get('/archive', (req, res) => {
     console.log('📂 Fetching archived feedback data...');
     
+    // DATE_FORMAT returns SGT datetime as string for consistent display
     const query = `
         SELECT 
             f.id,
@@ -674,7 +928,7 @@ router.get('/archive', (req, res) => {
             f.data_retention,
             f.photo_path,
             f.processed_photo_path,
-            f.created_at as date
+            DATE_FORMAT(CONVERT_TZ(f.created_at, '+00:00', '+08:00'), '%Y-%m-%d %H:%i:%s') as date
         FROM feedback f
         JOIN users u ON f.user_id = u.id
         WHERE f.is_active = 1 AND f.archive_status = 'archived'
@@ -690,10 +944,51 @@ router.get('/archive', (req, res) => {
             });
         }
         
-        console.log(`📂 Found ${rows.length} archived feedback entries`);
-        res.json({
-            success: true,
-            feedback: rows
+        if (rows.length === 0) {
+            console.log('📂 No archived feedback found');
+            return res.json({
+                success: true,
+                feedback: []
+            });
+        }
+        
+        // Fetch question answers for each archived feedback (same as /feedback route)
+        const archiveWithAnswers = [];
+        let processed = 0;
+        
+        rows.forEach(feedback => {
+            const answersQuery = `
+                SELECT 
+                    q.question_text,
+                    q.question_type,
+                    fa.answer_value,
+                    qo.option_label
+                FROM feedback_answers fa
+                JOIN questions q ON fa.question_id = q.id
+                LEFT JOIN question_options qo ON (
+                    q.question_type = 'choice' 
+                    AND fa.answer_value = qo.id
+                )
+                WHERE fa.feedback_id = ?
+                ORDER BY q.display_order ASC
+            `;
+            
+            db.all(answersQuery, [feedback.id], (err, answers) => {
+                archiveWithAnswers.push({
+                    ...feedback,
+                    question_answers: err ? [] : answers
+                });
+                
+                processed++;
+                
+                if (processed === rows.length) {
+                    console.log(`📂 Found ${archiveWithAnswers.length} archived feedback entries with answers`);
+                    res.json({
+                        success: true,
+                        feedback: archiveWithAnswers
+                    });
+                }
+            });
         });
     });
 });
@@ -1908,7 +2203,10 @@ router.delete('/users/:id/permanent', (req, res) => {
     });
 });
 
-// Update admin user and handle full_name
+
+
+
+
 router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
     const { username, full_name, role, password } = req.body;
@@ -1943,11 +2241,35 @@ router.put('/users/:id', async (req, res) => {
                 return res.status(404).json({ error: 'User not found' });
             }
             
-            // Prevent modifying the root 'systemadmin' account
-            if (targetUser.username === 'systemadmin' && targetUser.username !== currentUsername) {
-                return res.status(403).json({ error: 'Cannot modify the root systemadmin account' });
+            
+            if (targetUser.username === 'systemadmin') {
+                // Check if the current user IS the systemadmin
+                if (currentUsername === 'systemadmin') {
+                    console.log('🔐 systemadmin is updating their own account');
+                    
+                    // systemadmin can ONLY update their own password and full_name
+                    // They CANNOT change username or role
+                    if (username !== 'systemadmin' || role !== 'system_admin') {
+                        return res.status(403).json({ 
+                            error: 'Root account username and role cannot be changed',
+                            hint: 'You can only update your password and full name'
+                        });
+                    }
+                    
+                    // Allow password and full_name update only
+                    await performSystemAdminSelfUpdate();
+                } else {
+                    // Other users (even system_admin role) cannot modify systemadmin
+                    console.log('🚫 Another admin tried to modify systemadmin account');
+                    return res.status(403).json({ 
+                        error: 'The root systemadmin account can only be modified by itself',
+                        hint: 'Log in as systemadmin to change this account'
+                    });
+                }
+                return; // Exit early for systemadmin cases
             }
             
+            // STANDARD USER UPDATE (non-systemadmin accounts)
             if (role && !['system_admin', 'IT_admin', 'IT_staff'].includes(role)) {
                 return res.status(400).json({ error: 'Invalid role. Allowed roles: system_admin, IT_admin, IT_staff' });
             }
@@ -1971,6 +2293,76 @@ router.put('/users/:id', async (req, res) => {
                 await performUserUpdate();
             }
             
+            // FUNCTION: Update systemadmin's own password and full_name
+            async function performSystemAdminSelfUpdate() {
+                let updateQuery = 'UPDATE admin_users SET ';
+                const updateParams = [];
+                const updateFields = [];
+                
+                // Always include full_name (even if null/empty)
+                if (full_name !== undefined) {
+                    updateFields.push('full_name = ?');
+                    updateParams.push(full_name);
+                }
+                
+                // Include password if provided
+                if (password && password.trim() !== '') {
+                    try {
+                        const hashedPassword = await auth.hashPassword(password);
+                        updateFields.push('password_hash = ?');
+                        updateParams.push(hashedPassword);
+                        console.log('🔐 systemadmin password will be updated');
+                    } catch (hashErr) {
+                        console.error('❌ Error hashing password:', hashErr);
+                        return res.status(500).json({ error: 'Failed to hash password' });
+                    }
+                }
+                
+                if (updateFields.length === 0) {
+                    return res.status(400).json({ error: 'No fields to update' });
+                }
+                
+                updateQuery += updateFields.join(', ') + ' WHERE id = ?';
+                updateParams.push(id);
+                
+                console.log('📝 Executing systemadmin self-update query');
+                
+                db.run(updateQuery, updateParams, function(err) {
+                    if (err) {
+                        console.error('❌ Error updating systemadmin account:', err);
+                        return res.status(500).json({ error: 'Failed to update account: ' + err.message });
+                    }
+                    
+                    console.log('✅ systemadmin account updated successfully:', { changes: this.changes, id });
+                    
+                    // Get the updated user data
+                    const getUpdatedUserQuery = 'SELECT * FROM admin_users WHERE id = ?';
+                    db.get(getUpdatedUserQuery, [id], (err, updatedUser) => {
+                        if (err) {
+                            console.error('❌ Error fetching updated user:', err);
+                            return res.json({
+                                success: true,
+                                message: 'Root account updated successfully',
+                                changes: this.changes
+                            });
+                        }
+                        
+                        res.json({
+                            success: true,
+                            message: 'Root account updated successfully',
+                            changes: this.changes,
+                            updatedUser: {
+                                id: updatedUser.id,
+                                username: updatedUser.username,
+                                full_name: updatedUser.full_name,
+                                role: updatedUser.role
+                            }
+                        });
+                    });
+                });
+            }
+            
+            // FUNCTION: Update standard (non-systemadmin) users
             async function performUserUpdate() {
                 // Build update query based on provided fields
                 let updateQuery = 'UPDATE admin_users SET ';
@@ -3121,7 +3513,7 @@ router.delete('/questions/:id', (req, res) => {
                 });
             } else {
                 // No answers safe to hard delete (question and options)
-                db.beginTransaction( function(err) {
+                db.beginTransaction((err) => {
                     if (err) {
                         console.error('❌ Error starting transaction:', err);
                         return res.status(500).json({ error: 'Database error: ' + err.message });
@@ -3133,7 +3525,7 @@ router.delete('/questions/:id', (req, res) => {
                     db.run(deleteOptionsQuery, [id], function(err) {
                         if (err) {
                             console.error('❌ Error deleting question options:', err);
-                            return db.rollback( () => {
+                            return db.rollback(() => {
                                 res.status(500).json({ error: 'Database error: ' + err.message });
                             });
                         }
@@ -3146,13 +3538,13 @@ router.delete('/questions/:id', (req, res) => {
                         db.run(deleteQuestionQuery, [id], function(err) {
                             if (err) {
                                 console.error('❌ Error deleting question:', err);
-                                return db.rollback( () => {
+                                return db.rollback(() => {
                                     res.status(500).json({ error: 'Database error: ' + err.message });
                                 });
                             }
                             
                             // Commit transaction
-                            db.commit( (err) => {
+                            db.commit((err) => {
                                 if (err) {
                                     console.error('❌ Error committing transaction:', err);
                                     return res.status(500).json({ error: 'Database error: ' + err.message });
@@ -3174,7 +3566,6 @@ router.delete('/questions/:id', (req, res) => {
     });
 });
 
-// Update question (safe edit)
 router.put('/questions/:id', (req, res) => {
     const { id } = req.params;
     const { question_text, display_order, is_required, is_active } = req.body;
