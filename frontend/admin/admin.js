@@ -1,8 +1,27 @@
 // ============================================================
-// ADMIN.JS - TABLE OF CONTENTS
+// ADMIN.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
-// 1. GLOBAL VARIABLES & STATE MANAGEMENT
+// 0. SESSION TIMEOUT & AUTO-LOGOUT ENHANCEMENT (DONE BY PRETI)
+//    const SESSION_TIMEOUT_MS         - Session timeout duration (30 minutes) (DONE BY PRETI)
+//    const WARNING_BEFORE_TIMEOUT_MS  - Warning time before timeout (2 minutes) (DONE BY PRETI)
+//    const ACTIVITY_CHECK_INTERVAL_MS - Activity check interval (1 minute) ((DONE BY PRETI)
+//    let lastActivityTime             - Track last user activity timestamp (DONE BY PRETI)
+//    let sessionWarningShown          - Flag for session warning modal state (DONE BY PRETI)
+//    let activityCheckInterval        - Interval timer for activity checks (DONE BY PRETI)
+//    let sessionTimeoutModal          - Reference to timeout warning modal (DONE BY PRETI)
+//    function resetActivityTimer()    - Reset activity timer on user interaction (DONE BY PRETI)
+//    function initActivityTracking()  - Initialize activity event listeners (DONE BY PRETI)
+//    function checkSessionTimeout()   - Check if session has timed out (DONE BY PRETI)
+//    function startSessionMonitoring() - Start session timeout monitoring (DONE BY PRETI)
+//    function stopSessionMonitoring() - Stop session timeout monitoring (DONE BY PRETI)
+//    function showSessionWarningModal() - Show session timeout warning modal (DONE BY PRETI)
+//    function updateCountdown()       - Update countdown timer in warning modal (DONE BY PRETI)
+//    function closeSessionWarningModal() - Close session warning modal (DONE BY PRETI)
+//    function handleSessionTimeout()  - Handle session timeout and logout (DONE BY PRETI)
+//    window.fetch                     - Global fetch interceptor for 401 detection (DONE BY PRETI)
+//
+// 1. GLOBAL VARIABLES & STATE MANAGEMENT (DONE BY PRETI)
 //    let currentDownloadType          - Track current download operation type (DONE BY PRETI)
 //    let currentDeleteFeedbackId      - Track feedback ID pending deletion (DONE BY PRETI)
 //    let currentEmailViewingId        - Track email ID being viewed (DONE BY PRETI)
@@ -20,10 +39,10 @@
 //    let filteredArchiveData          - Filtered archive results (DONE BY PRETI)
 //    let archiveCurrentPage           - Current archive page (DONE BY PRETI)
 //    const archiveItemsPerPage        - Items per page for archive (25) (DONE BY PRETI)
-//    let allLeaderboardData           - ALL leaderboard records (DONE BY PRETI)
-//    let filteredLeaderboardData      - Filtered leaderboard results (DONE BY PRETI)
-//    let leaderboardCurrentPage       - Current leaderboard page (DONE BY PRETI)
-//    const leaderboardItemsPerPage    - Items per page for leaderboard (25) (DONE BY PRETI)
+//    let allPledgeboardData           - ALL pledgeboard records (DONE BY PRETI)
+//    let filteredPledgeboardData      - Filtered pledgeboard results (DONE BY PRETI)
+//    let pledgeboardCurrentPage       - Current pledgeboard page (DONE BY PRETI)
+//    const pledgeboardItemsPerPage    - Items per page for pledgeboard (25) (DONE BY PRETI)
 //    let decryptedEmailMap            - Map of decrypted emails {feedbackId: email} (DONE BY PRETI)
 //    let isAnyEmailDecrypted          - Flag for feedback decryption state (DONE BY PRETI)
 //    let encryptedFeedbackIds         - Array of encrypted feedback IDs (current page) (DONE BY PRETI)
@@ -35,13 +54,13 @@
 //    window.questionsDataMap          - Store question data for edit functions (DONE BY PRETI)
 //    function showNotification()      - Show notification message to user (DONE BY PRETI)
 //
-// 2. AUTHENTICATION & SESSION MANAGEMENT
+// 2. AUTHENTICATION & SESSION MANAGEMENT (DONE BY PRETI)
 //    async function handleLogin()     - Admin login with API authentication (DONE BY PRETI)
 //    function handleLogout()          - Log out admin user with audit logging (DONE BY PRETI)
 //    function updateUIForUser()       - Update UI based on user role (DONE BY PRETI)
 //    function formatRoleName()        - Format role names for display (DONE BY PRETI)
 //
-// 3. AUDIT LOGS MANAGEMENT
+// 3. AUDIT LOGS MANAGEMENT (DONE BY PRETI)
 //    async function loadAuditLogs()   - Load all audit log entries (DONE BY PRETI)
 //    function populateUserFilter()    - Populate user filter dropdown (DONE BY PRETI)
 //    function filterAuditLogs()       - Filter logs by search, action, user, target, IP, date (DONE BY PRETI)
@@ -60,16 +79,34 @@
 //    function updateResultsCounts()   - Update result count displays (DONE BY PRETI)
 //    async function downloadAuditExcel() - Download filtered logs as CSV/Excel (DONE BY PRETI)
 //
-// 4. DASHBOARD MANAGEMENT
+// 4. DASHBOARD MANAGEMENT (DONE BY PRETI)
+//    let visitorTrendsChart           - Visitor trends chart instance (DONE BY PRETI)
+//    let feedbackDistributionChart    - Feedback distribution chart instance (DONE BY PRETI)
+//    let currentChartRange            - Current chart time range (DONE BY PRETI)
 //    async function loadDashboardData() - Load dashboard statistics from API (DONE BY PRETI)
-//    function updateDashboardStats()  - Update dashboard stat cards (DONE BY PRETI)
-//    function updateRecentActivity()  - Update recent activity section (DONE BY PRETI)
-//    function createStatusItem()      - Create status item element (DONE BY PRETI)
+//    function updateEnhancedDashboardStats() - Update dashboard stat cards (DONE BY PRETI)
+//    async function updateSystemStatus() - Check and update System Status section (Kiosk, DB) (DONE BY PRETI)
+//    async function updateKioskStatus() - Update kiosk status metric card at top of dashboard (DONE BY PRETI)
+//    function animateValue()          - Animate number value changes (DONE BY PRETI)
 //    function updateLastUpdated()     - Update last updated timestamp (DONE BY PRETI)
 //    function getDefaultStats()       - Get fallback statistics for offline mode (DONE BY PRETI)
 //    function refreshDashboard()      - Refresh dashboard data (DONE BY PRETI)
-//
-// 5. FEEDBACK DATA MANAGEMENT (NOT_ARCHIVED)
+//    async function loadChartData()   - Load chart data for dashboard (DONE BY PRETI)
+//    async function loadVisitorTrendsData() - Load visitor trends chart data (DONE BY PRETI)
+//    async function loadFeedbackDistributionData() - Load feedback distribution data (DONE BY PRETI)
+//    function createVisitorTrendsChart() - Create visitor trends chart (DONE BY PRETI)
+//    function createEmptyVisitorTrendsChart() - Create empty placeholder chart (DONE BY PRETI)
+//    function createVisitorTrendsChartWithSampleData() - Create chart with sample data (DONE BY PRETI)
+//    function createFeedbackDistributionChart() - Create feedback distribution chart (DONE BY PRETI)
+//    function createEmptyFeedbackDistributionChart() - Create empty distribution chart (DONE BY PRETI)
+//    function createFeedbackDistributionChartWithSampleData() - Create chart with sample data (DONE BY PRETI)
+//    function updateChartRange()      - Update chart time range (DONE BY PRETI)
+//    function formatNumber()          - Format numbers for display (DONE BY PRETI)
+//    function calculatePercentage()   - Calculate percentage values (DONE BY PRETI)
+//    function formatDate()            - Format dates for UI display (DONE BY PRETI)
+//    function formatTime()            - Format times for UI display (DONE BY PRETI)
+
+// 5. FEEDBACK DATA MANAGEMENT (NOT_ARCHIVED) (DONE BY PRETI)
 //    async function loadFeedbackData() - Load ALL feedback data (not_archived) (DONE BY PRETI)
 //    function filterFeedbackData()    - Filter feedback based on all active filters (DONE BY PRETI)
 //    function updateFeedbackCounts()  - Update feedback count displays (DONE BY PRETI)
@@ -79,7 +116,7 @@
 //    function nextFeedbackPage()      - Navigate to next feedback page (DONE BY PRETI)
 //    function refreshFeedbackData()   - Refresh feedback data (DONE BY PRETI)
 //
-// 6. ARCHIVE DATA MANAGEMENT (ARCHIVED)
+// 6. ARCHIVE DATA MANAGEMENT (ARCHIVED) (DONE BY PRETI)
 //    async function loadArchiveData() - Load ALL archive data (archived) (DONE BY PRETI)
 //    function filterArchiveData()     - Filter archive data (DONE BY PRETI)
 //    function updateArchiveCounts()   - Update archive count displays (DONE BY PRETI)
@@ -89,7 +126,7 @@
 //    function nextArchivePage()       - Navigate to next archive page (DONE BY PRETI)
 //    function refreshArchiveData()    - Refresh archive data (DONE BY PRETI)
 //
-// 7. FILTER CONTROLS (BOTH TABS)
+// 7. FILTER CONTROLS (BOTH TABS) (DONE BY PRETI)
 //    function toggleFeedbackAdvancedFilters() - Toggle feedback advanced filters panel (DONE BY PRETI)
 //    function toggleArchiveAdvancedFilters() - Toggle archive advanced filters panel (DONE BY PRETI)
 //    function setFeedbackDateRangePreset() - Set feedback date range preset (DONE BY PRETI)
@@ -97,7 +134,7 @@
 //    function clearAllFeedbackFilters() - Clear all feedback filters (DONE BY PRETI)
 //    function clearAllArchiveFilters() - Clear all archive filters (DONE BY PRETI)
 //
-// 8. ENCRYPTION MANAGEMENT (PAGE-SPECIFIC)
+// 8. ENCRYPTION MANAGEMENT (PAGE-SPECIFIC) (DONE BY PRETI)
 //    function updateEncryptionButtons() - Update feedback encryption buttons (DONE BY PRETI)
 //    function updateArchiveEncryptionButtons() - Update archive encryption buttons (DONE BY PRETI)
 //    async function decryptAllEmails() - Decrypt emails on current feedback page (DONE BY PRETI)
@@ -105,7 +142,7 @@
 //    function reEncryptAllEmails()    - Re-encrypt feedback emails (DONE BY PRETI)
 //    function reEncryptAllArchiveEmails() - Re-encrypt archive emails (DONE BY PRETI)
 //
-// 9. PLEDGE & CONTENT VIEWING
+// 9. PLEDGE & CONTENT VIEWING (DONE BY PRETI)
 //    function viewPledge()            - Display pledge content in popup (DONE BY PRETI)
 //    function closePledgePopup()      - Close pledge popup (DONE BY PRETI)
 //    async function viewQuestionAnswers() - Load and display question answers (DONE BY PRETI)
@@ -113,7 +150,7 @@
 //    function formatAnswer()          - Format answer based on question type (DONE BY PRETI)
 //    function closeQAPopup()          - Close Q&A popup (DONE BY PRETI)
 //
-// 10. PHOTO MANAGEMENT
+// 10. PHOTO MANAGEMENT (DONE BY PRETI)
 //     async function viewRawPhoto()   - View raw photo without password (DONE BY PRETI)
 //     async function viewProcessedPhoto() - View processed photo without password (DONE BY PRETI)
 //     function showRawPhotoPopup()    - Show raw photo popup (DONE BY PRETI)
@@ -123,12 +160,13 @@
 //     function downloadPhoto()        - Download photo file (DONE BY PRETI)
 //     function closePhotoPopup()      - Close photo popup (DONE BY PRETI)
 //
-// 11. EMAIL MANAGEMENT
+// 11. EMAIL MANAGEMENT (DONE BY PRETI)
 //     function showPasswordPrompt()   - Custom password prompt with hidden input (DONE BY PRETI)
 //     function showEmailPopup()       - Display decrypted email in popup (DONE BY PRETI)
+//     function closeEmailModal()      - Close email modal (DONE BY PRETI)
 //     function closeEmailPopup()      - Close email display popup (DONE BY PRETI)
 //
-// 12. OVERLAY MANAGEMENT
+// 12. OVERLAY MANAGEMENT (DONE BY PRETI)
 //     async function loadOverlayData() - Load overlay themes from API (DONE BY PRETI)
 //     function showOverlayMessage()   - Display overlay status message (DONE BY PRETI)
 //     function createOverlaysTable()  - Placeholder for creating overlays table (DONE BY PRETI)
@@ -143,143 +181,528 @@
 //     async function deleteOverlay()  - Request overlay deletion (System Admin only) (DONE BY PRETI)
 //     async function performOverlayDeletion() - Execute overlay deletion (DONE BY PRETI)
 // 
-// 13. USER MANAGEMENT 
-//     let currentUserTab                - Track current tab ('active' or 'deleted') (DONE BY PRETI)
-//     function switchUserTab()          - Switch between Active/Deleted users tabs (DONE BY PRETI)
+// 13. USER MANAGEMENT (DONE BY PRETI)
+//     let currentUserTab              - Track current tab ('active' or 'deleted') (DONE BY PRETI)
+//     function switchUserTab()        - Switch between Active/Deleted users tabs (DONE BY PRETI)
 //     async function loadUserManagementData() - Load users based on current tab (DONE BY PRETI)
-//     async function loadActiveUsers()  - Load active admin users (DONE BY PRETI)
+//     async function loadActiveUsers() - Load active admin users (DONE BY PRETI)
 //     async function loadDeletedUsers() - Load deleted admin users (DONE BY PRETI)
 //     function updateActiveUsersTable() - Update active users table (DONE BY PRETI)
 //     function updateDeletedUsersTable() - Update deleted users table (DONE BY PRETI)
 //     function updateUserManagementTable() - Legacy wrapper for backward compatibility (DONE BY PRETI)
-//     function addUser()                - Open add user modal (System Admin only) (DONE BY PRETI)
-//     async function handleAddUser()    - Process new user creation (DONE BY PRETI)
-//     function closeAddUserModal()      - Close add user modal (DONE BY PRETI)
-//     function editUser()               - Open user edit modal (System Admin only) (DONE BY PRETI)
-//     async function handleEditUser()   - Process user updates (DONE BY PRETI)
-//     function closeEditUserModal()     - Close edit user modal (DONE BY PRETI)
-//     async function deleteUser()       - Soft delete user (DONE BY PRETI)
-//     async function performUserDeletion() - Execute soft deletion (DONE BY PRETI)
-//     async function restoreUser()      - Restore soft-deleted user (DONE BY PRETI)
-//     async function permanentDeleteUser() - Permanently delete from database (DONE BY PRETI)
-//     function getFallbackUsers()       - Get fallback user data for development (DONE BY PRETI)
-//     function formatRoleName()         - Format role display names (DONE BY PRETI)
+//     function addUser()              - Open add user modal (System Admin only) (DONE BY PRETI)
+//     async function handleAddUser()  - Submit new user creation (DONE BY PRETI)
+//     function closeAddUserModal()    - Close add user modal (DONE BY PRETI)
+//     function editUser()             - Edit user details (System Admin only) (DONE BY PRETI)
+//     async function handleEditUser() - Submit user edit changes (DONE BY PRETI)
+//     function closeEditUserModal()   - Close edit user modal (DONE BY PRETI)
+//     async function deleteUser()     - Request user deletion (System Admin only) (DONE BY PRETI)
+//     async function performUserDeletion() - Execute user soft deletion (DONE BY PRETI)
+//     async function restoreUser()    - Recover a deleted user (DONE BY PRETI)
+//     async function permanentDeleteUser() - Permanently delete user (DONE BY PRETI)
 //
-// 14. QUESTION MANAGEMENT
-//     async function loadQuestionManagementData() - Load question data from API (DONE BY PRETI)
-//     function updateQuestionManagementTable() - Update question display (DONE BY PRETI)
+// 14. QUESTION MANAGEMENT (DONE BY PRETI)
+//     async function loadQuestionManagementData() - Load all questions from API (DONE BY PRETI)
+//     function updateQuestionManagementTable() - Render question table with data (DONE BY PRETI)
 //     function formatQuestionType()   - Format question type for display (DONE BY PRETI)
-//     function showAddQuestionModal() - Show add question modal (System Admin only) (DONE BY PRETI)
+//     function showAddQuestionModal() - Show add question modal (DONE BY PRETI)
 //     function closeAddQuestionModal() - Close add question modal (DONE BY PRETI)
-//     function toggleOptionsField()   - Show/hide options based on question type (DONE BY PRETI)
-//     function addOptionField()       - Add option input field (DONE BY PRETI)
+//     function toggleOptionsField()   - Toggle options field visibility (DONE BY PRETI)
+//     function addOptionField()       - Add option input field for multichoice/dropdown (DONE BY PRETI)
 //     function removeOptionField()    - Remove option input field (DONE BY PRETI)
-//     async function handleAddQuestion() - Process new question creation (DONE BY PRETI)
-//     function editQuestionById()     - Helper to retrieve question data and call edit (DONE BY PRETI)
-//     function editQuestion()         - Open question edit modal (System Admin only) (DONE BY PRETI)
-//     async function handleEditQuestion() - Process question updates (safe editing) (DONE BY PRETI)
+//     async function handleAddQuestion() - Submit new question creation (DONE BY PRETI)
+//     function editQuestionById()     - Edit question by ID (DONE BY PRETI)
+//     function editQuestion()         - Show edit question modal (DONE BY PRETI)
+//     async function handleEditQuestion() - Submit question edit changes (DONE BY PRETI)
 //     function closeEditQuestionModal() - Close edit question modal (DONE BY PRETI)
-//     async function deleteQuestion() - Delete question (System Admin only) (DONE BY PRETI)
+//     async function deleteQuestion() - Request question deletion (DONE BY PRETI)
 //
-// 15. DATA EXPORT MANAGEMENT
-//     function initDataExportPage()   - Initialize data export page with access control (DONE BY PRETI)
-//     async function unlockDataExport() - Unlock data export with password verification (DONE BY PRETI)
-//     function updateExportSessionInfo() - Update session info display (DONE BY PRETI)
-//     async function downloadExport() - Download export file (Excel/CSV/Zip) (DONE BY PRETI)
+// 15. DATA EXPORT MANAGEMENT (DONE BY PRETI)
+//     function initDataExportPage()   - Initialize data export page (DONE BY PRETI)
+//     async function unlockDataExport() - Verify admin password and unlock data export session (DONE BY PRETI)
+//     function updateExportSessionInfo() - Update export session info display (DONE BY PRETI)
+//     async function downloadExport() - Execute file download (DONE BY PRETI)
 //
-// 16. FEEDBACK DELETION
-//     async function deleteFeedback() - Request feedback deletion with password (DONE BY PRETI)
-//     async function deleteArchiveFeedback() - Request archive feedback deletion (DONE BY PRETI)
-//     function showDeletePasswordModal() - Show deletion password prompt (DONE BY PRETI)
-//     async function verifyDeleteAccess() - Verify password for deletion (DONE BY PRETI)
+// 16. FEEDBACK DELETION (DONE BY PRETI)
+//     async function deleteFeedback() - Delete feedback item (DONE BY PRETI)
+//     async function deleteArchiveFeedback() - Delete archive feedback item (DONE BY PRETI)
+//     function showDeletePasswordModal() - Show password verification modal (DONE BY PRETI)
+//     async function verifyDeleteAccess() - Verify delete access with password (DONE BY PRETI)
 //     async function performFeedbackDeletion() - Execute feedback deletion (DONE BY PRETI)
 //     function closeDeleteModal()     - Close delete modal (DONE BY PRETI)
 //
-// 17. NAVIGATION & PAGE MANAGEMENT
-//     function showPage()             - Navigate between pages with role-based access control (DONE BY PRETI)
-//     function initializeArchivePage() - Initialize archive page (placeholder) (DONE BY PRETI)
+// 17. NAVIGATION & PAGE MANAGEMENT (DONE BY PRETI)
+//     function showPage()             - Show selected page and hide others (DONE BY PRETI)
+//     function initializeArchivePage() - Initialize archive page (DONE BY PRETI)
 //
-// 18. DIGITAL TREE MANAGEMENT
-//     async function loadDigitalTreeData() - Load digital tree visitor data (DONE BY PRETI)
-//     function updateDigitalTreeTable() - Update digital tree table (DONE BY PRETI)
+// 18. DIGITAL TREE MANAGEMENT (DONE BY PRETI)
+//     async function loadDigitalTreeData() - Load digital tree data from API (DONE BY PRETI)
+//     function updateDigitalTreeTable() - Update digital tree table display (DONE BY PRETI)
 //     function refreshTreeData()      - Refresh tree data (DONE BY PRETI)
-//
-// 19. UTILITY FUNCTIONS
 //     function escapeHtml()           - Escape HTML for safe display (DONE BY PRETI)
 //
-// 20. THEME SETTINGS - HELPER FUNCTIONS
-//     function showConfirmDialog()    - Show confirmation dialog (DONE BY PRETI)
+// 19. UTILITY FUNCTIONS (DONE BY PRETI)
+//     const style                     - Style element for dynamic CSS (DONE BY PRETI)
 //
-// 21. THEME CONFIGURATION
-//     function getDefaultThemeSettings() - Get default theme color settings (DONE BY PRETI)
-//     function initThemeSettings()    - Initialize theme settings page (DONE BY PRETI)
+// 20. THEME SETTINGS - HELPER FUNCTIONS (DONE BY PRETI)
+//     function expandSelectorPatterns() - Expand CSS selector patterns (DONE BY PRETI)
+//     function expandPattern()        - Expand individual selector pattern (DONE BY PRETI)
+//     function validateSelectors()    - Validate CSS selectors exist (DONE BY PRETI)
+//     function suggestCorrection()    - Suggest selector correction (DONE BY PRETI)
+//     function levenshteinDistance()  - Calculate string similarity (DONE BY PRETI)
+//
+// 21. THEME CONFIGURATION (DONE BY PRETI)
+//     const themeConfig               - Theme configuration object (DONE BY PRETI)
+//     function getColorOptionsForSection() - Get color options for section (DONE BY PRETI)
+//     function getSelectorsForOption() - Get selectors for color option (DONE BY PRETI)
+//
+// 22. THEME MANAGEMENT FUNCTIONS (DONE BY PRETI)
+//     let themeSettings               - Store theme settings (DONE BY PRETI)
+//     let currentSection              - Track current theme section (DONE BY PRETI)
+//     function initThemeSettings()    - Initialize theme settings (DONE BY PRETI)
 //     function loadThemeSettings()    - Load theme settings from localStorage (DONE BY PRETI)
-//     function migrateOldColors()     - Migrate old color format to new structure (DONE BY PRETI)
+//     function migrateOldColors()     - Migrate old color scheme (DONE BY PRETI)
 //     function getCustomDefaultColors() - Get custom default colors (DONE BY PRETI)
-//     function saveIndividualPageSettings() - Save page-specific color overrides (DONE BY PRETI)
-//     function loadIndividualPageSettings() - Load page-specific color overrides (DONE BY PRETI)
+//     function getDefaultThemeSettings() - Get default theme settings (DONE BY PRETI)
+//     function saveIndividualPageSettings() - Save individual page settings (DONE BY PRETI)
+//     function loadIndividualPageSettings() - Load individual page settings (DONE BY PRETI)
 //     function saveThemeSettings()    - Save theme settings to localStorage (DONE BY PRETI)
 //     function showSaveMessage()      - Show save confirmation message (DONE BY PRETI)
-//
-// 22. THEME MANAGEMENT FUNCTIONS
-//     function renderSectionList()    - Render list of theme sections (DONE BY PRETI)
-//     function selectSection()        - Select theme section for editing (DONE BY PRETI)
-//     function updateSectionTitle()   - Update section title display (DONE BY PRETI)
-//     function renderThemeControls()  - Render color controls for section (DONE BY PRETI)
-//     function createColorGroup()     - Create group of color controls (DONE BY PRETI)
+//     function renderSectionList()    - Render theme section list (DONE BY PRETI))
+//     function selectSection()        - Select theme section (DONE BY PRETI)
+//     function updateSectionTitle()   - Update section title display ( DONE BY PRETI)
+//     function renderThemeControls()  - Render theme control UI (DONE BY PRETI)
+//     function createColorGroup()     - Create color control group (DONE BY PRETI)
 //     function createColorControl()   - Create individual color control (DONE BY PRETI)
-//     function updateColor()          - Update color value from picker (DONE BY PRETI)
-//     function updateColorFromHex()   - Update color value from hex input (DONE BY PRETI)
-//     function toggleGlobalThemeOverride() - Toggle global theme override for section (DONE BY PRETI)
-//     function resetSectionToGlobal() - Reset section colors to global theme (DONE BY PRETI)
-//     async function resetAllToDefaults() - Reset all theme settings to defaults (DONE BY PRETI)
-//     function updatePreview()        - Update theme preview display (DONE BY PRETI)
-//     function applyThemeSettings()   - Apply theme colors to all pages (DONE BY PRETI)
+//     function updateColor()          - Update color value (DONE BY PRETI)
+//     function updateColorFromHex()   - Update color from hex input (DONE BY PRETI)
+//     function toggleGlobalThemeOverride() - Toggle global theme override (DONE BY PRETI)
+//     function resetSectionToGlobal() - Reset section to global theme (DONE BY PRETI)
+//     async function resetAllToDefaults() - Reset all settings to defaults (DONE BY PRETI)
+//     function updatePreview()        - Update theme preview ((DONE BY PRETI)
+//     function applyThemeSettings()   - Apply theme settings to DOM (DONE BY PRETI)
 //
-// 23. SAVED THEMES MANAGEMENT
-//     let savedThemesCache            - Cache saved themes data (DONE BY PRETI)
-//     async function loadSavedThemes() - Load user saved themes from database (DONE BY PRETI)
-//     function updateSavedThemesUI()  - Update saved themes UI display (DONE BY PRETI)
+// 23. SAVED THEMES MANAGEMENT (DONE BY PRETI)
+//     let savedThemesCache            - Cache of user's saved themes (DONE BY PRETI)
+//     let currentThemeData            - Store current theme data for saving (DONE BY PRETI)
+//     async function loadSavedThemes() - Load user's saved themes (DONE BY PRETI)
+//     function updateSavedThemesUI()  - Update saved themes UI (DONE BY PRETI)
 //     function createSavedThemeCard() - Create saved theme card element (DONE BY PRETI)
-//     function extractPreviewColors() - Extract preview colors from theme data (DONE BY PRETI)
-//     function captureCurrentThemeData() - Capture current theme configuration (DONE BY PRETI)
-//     async function saveCurrentTheme() - Save current theme to database (DONE BY PRETI)
-//     function clearSaveThemeForm()   - Clear save theme form inputs (DONE BY PRETI)
-//     function applyThemeData()       - Apply theme data to UI (DONE BY PRETI)
-//     async function activateSavedTheme() - Set theme as active for user (DONE BY PRETI)
+//     function extractPreviewColors() - Extract preview colors from theme (DONE BY PRETI)
+//     function captureCurrentThemeData() - Capture current theme data (DONE BY PRETI)
+//     async function saveCurrentTheme() - Save current theme (DONE BY PRETI)
+//     function clearSaveThemeForm()   - Clear save theme form (DONE BY PRETI)
+//     function applyThemeData()       - Apply theme data to settings (DONE BY PRETI)
+//     async function activateSavedTheme() - Activate saved theme (DONE BY PRETI)
 //     async function renameSavedTheme() - Rename saved theme (DONE BY PRETI)
-//     function createRenameModal()    - Create rename modal interface (DONE BY PRETI)
-//     async function performRename()  - Execute theme rename operation (DONE BY PRETI)
+//     function createRenameModal()    - Create rename modal (DONE BY PRETI)
+//     async function performRename()  - Perform theme rename (DONE BY PRETI)
 //     function closeRenameModal()     - Close rename modal (DONE BY PRETI)
-//     async function deleteSavedTheme() - Delete saved theme from database (DONE BY PRETI)
+//     async function deleteSavedTheme() - Delete saved theme (DONE BY PRETI)
 //     async function refreshSavedThemes() - Refresh saved themes list (DONE BY PRETI)
-//     async function loadActiveThemeOnLogin() - Load and apply active theme on page load (DONE BY PRETI)
-//     function applyDefaultTheme()    - Apply default theme colors (DONE BY PRETI)
+//     async function loadActiveThemeOnLogin() - Load active theme on login (DONE BY PRETI)
+//     function applyDefaultTheme()    - Apply default theme (DONE BY PRETI)
 //     function initSavedThemesSection() - Initialize saved themes section (DONE BY PRETI)
+//     function showConfirmDialog()    - Show confirmation dialog (DONE BY PRETI)
 //
-// 24. ARCHIVE DELETION FUNCTIONS (System Admin Only)
-//     function initializeDeletionControls() - Show/hide deletion controls based on user role (DONE BY PRETI)
-//     function toggleSelectAllArchive() - Toggle select all checkboxes in archive (DONE BY PRETI)
-//     function updateArchiveSelectionCount() - Update selected count and enable/disable delete button (DONE BY PRETI)
-//     function setQuickDeleteDate()   - Set quick date for bulk deletion (DONE BY PRETI) 
-//     async function previewBulkDelete() - Preview records to be deleted by date (DONE BY PRETI) 
-//     async function deleteSelectedArchive() - Delete selected archive records (DONE BY PRETI) 
-//     async function bulkDeleteByDate() - Bulk delete records before date (DONE BY PRETI)
-//     function showDeletionConfirmationModal() - Show deletion confirmation modal (DONE BY PRETI) 
-//     function refreshArchiveData()   - Refresh archive data after deletion (DONE BY PRETI) 
+// 24. ARCHIVE DELETION FUNCTIONS (System Admin Only) (DONE BY PRETI)
+//     function initializeDeletionControls() - Initialize deletion controls (DONE BY PRETI)
+//     function toggleSelectAllArchive() - Toggle select all checkboxes (DONE BY PRETI)
+//     function updateArchiveSelectionCount() - Update selection count display (DONE BY PRETI)
+//     function setQuickDeleteDate()   - Set quick delete date (DONE BY PRETI)
+//     async function previewBulkDelete() - Preview bulk delete operation (DONE BY PRETI)
+//     async function deleteSelectedArchive() - Delete selected archive items (DONE BY PRETI)
+//     async function bulkDeleteByDate() - Bulk delete by date (DONE BY PRETI)
+//     function showDeletionConfirmationModal() - Show deletion confirmation modal (DONE BY PRETI)
+//     function refreshArchiveData()   - Refresh archive data (DONE BY PRETI)
 //
 // 25. INITIALIZATION & EVENT HANDLERS
-//     window.addEventListener('DOMContentLoaded') - Check login status on page load (DONE BY PRETI)
+//     (Window onload and initialization code)
 //
-// 26. LEADERBOARD MANAGEMENT
-//     async function loadAdminLeaderboard() - Load leaderboard data from API (DONE BY PRETI)
-//     function filterLeaderboardData() - Filter leaderboard data by search term (DONE BY PRETI)
-//     function clearLeaderboardSearch() - Clear leaderboard search (DONE BY PRETI)
-//     function renderLeaderboardPage() - Render current page of leaderboard (DONE BY PRETI)
-//     function updateLeaderboardPaginationControls() - Update leaderboard pagination controls (DONE BY PRETI)
-//     function prevLeaderboardPage()  - Navigate to previous leaderboard page (DONE BY PRETI)
-//     function nextLeaderboardPage()  - Navigate to next leaderboard page (DONE BY PRETI)
+// 26. PLEDGEBOARD MANAGEMENT (DONE BY PRETI)
+//     async function loadAdminPledgeboard() - Load pledgeboard data (DONE BY PRETI)
+//     function filterPledgeboardData() - Filter pledgeboard data (DONE BY PRETI)
+//     function clearPledgeboardSearch() - Clear pledgeboard search (DONE BY PRETI)
+//     function renderPledgeboardPage() - Render pledgeboard page (DONE BY PRETI)
+//     function updatePledgeboardPaginationControls() - Update pledgeboard pagination (DONE BY PRETI)
+//     function prevPledgeboardPage()  - Navigate to previous pledgeboard page (DONE BY PRETI)
+//     function nextPledgeboardPage()  - Navigate to next pledgeboard page (DONE BY PRETI)
 //
+// 27. FORM MANAGEMENT (DONE BY NADH)
+//     function setFormStatus()        - Set form status message 
+//     async function loadFormUISettings() - Load form UI settings 
+//     async function saveFormUISettings() - Save form UI settings 
+//
+// 28. EMAIL MANAGEMENT (DONE BY NADH)
+//     function setEmailStatus()       - Set email status message 
+//     function renderEmailFields()    - Render email configuration fields 
+//     async function loadEmailConfig() - Load email configuration 
+//     async function saveEmailConfig() - Save email configuration 
+//     async function sendTestEmail()  - Send test email 
+//
+// 29. TIMER COUNTDOWN MANAGEMENT (DONE BY BERNISSA)
+//     const TIMER_API_URL             - Timer API endpoint 
+//     function getTimerCountdownEls() - Get timer countdown UI elements 
+//     async function loadTimerCountdownSetting() - Load timer countdown setting 
+//     async function saveTimerCountdownSetting() - Save timer countdown setting 
+//     function validateTimerCountdown() - Validate timer countdown input 
+//
+// 30. SERVER SCHEDULE MANAGEMENT (DONE BY BERNISSA)
+//     let schedulesData               - Store schedules data 
+//     let currentScheduleId           - Track current schedule ID 
+//     function loadSchedules()        - Load server schedules 
+//     function renderSchedulesTable() - Render schedules table 
+//     function showAddScheduleModal() - Show add schedule modal 
+//     function editSchedule()         - Edit schedule 
+//     function validateTimes()        - Validate schedule times 
+//     function saveSchedule()         - Save schedule 
+//     function deleteSchedule()       - Delete schedule 
+//     function toggleScheduleStatus() - Toggle schedule active status 
+//     function enableAllSchedules()   - Enable all schedules 
+//     function disableAllSchedules()  - Disable all schedules 
+//     async function loadServerMode() - Load server control mode 
+//     async function toggleServerMode() - Toggle server control mode 
+//     function updateModeUI()         - Update mode UI display 
+//     async function checkServerStatus() - Check server status 
+//     function startServer()          - Start kiosk server 
+//     function stopServer()           - Stop kiosk server 
+//     function getScheduleTypeBadge() - Get schedule type badge HTML 
+//     function formatDaysDisplay()    - Format days display string 
+//     function updateFormFields()     - Update form fields 
+//     function showNotification()     - Show notification message (duplicate) 
+//     function showLoading()          - Show loading indicator 
+//     function hideLoading()          - Hide loading indicator 
+//     function closeModal()           - Close modal by ID 
+//
+// 31. VIP MANAGEMENT (DONE BY ZAH)
+//     let vipData                     - Array storing VIP names 
+//     const VIP_API_BASE              - VIP API base URL 
+//     const VIP_API                   - API endpoint helpers for VIP operations 
+//     function getVipElements()       - Get VIP UI elements 
+//     function escapeHtmlSafe()       - Escape HTML for safe rendering 
+//     function formatVipDate()        - Format VIP date for display 
+//     async function fetchVipJson()   - Fetch helper for VIP API calls 
+//     function renderVipList()        - Render VIP list UI 
+//     async function loadVipData()    - Load VIPs from API 
+//     function loadVipManagementData() - Loader used by showPage('vip') 
+//     async function addVip()         - Add VIP name 
+//
+// 32. KIOSK AUTO-RELOAD ON START/STOP (DONE BY BERNISSA)
+//     let lastKioskActive             - Track last kiosk active state 
+//     async function watchKioskService() - Watch kiosk service and reload on state change 
+
+// ==================== SESSION TIMEOUT & AUTO-LOGOUT ENHANCEMENT ====================
+// This code adds automatic logout when session expires
+
+// Session timeout configuration
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes (matches server session)
+const WARNING_BEFORE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes warning before timeout
+const ACTIVITY_CHECK_INTERVAL_MS = 60 * 1000; // Check activity every minute
+
+let lastActivityTime = Date.now();
+let sessionWarningShown = false;
+let activityCheckInterval = null;
+let sessionTimeoutModal = null;
+
+// ==================== ACTIVITY TRACKING ====================
+
+/**
+ * Reset activity timer on user interaction
+ */
+function resetActivityTimer() {
+    lastActivityTime = Date.now();
+    sessionWarningShown = false;
+    
+    // Close warning modal if it's showing
+    if (sessionTimeoutModal) {
+        closeSessionWarningModal();
+    }
+}
+
+/**
+ * Track user activity events
+ */
+function initActivityTracking() {
+    // Track various user interactions
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    events.forEach(event => {
+        document.addEventListener(event, resetActivityTimer, { passive: true });
+    });
+    
+    console.log('✅ Activity tracking initialized');
+}
+
+/**
+ * Check session timeout and show warning
+ */
+function checkSessionTimeout() {
+    // Only check if user is logged in
+    const loggedUser = sessionStorage.getItem('loggedUser');
+    if (!loggedUser) {
+        return;
+    }
+    
+    const timeSinceLastActivity = Date.now() - lastActivityTime;
+    const timeUntilTimeout = SESSION_TIMEOUT_MS - timeSinceLastActivity;
+    
+    // Show warning if approaching timeout
+    if (timeUntilTimeout <= WARNING_BEFORE_TIMEOUT_MS && timeUntilTimeout > 0 && !sessionWarningShown) {
+        showSessionWarningModal(timeUntilTimeout);
+        sessionWarningShown = true;
+    }
+    
+    // Auto-logout if timed out
+    if (timeUntilTimeout <= 0) {
+        handleSessionTimeout();
+    }
+}
+
+/**
+ * Start session timeout monitoring
+ */
+function startSessionMonitoring() {
+    // Reset timer
+    lastActivityTime = Date.now();
+    sessionWarningShown = false;
+    
+    // Clear existing interval if any
+    if (activityCheckInterval) {
+        clearInterval(activityCheckInterval);
+    }
+    
+    // Start checking session timeout
+    activityCheckInterval = setInterval(checkSessionTimeout, ACTIVITY_CHECK_INTERVAL_MS);
+    
+    console.log('✅ Session monitoring started');
+}
+
+/**
+ * Stop session timeout monitoring
+ */
+function stopSessionMonitoring() {
+    if (activityCheckInterval) {
+        clearInterval(activityCheckInterval);
+        activityCheckInterval = null;
+    }
+    
+    console.log('🛑 Session monitoring stopped');
+}
+
+// ==================== SESSION TIMEOUT WARNING MODAL ====================
+
+/**
+ * Show session timeout warning modal
+ */
+function showSessionWarningModal(timeRemaining) {
+    const minutesRemaining = Math.ceil(timeRemaining / 60000);
+    
+    // Create modal if it doesn't exist
+    if (!sessionTimeoutModal) {
+        sessionTimeoutModal = document.createElement('div');
+        sessionTimeoutModal.id = 'session-timeout-modal';
+        sessionTimeoutModal.innerHTML = `
+            <div class="modal-overlay" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            ">
+                <div class="modal-content" style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    max-width: 400px;
+                    text-align: center;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                ">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⏰</div>
+                    <h2 style="margin: 0 0 15px 0; color: #333;">Session Timeout Warning</h2>
+                    <p style="color: #666; margin-bottom: 25px;">
+                        Your session will expire in <strong id="timeout-countdown">${minutesRemaining}</strong> minute(s) due to inactivity.
+                    </p>
+                    <p style="color: #666; margin-bottom: 25px; font-size: 14px;">
+                        Click "Stay Logged In" to continue your session, or you will be automatically logged out.
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button id="session-stay-btn" style="
+                            background: #10b981;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            font-size: 16px;
+                        ">Stay Logged In</button>
+                        <button id="session-logout-btn" style="
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            font-size: 16px;
+                        ">Logout Now</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(sessionTimeoutModal);
+        
+        // Add event listeners
+        document.getElementById('session-stay-btn').addEventListener('click', () => {
+            resetActivityTimer();
+            // Make a keep-alive request to refresh server session
+            fetch('/api/admin/keep-alive', { method: 'POST' }).catch(() => {});
+            closeSessionWarningModal();
+        });
+        
+        document.getElementById('session-logout-btn').addEventListener('click', () => {
+            handleLogout();
+        });
+        
+        // Start countdown update
+        updateCountdown(timeRemaining);
+    } else {
+        sessionTimeoutModal.style.display = 'block';
+        updateCountdown(timeRemaining);
+    }
+}
+
+/**
+ * Update countdown timer in warning modal
+ */
+function updateCountdown(timeRemaining) {
+    const countdownElement = document.getElementById('timeout-countdown');
+    if (countdownElement) {
+        const minutesRemaining = Math.ceil(timeRemaining / 60000);
+        countdownElement.textContent = minutesRemaining;
+    }
+}
+
+/**
+ * Close session timeout warning modal
+ */
+function closeSessionWarningModal() {
+    if (sessionTimeoutModal) {
+        sessionTimeoutModal.style.display = 'none';
+    }
+}
+
+/**
+ * Handle session timeout - auto logout
+ */
+function handleSessionTimeout() {
+    console.log('⏰ Session timeout - auto logout');
+    
+    // Clear session monitoring
+    stopSessionMonitoring();
+    
+    // Show timeout message
+    alert('⏰ Your session has expired due to inactivity. You will be logged out.');
+    
+    // Perform logout
+    handleLogout();
+}
+
+// ==================== GLOBAL FETCH INTERCEPTOR FOR 401 DETECTION ====================
+
+/**
+ * Wrap the original fetch to detect 401 errors and auto-logout
+ */
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    return originalFetch.apply(this, args)
+        .then(response => {
+            // Check if response is 401 Unauthorized
+            if (response.status === 401) {
+                const loggedUser = sessionStorage.getItem('loggedUser');
+                
+                // Only auto-logout if we think we're logged in
+                if (loggedUser) {
+                    console.log('🔒 401 Unauthorized detected - session expired');
+                    
+                    // Show message
+                    setTimeout(() => {
+                        alert('🔒 Your session has expired. Please log in again.');
+                        handleLogout();
+                    }, 100);
+                }
+            }
+            
+            // Reset activity timer on successful API calls
+            if (response.ok && sessionStorage.getItem('loggedUser')) {
+                resetActivityTimer();
+            }
+            
+            return response;
+        })
+        .catch(error => {
+            // Re-throw the error for normal error handling
+            throw error;
+        });
+};
+
+// ==================== ENHANCED LOGIN/LOGOUT FUNCTIONS ====================
+
+/**
+ * Enhanced handleLogin - start session monitoring after successful login
+ * This wraps around the existing handleLogin function
+ */
+const originalHandleLogin = window.handleLogin;
+if (originalHandleLogin) {
+    window.handleLogin = async function(event) {
+        const result = await originalHandleLogin.call(this, event);
+        
+        // If login was successful, start session monitoring
+        if (sessionStorage.getItem('loggedUser')) {
+            initActivityTracking();
+            startSessionMonitoring();
+        }
+        
+        return result;
+    };
+} else {
+    console.warn('⚠️ Original handleLogin not found - session monitoring may not start automatically');
+}
+
+/**
+ * Enhanced handleLogout - stop session monitoring on logout
+ * This wraps around the existing handleLogout function
+ */
+const originalHandleLogout = window.handleLogout;
+if (originalHandleLogout) {
+    window.handleLogout = function() {
+        stopSessionMonitoring();
+        closeSessionWarningModal();
+        originalHandleLogout.call(this);
+    };
+} else {
+    console.warn('⚠️ Original handleLogout not found');
+}
+
+// ==================== SESSION TIMEOUT INITIALIZATION ====================
+
+/**
+ * Initialize session timeout on page load if user is already logged in
+ */
+window.addEventListener('DOMContentLoaded', () => {
+    const loggedUser = sessionStorage.getItem('loggedUser');
+    if (loggedUser) {
+        console.log('🔐 User already logged in, starting session monitoring...');
+        initActivityTracking();
+        startSessionMonitoring();
+    }
+});
+
+console.log('✅ Session timeout & auto-logout enhancement loaded');
 
 // ==================== 1. GLOBAL VARIABLES & STATE MANAGEMENT ====================
 
@@ -314,11 +737,11 @@ const archiveItemsPerPage = 25;
 
 // Decryption state (per-page only)
 
-// Global variables for leaderboard
-let allLeaderboardData = []; // ALL leaderboard records
-let filteredLeaderboardData = []; // Filtered results
-let leaderboardCurrentPage = 1;
-const leaderboardItemsPerPage = 25;
+// Global variables for pledgeboard
+let allPledgeboardData = []; // ALL pledgeboard records
+let filteredPledgeboardData = []; // Filtered results
+let pledgeboardCurrentPage = 1;
+const pledgeboardItemsPerPage = 25;
 let decryptedEmailMap = {}; // {feedbackId: decryptedEmail}
 let isAnyEmailDecrypted = false;
 let encryptedFeedbackIds = [];
@@ -441,7 +864,7 @@ function updateUIForUser(username, role) {
     document.querySelector('.user-avatar').textContent = username[0].toUpperCase();
     
     // MAIN section: Always visible for ALL roles
-    // Contains: Dashboard, Feedback Data, Digital Tree, Leaderboard, Style & Theme Settings
+    // Contains: Dashboard, Feedback Data, Digital Tree, Pledgeboard, Style & Theme Settings
     const mainSection = document.getElementById('main-section');
     if (mainSection) {
         mainSection.style.display = 'block';
@@ -970,12 +1393,18 @@ async function downloadAuditExcel() {
     }
 }
 
-// ==================== 4. DASHBOARD MANAGEMENT ====================
 
-// Load dashboard data from database
+// Global chart instances
+let visitorTrendsChart = null;
+let feedbackDistributionChart = null;
+let currentChartRange = 'week';
+
+// ==================== ENHANCED DASHBOARD DATA LOADING ====================
+
+// Enhanced dashboard data loading with chart data
 async function loadDashboardData() {
     try {
-        console.log('Loading dashboard data...');
+        console.log('📊 Loading enhanced dashboard data...');
         const response = await fetch('/api/admin/dashboard');
         
         if (!response.ok) {
@@ -986,102 +1415,609 @@ async function loadDashboardData() {
         console.log('Dashboard API response:', data);
         
         if (data.success) {
-            updateDashboardStats(data.stats);
-            updateRecentActivity(data.recentActivity);
+            updateEnhancedDashboardStats(data.stats);
+            await updateSystemStatus(data.recentActivity); // Check all system statuses (System Status section)
+            await updateKioskStatus(); // Update kiosk metric card
+            await loadChartData(); // Load chart data separately
             updateLastUpdated();
         } else {
             console.error('Failed to load dashboard data:', data.error);
-            alert('Error loading dashboard data: ' + (data.error || 'Unknown error'));
+            showNotification('Error loading dashboard data', 'error');
         }
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        // Fallback to default data
-        updateDashboardStats(getDefaultStats());
-        alert('Error connecting to server. Please check if the server is running.');
+        console.error('❌ Error loading dashboard data:', error);
+        updateEnhancedDashboardStats(getDefaultStats());
+        showNotification('Error connecting to server', 'error');
     }
 }
 
-// Update dashboard statistics
-function updateDashboardStats(stats) {
-    console.log('Updating dashboard with stats:', stats);
+// Update dashboard statistics with enhanced metrics
+function updateEnhancedDashboardStats(stats) {
+    console.log('📈 Updating dashboard stats (feedback only):', stats);
     
-    // Update stat cards with real data from database (5 cards)
-    const statCards = document.querySelectorAll('.stat-card');
-    if (statCards.length >= 5) {
-        statCards[0].querySelector('.stat-value').textContent = stats.totalVisitors;
-        statCards[1].querySelector('.stat-value').textContent = stats.todaysVisitors;
-        statCards[2].querySelector('.stat-value').textContent = stats.feedbackSubmissions;
-        statCards[3].querySelector('.stat-value').textContent = stats.usersWithEmail;
-        statCards[4].querySelector('.stat-value').textContent = stats.recentSubmissions;
-    } else {
-        console.error('Not enough stat cards found, expected 5 but found:', statCards.length);
+    // This Month's Feedback
+    const feedbackMonthEl = document.getElementById('feedback-month-value');
+    if (feedbackMonthEl) {
+        const monthFeedback = stats.feedbackThisMonth ?? stats.feedbackSubmissions ?? 0;
+        animateValue(feedbackMonthEl, 0, monthFeedback, 1000);
+    }
+    
+    // Today's Feedback
+    const feedbackTodayEl = document.getElementById('feedback-today-value');
+    if (feedbackTodayEl) {
+        const todayFeedback = stats.feedbackToday ?? 0;
+        animateValue(feedbackTodayEl, 0, todayFeedback, 1000);
     }
 }
 
-// Update recent activity section
-function updateRecentActivity(activity) {
-    const systemStatusSection = document.querySelector('.status-section:first-child');
-    const dataManagementSection = document.querySelector('.status-section:last-child');
+// Update system status section - CHECK ALL SERVICES LIVE
+async function updateSystemStatus(activity) {
+    console.log('🔄 Checking all system statuses...');
     
-    if (!systemStatusSection || !dataManagementSection) {
-        console.error('Status sections not found');
-        return;
+    // Track overall system health
+    let allSystemsOk = true;
+    let statusMessages = [];
+    
+    // Check Kiosk Server Status
+    try {
+        const kioskResponse = await fetch('/api/admin/server/status');
+        const kioskData = await kioskResponse.json();
+        const kioskStatusEl = document.getElementById('kiosk-server-status');
+        
+        if (kioskStatusEl) {
+            if (kioskData.success && kioskData.kiosk_running) {
+                kioskStatusEl.className = 'status-badge status-online';
+                kioskStatusEl.textContent = 'Online';
+                statusMessages.push('Kiosk Server: Online');
+            } else {
+                kioskStatusEl.className = 'status-badge status-offline';
+                kioskStatusEl.textContent = 'Offline';
+                allSystemsOk = false;
+                statusMessages.push('Kiosk Server: Offline');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error checking kiosk status:', error);
+        const kioskStatusEl = document.getElementById('kiosk-server-status');
+        if (kioskStatusEl) {
+            kioskStatusEl.className = 'status-badge status-error';
+            kioskStatusEl.textContent = 'Error';
+            allSystemsOk = false;
+        }
     }
     
-    // Clear existing status items (except headers)
-    systemStatusSection.querySelectorAll('.status-item').forEach(item => item.remove());
-    dataManagementSection.querySelectorAll('.status-item').forEach(item => item.remove());
+    // Check Database Status
+    try {
+        const dbResponse = await fetch('/api/test-db');
+        const dbData = await dbResponse.json();
+        const dbStatusEl = document.getElementById('database-status');
+        
+        if (dbStatusEl) {
+            if (dbData.message && dbData.message.includes('working')) {
+                dbStatusEl.className = 'status-badge status-online';
+                dbStatusEl.textContent = 'Connected';
+                statusMessages.push('Database: Connected');
+            } else {
+                dbStatusEl.className = 'status-badge status-error';
+                dbStatusEl.textContent = 'Error';
+                allSystemsOk = false;
+                statusMessages.push('Database: Error');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error checking database status:', error);
+        const dbStatusEl = document.getElementById('database-status');
+        if (dbStatusEl) {
+            dbStatusEl.className = 'status-badge status-offline';
+            dbStatusEl.textContent = 'Disconnected';
+            allSystemsOk = false;
+        }
+    }
     
-    // Add system status items
-    activity.systemStatus.forEach(item => {
-        const statusItem = createStatusItem(item.label, item.value, item.badgeType);
-        systemStatusSection.appendChild(statusItem);
-    });
+    // Update Overall System Status
+    const overallStatusEl = document.getElementById('overall-system-status');
+    if (overallStatusEl) {
+        if (allSystemsOk) {
+            overallStatusEl.className = 'status-indicator status-online';
+            overallStatusEl.innerHTML = '<span class="status-dot"></span>All Systems Operational';
+        } else {
+            overallStatusEl.className = 'status-indicator status-warning';
+            overallStatusEl.innerHTML = '<span class="status-dot"></span>System Issues Detected';
+        }
+    }
     
-    // Add data management items
-    activity.dataManagement.forEach(item => {
-        const statusItem = createStatusItem(item.label, item.value, item.badgeType);
-        dataManagementSection.appendChild(statusItem);
-    });
+    console.log('✅ System status check complete:', statusMessages);
 }
 
-// Create status item element
-function createStatusItem(label, value, badgeType) {
-    const statusItem = document.createElement('div');
-    statusItem.className = 'status-item';
+// Update kiosk server status on dashboard
+async function updateKioskStatus() {
+    try {
+        const response = await fetch('/api/admin/server/status');
+        const data = await response.json();
+        
+        const statusValueEl = document.getElementById('kiosk-status-value');
+        const statusSubtitleEl = document.getElementById('kiosk-status-subtitle');
+        
+        if (!statusValueEl) return;
+        
+        if (data.success && data.kiosk_running) {
+            // Kiosk is running
+            statusValueEl.innerHTML = '<span class="status-running">🟢 Running</span>';
+            if (statusSubtitleEl) {
+                statusSubtitleEl.textContent = 'Service is active';
+            }
+        } else {
+            // Kiosk is stopped
+            statusValueEl.innerHTML = '<span class="status-stopped">🔴 Stopped</span>';
+            if (statusSubtitleEl) {
+                statusSubtitleEl.textContent = 'Service is inactive';
+            }
+        }
+        
+        console.log('✅ Kiosk status updated:', data.kiosk_running ? 'Running' : 'Stopped');
+    } catch (error) {
+        console.error('❌ Error checking kiosk status:', error);
+        const statusValueEl = document.getElementById('kiosk-status-value');
+        if (statusValueEl) {
+            statusValueEl.innerHTML = '<span class="status-badge" style="background: #ffc107; color: #000;">⚠️ Unknown</span>';
+        }
+    }
+}
+
+
+// Animate number counting
+function animateValue(element, start, end, duration) {
+    const range = end - start;
+    const increment = range / (duration / 16); // 60 FPS
+    let current = start;
     
-    statusItem.innerHTML = `
-        <span>${label}</span>
-        <span class="badge badge-${badgeType}">${value}</span>
-    `;
-    
-    return statusItem;
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            current = end;
+            clearInterval(timer);
+        }
+        element.textContent = Math.round(current).toLocaleString();
+    }, 16);
 }
 
 // Update last updated timestamp
 function updateLastUpdated() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString();
+    const timeString = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
     const lastUpdatedElement = document.querySelector('.last-updated');
     if (lastUpdatedElement) {
         lastUpdatedElement.textContent = `Last updated: ${timeString}`;
     }
 }
 
+// Get default statistics for offline mode
 function getDefaultStats() {
     return {
-        totalVisitors: 0,
-        todaysVisitors: 0,
-        feedbackSubmissions: 0,
-        usersWithEmail: 0,
-        recentSubmissions: 0
+        feedbackToday: 0,
+        feedbackThisMonth: 0,
+        feedbackSubmissions: 0
     };
 }
 
-// Refresh dashboard data
+// Refresh dashboard
 function refreshDashboard() {
+    const btn = document.querySelector('#dashboard-page .refresh-btn svg');
+    if (btn) {
+        btn.style.animationPlayState = 'running';
+        setTimeout(() => {
+            btn.style.animationPlayState = 'paused';
+        }, 1000);
+    }
     loadDashboardData();
+    showNotification('Dashboard refreshed', 'success');
 }
+
+// ==================== CHART FUNCTIONALITY ====================
+
+
+
+// Load chart data from REAL database
+async function loadChartData() {
+    try {
+        console.log('📊 Loading REAL chart data from database...');
+        await loadVisitorTrendsData();
+        await loadFeedbackDistributionData();
+    } catch (error) {
+        console.error('❌ Error loading chart data:', error);
+        showNotification('Failed to load chart data', 'error');
+    }
+}
+
+// Load feedback trends data from REAL database
+async function loadVisitorTrendsData() {
+    try {
+        console.log('📈 Fetching REAL feedback trends from database...');
+        
+        const response = await fetch('/api/admin/visitor-trends?range=' + currentChartRange);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                console.log('✅ Got REAL feedback trends data');
+                
+                const hasData = data.data.feedbackData.some(f => f > 0);
+                
+                if (!hasData) {
+                    console.log('ℹ️  No feedback data yet - showing empty chart');
+                }
+                
+                // Only pass feedback data (no visitor data)
+                createVisitorTrendsChart(
+                    data.data.labels, 
+                    data.data.feedbackData
+                );
+                return;
+            }
+        }
+        
+        console.log('⚠️  Feedback trends API not available - showing empty chart');
+        createEmptyVisitorTrendsChart();
+        
+    } catch (error) {
+        console.error('❌ Error loading feedback trends:', error);
+        createEmptyVisitorTrendsChart();
+    }
+}
+
+// Load feedback distribution data from REAL database
+async function loadFeedbackDistributionData() {
+    try {
+        console.log('🍩 Fetching REAL feedback distribution from database...');
+        
+        const response = await fetch('/api/admin/feedback-stats');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.stats) {
+                console.log('✅ Got REAL feedback stats');
+                
+                const hasData = Object.values(data.stats).some(v => v > 0);
+                
+                if (!hasData) {
+                    console.log('ℹ️  No feedback data yet - showing empty chart');
+                }
+                
+                createFeedbackDistributionChart(data.stats);
+                return;
+            }
+        }
+        
+        console.log('⚠️  Feedback stats API not available - showing empty chart');
+        createEmptyFeedbackDistributionChart();
+        
+    } catch (error) {
+        console.error('❌ Error loading feedback distribution:', error);
+        createEmptyFeedbackDistributionChart();
+    }
+}
+
+// Create feedback trends chart (feedback only - no visitor data)
+function createVisitorTrendsChart(labels, feedbackData) {
+    const ctx = document.getElementById('visitorTrendsChart');
+    if (!ctx) {
+        console.warn('visitorTrendsChart canvas not found');
+        return;
+    }
+    
+    if (visitorTrendsChart) {
+        visitorTrendsChart.destroy();
+    }
+    
+    visitorTrendsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Feedback',
+                    data: feedbackData,
+                    borderColor: 'rgb(99, 102, 241)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: 'rgb(99, 102, 241)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    titleFont: {
+                        size: 13,
+                        weight: 'bold'
+                    },
+                    bodyColor: '#fff',
+                    bodyFont: {
+                        size: 12
+                    },
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return ' ' + context.dataset.label + ': ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        precision: 0,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Visitor trends chart created with REAL data');
+}
+
+// Fallback for empty visitor trends
+function createEmptyVisitorTrendsChart() {
+    const labels = [];
+    const emptyData = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        labels.push(`${dayName}\n${dateLabel}`);
+        emptyData.push(0);
+    }
+    
+    createVisitorTrendsChart(labels, emptyData, emptyData);
+}
+
+// Fallback to sample data (only if API completely fails)
+function createVisitorTrendsChartWithSampleData() {
+    const labels = [];
+    const visitorData = [];
+    const feedbackData = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+        visitorData.push(Math.floor(Math.random() * 50) + 30);
+        feedbackData.push(Math.floor(Math.random() * 30) + 10);
+    }
+    
+    createVisitorTrendsChart(labels, visitorData, feedbackData);
+}
+
+// Create feedback distribution chart
+function createFeedbackDistributionChart(stats) {
+    const ctx = document.getElementById('feedbackDistributionChart');
+    if (!ctx) {
+        console.warn('feedbackDistributionChart canvas not found');
+        return;
+    }
+    
+    if (feedbackDistributionChart) {
+        feedbackDistributionChart.destroy();
+    }
+    
+    feedbackDistributionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                'With Email',
+                'Without Email', 
+                'With Photo',
+                'Long-term Storage'
+            ],
+            datasets: [{
+                data: [
+                    stats.withEmail || 0,
+                    stats.withoutEmail || 0,
+                    stats.withPhoto || 0,
+                    stats.longterm || 0
+                ],
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(156, 163, 175, 0.8)',
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(245, 158, 11, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(16, 185, 129)',
+                    'rgb(156, 163, 175)',
+                    'rgb(59, 130, 246)',
+                    'rgb(245, 158, 11)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    titleFont: {
+                        size: 13,
+                        weight: 'bold'
+                    },
+                    bodyColor: '#fff',
+                    bodyFont: {
+                        size: 12
+                    },
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return ` ${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Feedback distribution chart created with REAL data');
+}
+
+// Fallback for empty feedback distribution
+function createEmptyFeedbackDistributionChart() {
+    const stats = {
+        withEmail: 0,
+        withoutEmail: 0,
+        withPhoto: 0,
+        longterm: 0
+    };
+    createFeedbackDistributionChart(stats);
+}
+
+// Fallback to sample data (only if API completely fails)
+function createFeedbackDistributionChartWithSampleData() {
+    const stats = {
+        withEmail: 45,
+        withoutEmail: 15,
+        withPhoto: 50,
+        longterm: 55
+    };
+    createFeedbackDistributionChart(stats);
+}
+
+// Update chart range
+function updateChartRange(range) {
+    currentChartRange = range;
+    
+    document.querySelectorAll('.chart-control-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    loadVisitorTrendsData();
+    
+    showNotification(`Chart updated to ${range} view`, 'info');
+}
+
+
+// ==================== INITIALIZATION ====================
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.warn('⚠️ Chart.js not loaded. Please add it to your HTML.');
+        console.warn('Add this line to your admin.html <head>:');
+        console.warn('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>');
+    } else {
+        console.log('✅ Chart.js is loaded and ready');
+    }
+});
+
+/* ==================== HELPER FUNCTIONS ====================
+ * These can be used throughout the admin panel
+ */
+
+// Format number with commas
+function formatNumber(num) {
+    return num.toLocaleString();
+}
+
+// Calculate percentage
+function calculatePercentage(value, total) {
+    if (total === 0) return 0;
+    return Math.round((value / total) * 100);
+}
+
+// Format date for display
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+// Format time for display
+function formatTime(date) {
+    return new Date(date).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+console.log('✅ Enhanced dashboard JavaScript loaded - Updated version with working charts');
 
 // ==================== 5. FEEDBACK DATA MANAGEMENT (NOT_ARCHIVED) ====================
 
@@ -1138,6 +2074,52 @@ async function loadFeedbackData() {
     }
 }
 
+// ── Singapore-time helpers ──────────────────────────────────────────────────
+// SGT = UTC+8. All date-picker values are plain "YYYY-MM-DD" strings.
+// These functions convert date-picker strings into UTC epoch timestamps
+// corresponding to the START or END of that calendar day in Singapore.
+const SGT_OFFSET_MS = 8 * 60 * 60 * 1000;   // 8 hours in ms
+
+/**
+ * Get current Singapore date components
+ * @returns {Object} { year, month (0-based), day, dayOfWeek (0=Sun, 1=Mon...) }
+ */
+function getSGTDateComponents() {
+    const sgt = new Date(Date.now() + SGT_OFFSET_MS);
+    return {
+        year: sgt.getUTCFullYear(),
+        month: sgt.getUTCMonth(),      // 0-based
+        day: sgt.getUTCDate(),
+        dayOfWeek: sgt.getUTCDay()     // 0=Sunday, 1=Monday, etc.
+    };
+}
+
+/**
+ * Convert YYYY-MM-DD string to start of day in SGT (returned as UTC Date)
+ * midnight SGT = previous-day 16:00 UTC
+ */
+function startOfDaySGT(dateStr) {
+    return new Date(new Date(dateStr + 'T00:00:00Z').getTime() - SGT_OFFSET_MS);
+}
+
+/**
+ * Convert YYYY-MM-DD string to end of day in SGT (returned as UTC Date)
+ * 23:59:59.999 SGT = same-day 15:59:59.999 UTC
+ */
+function endOfDaySGT(dateStr) {
+    return new Date(new Date(dateStr + 'T23:59:59.999Z').getTime() - SGT_OFFSET_MS);
+}
+
+/**
+ * Format a shifted-SGT Date object to YYYY-MM-DD string
+ */
+function formatDateToSGTString(sgtDate) {
+    return sgtDate.getUTCFullYear() + '-' +
+           String(sgtDate.getUTCMonth() + 1).padStart(2, '0') + '-' +
+           String(sgtDate.getUTCDate()).padStart(2, '0');
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 // Filter feedback data based on all active filters
 function filterFeedbackData() {
     const searchTerm = document.getElementById('feedback-search-input')?.value.toLowerCase() || '';
@@ -1163,24 +2145,22 @@ function filterFeedbackData() {
         if (searchTerm) {
             const searchableText = [
                 item.name || '',
-                item.email_encrypted || '',
+                String(item.visits || ''),
                 item.pledge || '',
-                item.date || ''
+                item.date ? new Date(item.date).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' }) : ''
             ].join(' ').toLowerCase();
             
             matches = matches && searchableText.includes(searchTerm);
         }
         
-        // Date range filter
+        // Date range filter — boundaries computed in Singapore time
         if (dateFrom || dateTo) {
             const itemDate = new Date(item.date);
             if (dateFrom) {
-                matches = matches && itemDate >= new Date(dateFrom);
+                matches = matches && itemDate >= startOfDaySGT(dateFrom);
             }
             if (dateTo) {
-                const toDate = new Date(dateTo);
-                toDate.setHours(23, 59, 59, 999);
-                matches = matches && itemDate <= toDate;
+                matches = matches && itemDate <= endOfDaySGT(dateTo);
             }
         }
         
@@ -1214,8 +2194,8 @@ function filterFeedbackData() {
             
             if (filterValue === '7days' || filterValue === '7day') {
                 matches = matches && (itemRetention === '7days' || itemRetention === '7day');
-            } else if (filterValue === 'indefinite') {
-                matches = matches && itemRetention === 'indefinite';
+            } else if (filterValue === 'longterm') {
+                matches = matches && itemRetention === 'longterm';
             }
         }
         
@@ -1305,7 +2285,7 @@ function renderFeedbackPage() {
     pageData.forEach(feedback => {
         const row = tbody.insertRow();
         row.setAttribute('data-feedback-id', feedback.id);
-        row.setAttribute('data-retention', feedback.data_retention || 'indefinite');
+        row.setAttribute('data-retention', feedback.data_retention || 'longterm');
         
         // Name
         row.insertCell(0).textContent = feedback.name || 'Anonymous';
@@ -1348,11 +2328,11 @@ function renderFeedbackPage() {
         
         // Data Retention WITH BADGES
         const retentionCell = row.insertCell(5);
-        const retention = feedback.data_retention || 'indefinite';
+        const retention = feedback.data_retention || 'longterm';
         if (retention === '7days' || retention === '7day') {
             retentionCell.innerHTML = '<span class="badge badge-warning">7 DAYS</span>';
         } else {
-            retentionCell.innerHTML = '<span class="badge badge-permanent">INDEFINITE</span>';
+            retentionCell.innerHTML = '<span class="badge badge-permanent">LONG-TERM</span>';
         }
         
         // Raw Photo
@@ -1373,6 +2353,7 @@ function renderFeedbackPage() {
         
         // Date
         row.insertCell(8).textContent = new Date(feedback.date).toLocaleString('en-SG', {
+            timeZone: 'Asia/Singapore',
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -1441,6 +2422,82 @@ function nextFeedbackPage() {
 // Refresh feedback data
 function refreshFeedbackData() {
     loadFeedbackData();
+}
+
+// ==================== 5b. SORTING (FEEDBACK & ARCHIVE) ====================
+
+let feedbackSortColumn = null;
+let feedbackSortAsc = true;
+let archiveSortColumn = null;
+let archiveSortAsc = true;
+
+// Map HTML column keys to the actual data property names returned by the API
+const sortKeyMap = {
+    name: 'name',
+    email: 'email_encrypted',
+    total_visits: 'visits',
+    data_retention: 'data_retention',
+    data_retention_days: 'data_retention',
+    created_at: 'date'
+};
+
+function sortFeedbackData(columnKey) {
+    const field = sortKeyMap[columnKey] || columnKey;
+
+    if (feedbackSortColumn === field) {
+        feedbackSortAsc = !feedbackSortAsc;
+    } else {
+        feedbackSortColumn = field;
+        feedbackSortAsc = true;
+    }
+
+    // Update sort indicator arrows
+    document.querySelectorAll('[id^="feedback-sort-"]').forEach(el => el.textContent = '');
+    const indicator = document.getElementById('feedback-sort-' + columnKey);
+    if (indicator) indicator.textContent = feedbackSortAsc ? ' ▲' : ' ▼';
+
+    filteredFeedbackData.sort((a, b) => compareValues(a[field], b[field], field));
+    if (!feedbackSortAsc) filteredFeedbackData.reverse();
+
+    feedbackCurrentPage = 1;
+    renderFeedbackPage();
+}
+
+function sortArchiveData(columnKey) {
+    const field = sortKeyMap[columnKey] || columnKey;
+
+    if (archiveSortColumn === field) {
+        archiveSortAsc = !archiveSortAsc;
+    } else {
+        archiveSortColumn = field;
+        archiveSortAsc = true;
+    }
+
+    document.querySelectorAll('[id^="archive-sort-"]').forEach(el => el.textContent = '');
+    const indicator = document.getElementById('archive-sort-' + columnKey);
+    if (indicator) indicator.textContent = archiveSortAsc ? ' ▲' : ' ▼';
+
+    filteredArchiveData.sort((a, b) => compareValues(a[field], b[field], field));
+    if (!archiveSortAsc) filteredArchiveData.reverse();
+
+    archiveCurrentPage = 1;
+    renderArchivePage();
+}
+
+function compareValues(a, b, field) {
+    // Nulls always sort to the end
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+
+    // Date fields: compare as timestamps
+    if (field === 'date') return new Date(a) - new Date(b);
+
+    // Numeric fields: compare as numbers
+    if (field === 'visits') return Number(a) - Number(b);
+
+    // Everything else: case-insensitive string compare
+    return String(a).toLowerCase().localeCompare(String(b).toLowerCase());
 }
 
 // ==================== 6. ARCHIVE DATA MANAGEMENT (ARCHIVED) ====================
@@ -1523,22 +2580,22 @@ function filterArchiveData() {
         if (searchTerm) {
             const searchableText = [
                 item.name || '',
-                item.email_encrypted || '',
+                String(item.visits || ''),
                 item.pledge || '',
-                item.date || ''
+                item.date ? new Date(item.date).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' }) : ''
             ].join(' ').toLowerCase();
             
             matches = matches && searchableText.includes(searchTerm);
         }
         
-        // Date range
+        // Date range — boundaries computed in Singapore time
         if (dateFrom || dateTo) {
             const itemDate = new Date(item.date);
-            if (dateFrom) matches = matches && itemDate >= new Date(dateFrom);
+            if (dateFrom) {
+                matches = matches && itemDate >= startOfDaySGT(dateFrom);
+            }
             if (dateTo) {
-                const toDate = new Date(dateTo);
-                toDate.setHours(23, 59, 59, 999);
-                matches = matches && itemDate <= toDate;
+                matches = matches && itemDate <= endOfDaySGT(dateTo);
             }
         }
         
@@ -1572,8 +2629,8 @@ function filterArchiveData() {
             
             if (filterValue === '7days' || filterValue === '7day') {
                 matches = matches && (itemRetention === '7days' || itemRetention === '7day');
-            } else if (filterValue === 'indefinite') {
-                matches = matches && itemRetention === 'indefinite';
+            } else if (filterValue === 'longterm') {
+                matches = matches && itemRetention === 'longterm';
             }
         }
         
@@ -1615,7 +2672,7 @@ function updateArchiveCounts(total, filtered, activeFilters) {
     }
 }
 
-// Render current page of archive (SAME STYLING AS FEEDBACK)
+// Render current page of archive 
 function renderArchivePage() {
     const tbody = document.getElementById('archive-table-body');
     if (!tbody) return;
@@ -1657,11 +2714,11 @@ function renderArchivePage() {
         return;
     }
     
-    // Render each row - EXACT SAME STYLING AS FEEDBACK
+    // Render each row 
     pageData.forEach(feedback => {
         const row = tbody.insertRow();
         row.setAttribute('data-feedback-id', feedback.id);
-        row.setAttribute('data-retention', feedback.data_retention || 'indefinite');
+        row.setAttribute('data-retention', feedback.data_retention || 'longterm');
         
         // Checkbox - only for system_admin
         const checkboxCell = row.insertCell(0);
@@ -1710,11 +2767,11 @@ function renderArchivePage() {
         
         // Data Retention WITH BADGES (same as feedback)
         const retentionCell = row.insertCell(6);
-        const retention = feedback.data_retention || 'indefinite';
+        const retention = feedback.data_retention || 'longterm';
         if (retention === '7days' || retention === '7day') {
             retentionCell.innerHTML = '<span class="badge badge-warning">7 DAYS</span>';
         } else {
-            retentionCell.innerHTML = '<span class="badge badge-permanent">INDEFINITE</span>';
+            retentionCell.innerHTML = '<span class="badge badge-permanent">LONG-TERM</span>';
         }
         
         // Raw Photo
@@ -1735,6 +2792,7 @@ function renderArchivePage() {
         
         // Date
         row.insertCell(9).textContent = new Date(feedback.date).toLocaleString('en-SG', {
+            timeZone: 'Asia/Singapore',
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -1826,36 +2884,76 @@ function toggleArchiveAdvancedFilters() {
 }
 
 function setFeedbackDateRangePreset(preset) {
-    const today = new Date();
     const fromInput = document.getElementById('feedback-filter-date-from');
     const toInput = document.getElementById('feedback-filter-date-to');
     if (!fromInput || !toInput) return;
+
+    // Get current SGT date components
+    const { year: y, month: m, day: d, dayOfWeek: dow } = getSGTDateComponents();
     
-    toInput.value = today.toISOString().split('T')[0];
-    let fromDate = new Date();
+    // Create a shifted-SGT Date for today
+    const sgtToday = new Date(Date.now() + SGT_OFFSET_MS);
+    const todayStr = formatDateToSGTString(sgtToday);
+
+    let fromStr;
     
-    if (preset === 'today') fromDate = today;
-    else if (preset === 'week') fromDate.setDate(today.getDate() - 7);
-    else if (preset === 'month') fromDate.setMonth(today.getMonth() - 1);
-    
-    fromInput.value = fromDate.toISOString().split('T')[0];
+    if (preset === 'today') {
+        // Today only
+        fromStr = todayStr;
+        
+    } else if (preset === 'week') {
+        //calendar week (Monday to Sunday) in SGT
+        // dow: 0=Sun, 1=Mon, 2=Tue, ... 6=Sat
+        // Calculate days since Monday:
+        // If today is Sunday (dow=0), days since Monday = 6
+        // Otherwise, days since Monday = dow - 1
+        const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+        
+        // Go back to Monday of this week
+        const mondayDate = new Date(Date.UTC(y, m, d - daysSinceMonday));
+        fromStr = formatDateToSGTString(mondayDate);
+        
+    } else if (preset === 'month') {
+        // From 1st of current month to today
+        fromStr = y + '-' + String(m + 1).padStart(2, '0') + '-01';
+    }
+
+    fromInput.value = fromStr;
+    toInput.value = todayStr;
     filterFeedbackData();
 }
 
 function setArchiveDateRangePreset(preset) {
-    const today = new Date();
     const fromInput = document.getElementById('archive-filter-date-from');
     const toInput = document.getElementById('archive-filter-date-to');
     if (!fromInput || !toInput) return;
+
+    // Get current SGT date components
+    const { year: y, month: m, day: d, dayOfWeek: dow } = getSGTDateComponents();
     
-    toInput.value = today.toISOString().split('T')[0];
-    let fromDate = new Date();
+    // Create a shifted-SGT Date for today
+    const sgtToday = new Date(Date.now() + SGT_OFFSET_MS);
+    const todayStr = formatDateToSGTString(sgtToday);
+
+    let fromStr;
     
-    if (preset === 'today') fromDate = today;
-    else if (preset === 'week') fromDate.setDate(today.getDate() - 7);
-    else if (preset === 'month') fromDate.setMonth(today.getMonth() - 1);
-    
-    fromInput.value = fromDate.toISOString().split('T')[0];
+    if (preset === 'today') {
+        // Today only
+        fromStr = todayStr;
+        
+    } else if (preset === 'week') {
+        // Current calendar week (Monday to Sunday) in SGT
+        const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+        const mondayDate = new Date(Date.UTC(y, m, d - daysSinceMonday));
+        fromStr = formatDateToSGTString(mondayDate);
+        
+    } else if (preset === 'month') {
+        // From 1st of current month to today
+        fromStr = y + '-' + String(m + 1).padStart(2, '0') + '-01';
+    }
+
+    fromInput.value = fromStr;
+    toInput.value = todayStr;
     filterArchiveData();
 }
 
@@ -3455,7 +4553,7 @@ async function performOverlayDeletion(overlayId) {
     }
 }
 
-// ==================== 13. USER MANAGEMENT (UPDATED WITH SOFT DELETE 2026-01-09) ====================
+// ==================== 13. USER MANAGEMENT ( WITH SOFT DELETE ) ====================
 
 // Track current user management tab
 let currentUserTab = 'active'; // 'active' or 'deleted'
@@ -3586,7 +4684,11 @@ function updateActiveUsersTable(usersData) {
         
         const isCurrentUser = safeUser.username === currentUser;
         const isProtectedRootUser = safeUser.username === 'systemadmin';
-        const canEdit = isSystemAdmin && !isProtectedRootUser;
+        
+
+        const canEdit = isSystemAdmin && (!isProtectedRootUser || isCurrentUser);
+        
+
         const canDelete = isSystemAdmin && !isProtectedRootUser && !isCurrentUser;
         
         row.innerHTML = `
@@ -3605,7 +4707,7 @@ function updateActiveUsersTable(usersData) {
             <td>
                 ${canEdit ? `
                     <button class="btn-edit" onclick="editUser(${safeUser.id}, '${safeUser.username}', '${safeUser.role}', '${safeUser.full_name.replace(/'/g, "\\'")}')">
-                        Edit
+                        ${isProtectedRootUser && isCurrentUser ? '🔐 Edit My Account' : 'Edit'}
                     </button>
                 ` : ''}
                 ${canDelete ? `
@@ -3614,7 +4716,7 @@ function updateActiveUsersTable(usersData) {
                     </button>
                 ` : ''}
                 ${!canEdit && !canDelete ? `
-                    <span class="text-muted font-size-12">${isProtectedRootUser ? 'Protected' : 'No actions'}</span>
+                    <span class="text-muted font-size-12">${isProtectedRootUser ? '🔒 Protected' : 'No actions'}</span>
                 ` : ''}
             </td>
         `;
@@ -3928,7 +5030,8 @@ function closeAddUserModal() {
     }
 }
 
-// Edit user - UPDATED to pass full_name
+
+
 function editUser(userId, username, currentRole, fullName) {
     const currentUserRole = sessionStorage.getItem('userRole');
     if (currentUserRole !== 'system_admin') {
@@ -3936,9 +5039,14 @@ function editUser(userId, username, currentRole, fullName) {
         return;
     }
     
-    // Check if trying to edit protected root account
-    if (username === 'systemadmin') {
-        alert('⚠️ The root account "systemadmin" cannot be edited. This is a protected system account.');
+    const currentUsername = sessionStorage.getItem('loggedUser');
+    
+
+    const isSystemAdminSelf = (username === 'systemadmin' && currentUsername === 'systemadmin');
+    
+    // Check if trying to edit protected root account (but allow self-edit)
+    if (username === 'systemadmin' && !isSystemAdminSelf) {
+        alert('⚠️ The root account "systemadmin" can only be edited by itself.\n\nPlease log in as systemadmin to change this account.');
         return;
     }
     
@@ -3957,125 +5065,360 @@ function editUser(userId, username, currentRole, fullName) {
         z-index: 1000;
     `;
     
-    modal.innerHTML = `
-        <div class="edit-user-form" style="
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            width: 90%;
-            max-width: 500px;
-        ">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3 style="margin: 0; color: #1e293b; font-size: 20px;">Edit User: ${username}</h3>
-                <button onclick="closeEditUserModal()" style="
-                    background: none;
-                    border: none;
-                    font-size: 24px;
-                    cursor: pointer;
-                    color: #64748b;
-                    padding: 5px 10px;
-                ">×</button>
+
+    if (isSystemAdminSelf) {
+        modal.innerHTML = `
+            <div class="edit-user-form" style="
+                background: white;
+                padding: 30px;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                width: 90%;
+                max-width: 500px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="margin: 0; color: #1e293b; font-size: 20px;">🔐 Edit Root Account</h3>
+                    <button onclick="closeEditUserModal()" style="
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #64748b;
+                        padding: 5px 10px;
+                    ">×</button>
+                </div>
+                
+                <div style="
+                    background: #fef3c7;
+                    border-left: 4px solid #f59e0b;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                ">
+                    <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">
+                        🛡️ Protected Root Account
+                    </div>
+                    <div style="font-size: 13px; color: #78350f;">
+                        Username and role cannot be changed for security reasons.<br>
+                        You can only update your password and display name.
+                    </div>
+                </div>
+                
+                <form id="edit-user-form" onsubmit="handleEditUser(event, ${userId}, true)">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            Username (locked)
+                        </label>
+                        <input type="text" id="edit-username" 
+                            value="${username}"
+                            disabled
+                            style="
+                                width: 100%; 
+                                padding: 12px 16px; 
+                                border: 2px solid #e2e8f0; 
+                                border-radius: 8px; 
+                                font-size: 15px;
+                                background: #f1f5f9;
+                                color: #64748b;
+                                cursor: not-allowed;
+                            ">
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            🔒 Root username cannot be changed
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            Full Name
+                        </label>
+                        <input type="text" id="edit-full-name" 
+                            value="${fullName || 'System Administrator'}"
+                            placeholder="Enter full name"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;"
+                            required>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            This name will be displayed in the admin panel
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            Role (locked)
+                        </label>
+                        <select id="edit-user-role" disabled style="
+                            width: 100%;
+                            padding: 12px 16px;
+                            border: 2px solid #e2e8f0;
+                            border-radius: 8px;
+                            font-size: 15px;
+                            background: #f1f5f9;
+                            color: #64748b;
+                            cursor: not-allowed;
+                        ">
+                            <option value="system_admin" selected>System Admin</option>
+                        </select>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            🔒 Root role cannot be changed
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            New Password
+                        </label>
+                        <input type="password" id="edit-user-password" 
+                            placeholder="Enter new password (leave blank to keep current)"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;">
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            ✅ You can update your password here (minimum 8 characters)
+                        </div>
+                    </div>
+                    
+                    <div id="edit-user-error" style="
+                        color: #dc2626;
+                        font-size: 13px;
+                        margin-bottom: 15px;
+                        display: none;
+                    "></div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" onclick="closeEditUserModal()" style="
+                            flex: 1;
+                            padding: 12px;
+                            background: #64748b;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            cursor: pointer;
+                        ">Cancel</button>
+                        <button type="submit" style="
+                            flex: 1;
+                            padding: 12px;
+                            background: linear-gradient(135deg, #0A1E81, #764ba2);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            cursor: pointer;
+                        ">💾 Save Changes</button>
+                    </div>
+                </form>
             </div>
-            
-            <form id="edit-user-form" onsubmit="handleEditUser(event, ${userId})">
-                <div class="form-group" class="mb-20">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
-                        Username
-                    </label>
-                    <input type="text" id="edit-username" 
-                        value="${username}"
-                        placeholder="Enter username"
-                        style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;"
-                        required>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
-                        Username can be changed (must be unique)
-                    </div>
-                </div>
-                
-                <div class="form-group" class="mb-20">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
-                        Full Name
-                    </label>
-                    <input type="text" id="edit-full-name" 
-                        value="${fullName || ''}"
-                        placeholder="Enter full name"
-                        style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;"
-                        required>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
-                        This name will be displayed in the admin panel
-                    </div>
-                </div>
-                
-                <div class="form-group" class="mb-20">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
-                        Role
-                    </label>
-                    <select id="edit-user-role" style="
-                        width: 100%;
-                        padding: 12px 16px;
-                        border: 2px solid #e2e8f0;
-                        border-radius: 8px;
-                        font-size: 15px;
-                        background: white;
-                    ">
-                        <option value="system_admin" ${currentRole === 'system_admin' ? 'selected' : ''}>System Admin</option>
-                        <option value="IT_admin" ${currentRole === 'IT_admin' ? 'selected' : ''}>IT Admin</option>
-                        <option value="IT_staff" ${currentRole === 'IT_staff' ? 'selected' : ''}>IT Staff</option>
-                    </select>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
-                        Select the user role and permissions
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 25px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
-                        New Password (optional)
-                    </label>
-                    <input type="password" id="edit-user-password" 
-                        placeholder="Leave blank to keep current password"
-                        style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;">
-                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
-                        Only enter if you want to change the password
-                    </div>
-                </div>
-                
-                <div id="edit-user-error" style="
-                    color: #dc2626;
-                    font-size: 13px;
-                    margin-bottom: 15px;
-                    display: none;
-                "></div>
-                
-                <div style="display: flex; gap: 12px;">
-                    <button type="button" onclick="closeEditUserModal()" style="
-                        flex: 1;
-                        padding: 12px;
-                        background: #64748b;
-                        color: white;
+        `;
+    } else {
+        // STANDARD EDIT MODAL (for non-systemadmin users)
+        modal.innerHTML = `
+            <div class="edit-user-form" style="
+                background: white;
+                padding: 30px;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                width: 90%;
+                max-width: 500px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="margin: 0; color: #1e293b; font-size: 20px;">Edit User: ${username}</h3>
+                    <button onclick="closeEditUserModal()" style="
+                        background: none;
                         border: none;
-                        border-radius: 8px;
-                        font-size: 14px;
-                        font-weight: 600;
+                        font-size: 24px;
                         cursor: pointer;
-                    ">Cancel</button>
-                    <button type="submit" style="
-                        flex: 1;
-                        padding: 12px;
-                        background: linear-gradient(135deg, #0A1E81, #764ba2);
-                        color: white;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 14px;
-                        font-weight: 600;
-                        cursor: pointer;
-                    ">Save Changes</button>
+                        color: #64748b;
+                        padding: 5px 10px;
+                    ">×</button>
                 </div>
-            </form>
-        </div>
-    `;
+                
+                <form id="edit-user-form" onsubmit="handleEditUser(event, ${userId}, false)">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            Username
+                        </label>
+                        <input type="text" id="edit-username" 
+                            value="${username}"
+                            placeholder="Enter username"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;"
+                            required>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            Username can be changed (must be unique)
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            Full Name
+                        </label>
+                        <input type="text" id="edit-full-name" 
+                            value="${fullName || ''}"
+                            placeholder="Enter full name"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;"
+                            required>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            This name will be displayed in the admin panel
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            Role
+                        </label>
+                        <select id="edit-user-role" style="
+                            width: 100%;
+                            padding: 12px 16px;
+                            border: 2px solid #e2e8f0;
+                            border-radius: 8px;
+                            font-size: 15px;
+                            background: white;
+                        ">
+                            <option value="system_admin" ${currentRole === 'system_admin' ? 'selected' : ''}>System Admin</option>
+                            <option value="IT_admin" ${currentRole === 'IT_admin' ? 'selected' : ''}>IT Admin</option>
+                            <option value="IT_staff" ${currentRole === 'IT_staff' ? 'selected' : ''}>IT Staff</option>
+                        </select>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            Select the user role and permissions
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            New Password (optional)
+                        </label>
+                        <input type="password" id="edit-user-password" 
+                            placeholder="Leave blank to keep current password"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px;">
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            Only enter if you want to change the password
+                        </div>
+                    </div>
+                    
+                    <div id="edit-user-error" style="
+                        color: #dc2626;
+                        font-size: 13px;
+                        margin-bottom: 15px;
+                        display: none;
+                    "></div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" onclick="closeEditUserModal()" style="
+                            flex: 1;
+                            padding: 12px;
+                            background: #64748b;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            cursor: pointer;
+                        ">Cancel</button>
+                        <button type="submit" style="
+                            flex: 1;
+                            padding: 12px;
+                            background: linear-gradient(135deg, #0A1E81, #764ba2);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            cursor: pointer;
+                        ">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        `;
+    }
     
     document.body.appendChild(modal);
+}
+
+async function handleEditUser(event, userId, isSystemAdminSelf = false) {
+    event.preventDefault();
+    
+    const username = document.getElementById('edit-username').value.trim();
+    const fullName = document.getElementById('edit-full-name').value.trim();
+    const role = document.getElementById('edit-user-role').value;
+    const password = document.getElementById('edit-user-password').value;
+    const errorDiv = document.getElementById('edit-user-error');
+    
+    // Validate inputs
+    if (!username || !fullName || !role) {
+        errorDiv.textContent = 'Username, display name, and role are required';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    if (isSystemAdminSelf) {
+        if (username !== 'systemadmin' || role !== 'system_admin') {
+            errorDiv.textContent = 'Root account username and role cannot be changed';
+            errorDiv.style.display = 'block';
+            return;
+        }
+    } else {
+        // Validate username format for non-systemadmin users
+        if (!/^[a-z0-9_]+$/.test(username)) {
+            errorDiv.textContent = 'Username must contain only lowercase letters, numbers, and underscores';
+            errorDiv.style.display = 'block';
+            return;
+        }
+    }
+    
+    // Validate password if provided
+    if (password && password.length < 8) {
+        errorDiv.textContent = 'Password must be at least 8 characters long';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const updateData = {
+            username,
+            full_name: fullName,
+            role
+        };
+        
+        // Only include password if provided
+        if (password) {
+            updateData.password = password;
+        }
+        
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-username': sessionStorage.getItem('loggedUser')
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (isSystemAdminSelf) {
+                alert('✅ Root account updated successfully!\n\n' + 
+                      (password ? '🔐 Your password has been changed.' : '📝 Your display name has been updated.'));
+            } else {
+                alert('✅ User updated successfully!');
+            }
+            closeEditUserModal();
+            loadActiveUsers(); // Reload active users
+        } else {
+            errorDiv.textContent = data.error || 'Failed to update user';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error updating user:', error);
+        errorDiv.textContent = 'Error connecting to server: ' + error.message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Close edit user modal
+function closeEditUserModal() {
+    const modal = document.querySelector('.edit-user-modal');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 // Handle edit user form submission
@@ -5432,8 +6775,8 @@ function showPage(pageName) {
         loadFeedbackData();
     } else if (pageName === 'digital-tree') {
         loadDigitalTreeData();
-    } else if (pageName === 'leaderboard') {
-        loadAdminLeaderboard();
+    } else if (pageName === 'pledgeboard') {
+        loadAdminPledgeboard();
     } else if (pageName === 'overlay') {
         loadOverlayData();
     } else if (pageName === 'users') {
@@ -5795,7 +7138,7 @@ const themeConfig = {
         { id: 'dashboard-page', name: 'Dashboard', icon: '📊' },
         { id: 'feedback-data-page', name: 'Feedback Data', icon: '💬' },
         { id: 'digital-tree-page', name: 'Digital Tree', icon: '🌳' },
-        { id: 'leaderboard-page', name: 'Pledgeboard', icon: '🏆' },
+        { id: 'pledgeboard-page', name: 'Pledgeboard', icon: '🏆' },
         { id: 'overlay-page', name: 'Overlay Management', icon: '🎨', requiredRole: 'system_admin' },
         { id: 'questions-page', name: 'Question Management', icon: '❓', requiredRole: 'system_admin' },
         { id: 'users-page', name: 'User Management', icon: '👥', requiredRole: 'system_admin' },
@@ -6015,14 +7358,14 @@ const themeConfig = {
                         '.badge-warning'
                     ]
                 },
-                'badge-indefinite-background': {
+                'badge-longterm-background': {
                     explicit: [
                         '#feedback-data-page .badge-permanent',
                         '#archive-page .badge-permanent',
                         '.badge-permanent'
                     ]
                 },
-                'badge-indefinite-text': {
+                'badge-longterm-text': {
                     explicit: [
                         '#feedback-data-page .badge-permanent',
                         '#archive-page .badge-permanent',
@@ -6057,13 +7400,36 @@ const themeConfig = {
                 'secondary-text': ['#dashboard-page .page-header p']
             },
             card: {
-                'card-background': ['#dashboard-page .stat-card', '#dashboard-page .activity-section'],
-                'card-primary-text': ['#dashboard-page .stat-value', '#dashboard-page .section-header h3'],
-                'card-secondary-text': ['#dashboard-page .stat-label', '#dashboard-page .last-updated']
+                'card-background': [
+                    '#dashboard-page .metric-card',
+                    '#dashboard-page .chart-card',
+                    '#dashboard-page .status-card',
+                    '#dashboard-page .quick-actions-card'
+                ],
+                'card-primary-text': [
+                    '#dashboard-page .metric-value',
+                    '#dashboard-page .metric-label',
+                    '#dashboard-page .chart-header h3',
+                    '#dashboard-page .status-header h3',
+                    '#dashboard-page .quick-actions-header h3'
+                ],
+                'card-secondary-text': [
+                    '#dashboard-page .metric-subtitle',
+                    '#dashboard-page .chart-subtitle',
+                    '#dashboard-page .quick-actions-header p'
+                ]
             },
             buttons: {
-                'button-color': ['#dashboard-page .btn-primary', '#dashboard-page .refresh-btn'],
-                'button-text-color': ['#dashboard-page .btn-primary', '#dashboard-page .refresh-btn']
+                'button-color': [
+                    '#dashboard-page .btn-primary',
+                    '#dashboard-page .refresh-btn',
+                    '#dashboard-page .quick-action-btn'
+                ],
+                'button-text-color': [
+                    '#dashboard-page .btn-primary',
+                    '#dashboard-page .refresh-btn',
+                    '#dashboard-page .quick-action-btn'
+                ]
             }
         },
         
@@ -6098,8 +7464,8 @@ const themeConfig = {
             badges: {
                 'badge-7days-background': ['#feedback-data-page .badge-warning'],
                 'badge-7days-text': ['#feedback-data-page .badge-warning'],
-                'badge-indefinite-background': ['#feedback-data-page .badge-permanent'],
-                'badge-indefinite-text': ['#feedback-data-page .badge-permanent']
+                'badge-longterm-background': ['#feedback-data-page .badge-permanent'],
+                'badge-longterm-text': ['#feedback-data-page .badge-permanent']
             }
         },
         
@@ -6119,35 +7485,35 @@ const themeConfig = {
             }
         },
         
-        'leaderboard-page': {
+        'pledgeboard-page': {
             general: {
-                'page-background': ['#leaderboard-page'],
-                'primary-text': ['#leaderboard-page .page-header h2'],
-                'secondary-text': ['#leaderboard-page .page-header p']
+                'page-background': ['#pledgeboard-page'],
+                'primary-text': ['#pledgeboard-page .page-header h2'],
+                'secondary-text': ['#pledgeboard-page .page-header p']
             },
             card: {
-                'card-background': ['#leaderboard-page .leaderboard-section'],
-                'card-primary-text': ['#leaderboard-page .section-header h3']
+                'card-background': ['#pledgeboard-page .pledgeboard-section'],
+                'card-primary-text': ['#pledgeboard-page .section-header h3']
             },
             buttons: {
-                'button-color': ['#leaderboard-page .btn-primary', '#leaderboard-page .btn-secondary'],
-                'button-text-color': ['#leaderboard-page .btn-primary', '#leaderboard-page .btn-secondary']
+                'button-color': ['#pledgeboard-page .btn-primary', '#pledgeboard-page .btn-secondary'],
+                'button-text-color': ['#pledgeboard-page .btn-primary', '#pledgeboard-page .btn-secondary']
             }
         },
         
-        'leaderboard-page': {
+        'pledgeboard-page': {
             general: {
-                'page-background': ['#leaderboard-page'],
-                'primary-text': ['#leaderboard-page .page-header h2'],
-                'secondary-text': ['#leaderboard-page .page-header p']
+                'page-background': ['#pledgeboard-page'],
+                'primary-text': ['#pledgeboard-page .page-header h2'],
+                'secondary-text': ['#pledgeboard-page .page-header p']
             },
             card: {
-                'card-background': ['#leaderboard-page .leaderboard-section'],
-                'card-primary-text': ['#leaderboard-page .section-header h3']
+                'card-background': ['#pledgeboard-page .pledgeboard-section'],
+                'card-primary-text': ['#pledgeboard-page .section-header h3']
             },
             buttons: {
-                'button-color': ['#leaderboard-page .btn-primary', '#leaderboard-page .btn-secondary'],
-                'button-text-color': ['#leaderboard-page .btn-primary', '#leaderboard-page .btn-secondary']
+                'button-color': ['#pledgeboard-page .btn-primary', '#pledgeboard-page .btn-secondary'],
+                'button-text-color': ['#pledgeboard-page .btn-primary', '#pledgeboard-page .btn-secondary']
             }
         },
         
@@ -6281,8 +7647,8 @@ const themeConfig = {
             badges: {
                 'badge-7days-background': ['#archive-page .badge-warning'],
                 'badge-7days-text': ['#archive-page .badge-warning'],
-                'badge-indefinite-background': ['#archive-page .badge-permanent'],
-                'badge-indefinite-text': ['#archive-page .badge-permanent']
+                'badge-longterm-background': ['#archive-page .badge-permanent'],
+                'badge-longterm-text': ['#archive-page .badge-permanent']
             }
         },
         
@@ -6462,8 +7828,8 @@ const themeConfig = {
         badges: [
             { id: 'badge-7days-background', label: '7-Day Retention Badge BG', default: '#9E0000', description: 'Background for 7-day retention badges' },
             { id: 'badge-7days-text', label: '7-Day Retention Badge Text', default: '#ffffffff', description: 'Text color for 7-day retention badges' },
-            { id: 'badge-indefinite-background', label: 'Indefinite Retention Badge BG', default: '#2EAD00', description: 'Background for indefinite retention badges' },
-            { id: 'badge-indefinite-text', label: 'Indefinite Retention Badge Text', default: '#ffffffff', description: 'Text color for indefinite retention badges' }
+            { id: 'badge-longterm-background', label: 'Long-Term Retention Badge BG', default: '#2EAD00', description: 'Background for long-term retention badges' },
+            { id: 'badge-longterm-text', label: 'Long-Term Retention Badge Text', default: '#ffffffff', description: 'Text color for long-term retention badges' }
         ],
         // slider: [
         //     { id: 'card-slider-color', label: 'Toggle Slider Color', default: '#cbd5e1', description: 'Color for toggle switches' }
@@ -6624,7 +7990,7 @@ function migrateOldColors() {
     }
 }
 
-// Custom default theme - modify these colors to your preference
+// Custom default theme - modify these colors to preference
 function getCustomDefaultColors() {
     return {
         // ==================== GENERAL COLORS ====================
@@ -6663,8 +8029,8 @@ function getCustomDefaultColors() {
         // ==================== BADGE COLORS ====================
         'badge-7days-background': '#9E0000',       // Red badge background (7-day retention)
         'badge-7days-text': '#ffffffff',           // White badge text (7-day retention)
-        'badge-indefinite-background': '#2EAD00',  // Green badge background (indefinite)
-        'badge-indefinite-text': '#ffffffff',      // White badge text (indefinite)
+        'badge-longterm-background': '#2EAD00',  // Green badge background (long-term)
+        'badge-longterm-text': '#ffffffff',      // White badge text (long-term)
         
         // ==================== LOGIN PAGE COLORS ====================
         'login-background': '#ffffffff',           // White login page background
@@ -7620,9 +8986,7 @@ function clearSaveThemeForm() {
 }
 
 
-// Apply theme data to color inputs
-// APPLIES: ONLY Admin Overall (global) colors
-// Individual page overrides remain untouched and apply automatically
+
 function applyThemeData(themeData) {
     try {
         console.log('🎨 Applying theme data (Global Only)...', themeData);
@@ -7709,7 +9073,7 @@ function applyThemeData(themeData) {
 }
 
 // Set a saved theme as the active theme
-// This is now the ONLY way to apply a saved theme (Load button removed)
+
 async function activateSavedTheme(themeId) {
     try {
         const theme = savedThemesCache.find(t => t.id === themeId);
@@ -8414,69 +9778,69 @@ function refreshArchiveData() {
     loadArchiveData();
 }
 
-// ==================== 26. LEADERBOARD MANAGEMENT ====================
+// ==================== 26. PLEDGEBOARD MANAGEMENT ====================
 
-// Load leaderboard data from API
-async function loadAdminLeaderboard() {
+// Load pledgeboard data from API
+async function loadAdminPledgeboard() {
     try {
-        const response = await fetch('/api/leaderboard/pledges');
+        const response = await fetch('/api/pledgeboard/pledges');
         const data = await response.json();
         
         if (data.success) {
-            allLeaderboardData = data.pledges;
-            filteredLeaderboardData = data.pledges;
-            leaderboardCurrentPage = 1;
-            renderLeaderboardPage();
+            allPledgeboardData = data.pledges;
+            filteredPledgeboardData = data.pledges;
+            pledgeboardCurrentPage = 1;
+            renderPledgeboardPage();
         } else {
             console.error('Failed to load pledgeboard:', data.message);
         }
     } catch (error) {
-        console.error('Error loading leaderboard:', error);
+        console.error('Error loading pledgeboard:', error);
     }
 }
 
-// Filter leaderboard data by search term
-function filterLeaderboardData() {
-    const searchInput = document.getElementById('leaderboard-search-input');
+// Filter pledgeboard data by search term
+function filterPledgeboardData() {
+    const searchInput = document.getElementById('pledgeboard-search-input');
     const searchTerm = searchInput.value.toLowerCase().trim();
     
     if (!searchTerm) {
-        filteredLeaderboardData = allLeaderboardData;
+        filteredPledgeboardData = allPledgeboardData;
     } else {
-        filteredLeaderboardData = allLeaderboardData.filter(pledge => 
+        filteredPledgeboardData = allPledgeboardData.filter(pledge => 
             pledge.name.toLowerCase().includes(searchTerm) ||
             pledge.pledge.toLowerCase().includes(searchTerm)
         );
     }
     
-    leaderboardCurrentPage = 1;
-    renderLeaderboardPage();
+    pledgeboardCurrentPage = 1;
+    renderPledgeboardPage();
 }
 
-// Clear leaderboard search
-function clearLeaderboardSearch() {
-    const searchInput = document.getElementById('leaderboard-search-input');
+// Clear pledgeboard search
+function clearPledgeboardSearch() {
+    const searchInput = document.getElementById('pledgeboard-search-input');
     if (searchInput) {
         searchInput.value = '';
     }
-    filteredLeaderboardData = allLeaderboardData;
-    leaderboardCurrentPage = 1;
-    renderLeaderboardPage();
+    filteredPledgeboardData = allPledgeboardData;
+    pledgeboardCurrentPage = 1;
+    renderPledgeboardPage();
 }
 
-// Render current page of leaderboard
-function renderLeaderboardPage() {
-    const tableBody = document.getElementById('leaderboard-table-body');
-    const countSpan = document.getElementById('leaderboard-count');
+// Render current page of pledgeboard
+function renderPledgeboardPage() {
+    const tableBody = document.getElementById('pledgeboard-table-body');
+    const countSpan = document.getElementById('pledgeboard-count');
     
     if (!tableBody) return;
     
     // Update count
     if (countSpan) {
-        countSpan.textContent = filteredLeaderboardData.length;
+        countSpan.textContent = filteredPledgeboardData.length;
     }
     
-    if (filteredLeaderboardData.length === 0) {
+    if (filteredPledgeboardData.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">
@@ -8484,14 +9848,14 @@ function renderLeaderboardPage() {
                 </td>
             </tr>
         `;
-        updateLeaderboardPaginationControls();
+        updatePledgeboardPaginationControls();
         return;
     }
     
     // Calculate pagination
-    const startIndex = (leaderboardCurrentPage - 1) * leaderboardItemsPerPage;
-    const endIndex = startIndex + leaderboardItemsPerPage;
-    const pageData = filteredLeaderboardData.slice(startIndex, endIndex);
+    const startIndex = (pledgeboardCurrentPage - 1) * pledgeboardItemsPerPage;
+    const endIndex = startIndex + pledgeboardItemsPerPage;
+    const pageData = filteredPledgeboardData.slice(startIndex, endIndex);
     
     // Render pledges for current page
     tableBody.innerHTML = pageData.map((pledge, pageIndex) => {
@@ -8500,7 +9864,7 @@ function renderLeaderboardPage() {
         
         // Add medal for top 3 (only on first page)
         let rankDisplay = `<span style="font-size: 14px;">#${actualRank}</span>`;
-        if (leaderboardCurrentPage === 1) {
+        if (pledgeboardCurrentPage === 1) {
             if (pageIndex === 0) rankDisplay = '<span style="font-size: 18px;">🥇</span> <span style="font-size: 14px;">#1</span>';
             else if (pageIndex === 1) rankDisplay = '<span style="font-size: 18px;">🥈</span> <span style="font-size: 14px;">#2</span>';
             else if (pageIndex === 2) rankDisplay = '<span style="font-size: 18px;">🥉</span> <span style="font-size: 14px;">#3</span>';
@@ -8519,43 +9883,43 @@ function renderLeaderboardPage() {
         `;
     }).join('');
     
-    updateLeaderboardPaginationControls();
+    updatePledgeboardPaginationControls();
 }
 
-// Update leaderboard pagination controls
-function updateLeaderboardPaginationControls() {
-    const totalPages = Math.ceil(filteredLeaderboardData.length / leaderboardItemsPerPage);
-    const pageInfo = document.getElementById('leaderboard-page-info');
-    const prevBtn = document.getElementById('prev-leaderboard-btn');
-    const nextBtn = document.getElementById('next-leaderboard-btn');
+// Update pledgeboard pagination controls
+function updatePledgeboardPaginationControls() {
+    const totalPages = Math.ceil(filteredPledgeboardData.length / pledgeboardItemsPerPage);
+    const pageInfo = document.getElementById('pledgeboard-page-info');
+    const prevBtn = document.getElementById('prev-pledgeboard-btn');
+    const nextBtn = document.getElementById('next-pledgeboard-btn');
     
     if (pageInfo) {
-        pageInfo.textContent = `Page ${leaderboardCurrentPage} of ${totalPages} (${filteredLeaderboardData.length} total)`;
+        pageInfo.textContent = `Page ${pledgeboardCurrentPage} of ${totalPages} (${filteredPledgeboardData.length} total)`;
     }
     
     if (prevBtn) {
-        prevBtn.disabled = leaderboardCurrentPage === 1;
+        prevBtn.disabled = pledgeboardCurrentPage === 1;
     }
     
     if (nextBtn) {
-        nextBtn.disabled = leaderboardCurrentPage >= totalPages;
+        nextBtn.disabled = pledgeboardCurrentPage >= totalPages;
     }
 }
 
-// Navigate to previous leaderboard page
-function prevLeaderboardPage() {
-    if (leaderboardCurrentPage > 1) {
-        leaderboardCurrentPage--;
-        renderLeaderboardPage();
+// Navigate to previous pledgeboard page
+function prevPledgeboardPage() {
+    if (pledgeboardCurrentPage > 1) {
+        pledgeboardCurrentPage--;
+        renderPledgeboardPage();
     }
 }
 
-// Navigate to next leaderboard page
-function nextLeaderboardPage() {
-    const totalPages = Math.ceil(filteredLeaderboardData.length / leaderboardItemsPerPage);
-    if (leaderboardCurrentPage < totalPages) {
-        leaderboardCurrentPage++;
-        renderLeaderboardPage();
+// Navigate to next pledgeboard page
+function nextPledgeboardPage() {
+    const totalPages = Math.ceil(filteredPledgeboardData.length / pledgeboardItemsPerPage);
+    if (pledgeboardCurrentPage < totalPages) {
+        pledgeboardCurrentPage++;
+        renderPledgeboardPage();
     }
 }
 
