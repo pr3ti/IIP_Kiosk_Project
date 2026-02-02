@@ -1393,6 +1393,14 @@ async function downloadAuditExcel() {
     }
 }
 
+// ==================== 4. DASHBOARD MANAGEMENT ====================
+/* ==================== IMPROVED DASHBOARD JAVASCRIPT - UPDATED VERSION ====================
+ * Add this to your admin.js file or replace the existing dashboard functions
+ * 
+ * REQUIREMENTS:
+ * - Add Chart.js to admin.html: 
+ *   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+ */
 
 // Global chart instances
 let visitorTrendsChart = null;
@@ -1619,7 +1627,8 @@ function refreshDashboard() {
 
 // ==================== CHART FUNCTIONALITY ====================
 
-
+// Load chart data from API
+// ==================== CHART FUNCTIONALITY (UPDATED FOR REAL DATA) ====================
 
 // Load chart data from REAL database
 async function loadChartData() {
@@ -2672,7 +2681,7 @@ function updateArchiveCounts(total, filtered, activeFilters) {
     }
 }
 
-// Render current page of archive 
+// Render current page of archive (SAME STYLING AS FEEDBACK)
 function renderArchivePage() {
     const tbody = document.getElementById('archive-table-body');
     if (!tbody) return;
@@ -2714,7 +2723,7 @@ function renderArchivePage() {
         return;
     }
     
-    // Render each row 
+    // Render each row - EXACT SAME STYLING AS FEEDBACK
     pageData.forEach(feedback => {
         const row = tbody.insertRow();
         row.setAttribute('data-feedback-id', feedback.id);
@@ -2902,7 +2911,7 @@ function setFeedbackDateRangePreset(preset) {
         fromStr = todayStr;
         
     } else if (preset === 'week') {
-        //calendar week (Monday to Sunday) in SGT
+        // FIXED: Current calendar week (Monday to Sunday) in SGT
         // dow: 0=Sun, 1=Mon, 2=Tue, ... 6=Sat
         // Calculate days since Monday:
         // If today is Sunday (dow=0), days since Monday = 6
@@ -2942,7 +2951,7 @@ function setArchiveDateRangePreset(preset) {
         fromStr = todayStr;
         
     } else if (preset === 'week') {
-        // Current calendar week (Monday to Sunday) in SGT
+        // FIXED: Current calendar week (Monday to Sunday) in SGT
         const daysSinceMonday = dow === 0 ? 6 : dow - 1;
         const mondayDate = new Date(Date.UTC(y, m, d - daysSinceMonday));
         fromStr = formatDateToSGTString(mondayDate);
@@ -4553,7 +4562,7 @@ async function performOverlayDeletion(overlayId) {
     }
 }
 
-// ==================== 13. USER MANAGEMENT ( WITH SOFT DELETE ) ====================
+// ==================== 13. USER MANAGEMENT (UPDATED WITH SOFT DELETE 2026-01-09) ====================
 
 // Track current user management tab
 let currentUserTab = 'active'; // 'active' or 'deleted'
@@ -4685,10 +4694,12 @@ function updateActiveUsersTable(usersData) {
         const isCurrentUser = safeUser.username === currentUser;
         const isProtectedRootUser = safeUser.username === 'systemadmin';
         
-
+        // MODIFIED LOGIC: Allow systemadmin to edit itself, but prevent others from editing systemadmin
+        // - If it's the root account (systemadmin), only systemadmin itself can edit it
+        // - If it's a regular account, any system_admin can edit it
         const canEdit = isSystemAdmin && (!isProtectedRootUser || isCurrentUser);
         
-
+        // KEEP SAME: Cannot delete root account, cannot delete yourself
         const canDelete = isSystemAdmin && !isProtectedRootUser && !isCurrentUser;
         
         row.innerHTML = `
@@ -5030,7 +5041,9 @@ function closeAddUserModal() {
     }
 }
 
-
+// Edit user - UPDATED to pass full_name
+// Find and replace the editUser function (around line 4960-5109)
+// This is the MODIFIED VERSION that allows systemadmin to edit their own password
 
 function editUser(userId, username, currentRole, fullName) {
     const currentUserRole = sessionStorage.getItem('userRole');
@@ -5041,7 +5054,7 @@ function editUser(userId, username, currentRole, fullName) {
     
     const currentUsername = sessionStorage.getItem('loggedUser');
     
-
+    // MODIFIED: Check if systemadmin is editing themselves
     const isSystemAdminSelf = (username === 'systemadmin' && currentUsername === 'systemadmin');
     
     // Check if trying to edit protected root account (but allow self-edit)
@@ -5065,7 +5078,7 @@ function editUser(userId, username, currentRole, fullName) {
         z-index: 1000;
     `;
     
-
+    // MODIFIED: Different modal for systemadmin self-edit
     if (isSystemAdminSelf) {
         modal.innerHTML = `
             <div class="edit-user-form" style="
@@ -5332,6 +5345,7 @@ function editUser(userId, username, currentRole, fullName) {
     document.body.appendChild(modal);
 }
 
+// handleEditUser function to handle systemadmin self-edits
 async function handleEditUser(event, userId, isSystemAdminSelf = false) {
     event.preventDefault();
     
@@ -5348,6 +5362,7 @@ async function handleEditUser(event, userId, isSystemAdminSelf = false) {
         return;
     }
     
+    // For systemadmin self-edit, enforce locked username and role
     if (isSystemAdminSelf) {
         if (username !== 'systemadmin' || role !== 'system_admin') {
             errorDiv.textContent = 'Root account username and role cannot be changed';
@@ -7990,7 +8005,7 @@ function migrateOldColors() {
     }
 }
 
-// Custom default theme - modify these colors to preference
+// Custom default theme - modify these colors to your preference
 function getCustomDefaultColors() {
     return {
         // ==================== GENERAL COLORS ====================
@@ -8986,7 +9001,9 @@ function clearSaveThemeForm() {
 }
 
 
-
+// Apply theme data to color inputs
+// APPLIES: ONLY Admin Overall (global) colors
+// Individual page overrides remain untouched and apply automatically
 function applyThemeData(themeData) {
     try {
         console.log('🎨 Applying theme data (Global Only)...', themeData);
@@ -9073,7 +9090,7 @@ function applyThemeData(themeData) {
 }
 
 // Set a saved theme as the active theme
-
+// This is now the ONLY way to apply a saved theme (Load button removed)
 async function activateSavedTheme(themeId) {
     try {
         const theme = savedThemesCache.find(t => t.id === themeId);
@@ -9667,7 +9684,7 @@ function showDeletionConfirmationModal(count, type, date = null) {
     
     // Create modal
     const modal = document.createElement('div');
-    modal.className = 'modal deletion-modal-content';
+    modal.className = 'deletion-modal-content';
     
     // Create title based on type
     const title = type === 'date' 
