@@ -1,5 +1,6 @@
 // gatewayServer.js - Always running gateway on port 3001
 // Routes traffic based on schedule status OR manual mode + actual kiosk status
+// CRITICAL FIX: Conditional body parsing - DON'T parse bodies that will be proxied
 
 require('dotenv').config();
 const express = require('express');
@@ -104,13 +105,13 @@ const keyPath = path.join(certsDir, 'selfsigned.key');
 let sslOptions = null;
 
 if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
-  console.log('🔒 Using existing SSL certificates from certs/ folder');
+  console.log('🔐 Using existing SSL certificates from certs/ folder');
   sslOptions = {
     key: fs.readFileSync(keyPath),
     cert: fs.readFileSync(certPath),
   };
 } else {
-  console.log('🔒 Generating new SSL certificates...');
+  console.log('🔐 Generating new SSL certificates...');
   try {
     const selfsigned = require('selfsigned');
     const attrs = [{ name: 'commonName', value: 'localhost' }];
@@ -133,8 +134,9 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
 
 // ==================== MIDDLEWARE ====================
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// CRITICAL FIX: DO NOT USE express.json() or express.urlencoded()
+// These consume the request body, making it impossible to proxy
+// The body will be parsed by the backend (kiosk) server instead
 
 // Serve static files for offline page
 app.use('/offline-assets', express.static(path.join(__dirname, '../frontend/offline')));
@@ -187,17 +189,41 @@ async function shouldKioskBeAccessible() {
 
 const KIOSK_SERVER_URL = 'http://localhost:3003'; // Kiosk server on port 3003
 
-// Proxy options
+// Proxy options - stream the body without parsing
 const proxyOptions = {
   target: KIOSK_SERVER_URL,
   changeOrigin: true,
   ws: true, // proxy websockets
   logLevel: 'warn',
+  
+  // CRITICAL: Set this to false to prevent body parsing in proxy
+  // This allows the raw request stream to be forwarded
+  selfHandleResponse: false,
+  
+  // CRITICAL: Increase timeouts for large file uploads (base64 photos can be 10MB+)
+  timeout: 120000, // 2 minutes timeout
+  proxyTimeout: 120000, // 2 minutes for backend response
+  
   onError: (err, req, res) => {
-    console.error('Proxy Error:', err.message);
+    console.error('❌ Proxy Error:', err.message);
     // If proxy fails, show offline page
-    res.sendFile(path.join(__dirname, '../frontend/offline/offline.html'));
+    if (!res.headersSent) {
+      res.status(502).sendFile(path.join(__dirname, '../frontend/offline/offline.html'));
+    }
   },
+  
+  onProxyReq: (proxyReq, req, res) => {
+    // Log large uploads for debugging
+    const contentLength = req.headers['content-length'];
+    if (contentLength && parseInt(contentLength) > 1000000) {
+      console.log(`📤 Large upload: ${req.method} ${req.path} (${(parseInt(contentLength) / 1024 / 1024).toFixed(2)} MB)`);
+    }
+  },
+  
+  onProxyRes: (proxyRes, req, res) => {
+    // Log successful proxy responses for debugging
+    console.log(`✅ Proxied ${req.method} ${req.path} → Status: ${proxyRes.statusCode}`);
+  }
 };
 
 // ==================== SCHEDULE-BASED ROUTING ====================
@@ -214,6 +240,7 @@ app.use(async (req, res, next) => {
   
   if (shouldBeAccessible) {
     // Kiosk should be accessible - proxy to kiosk server
+    // IMPORTANT: Don't parse the body before proxying
     createProxyMiddleware(proxyOptions)(req, res, next);
   } else {
     // Kiosk should not be accessible - show offline page
@@ -241,7 +268,10 @@ function printServerInfo(isHttps) {
   console.log(`📡 Interface: ${interfaceName}`);
   console.log(`📡 IP: ${localIP}`);
   console.log(`🚀 URL: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}`);
-  console.log(`📄 Proxy Target: ${KIOSK_SERVER_URL} (when accessible)`);
+  console.log(`🔄 Proxy Target: ${KIOSK_SERVER_URL} (when accessible)`);
+  console.log(`✅ Body Handling: RAW STREAM (no parsing at gateway)`);
+  console.log(`📦 Body Size Limit: Handled by backend (kiosk: 50MB)`);
+  console.log(`⏱️ Proxy Timeout: 120 seconds`);
   console.log(`📅 Started: ${new Date().toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}`);
   console.log('============================================\n');
   console.log('💡 This gateway routes traffic based on:');
