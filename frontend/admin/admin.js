@@ -5,7 +5,7 @@
 // 0. SESSION TIMEOUT & AUTO-LOGOUT ENHANCEMENT (DONE BY PRETI)
 //    const SESSION_TIMEOUT_MS         - Session timeout duration (30 minutes) (DONE BY PRETI)
 //    const WARNING_BEFORE_TIMEOUT_MS  - Warning time before timeout (2 minutes) (DONE BY PRETI)
-//    const ACTIVITY_CHECK_INTERVAL_MS - Activity check interval (1 minute) ((DONE BY PRETI)
+//    const ACTIVITY_CHECK_INTERVAL_MS - Activity check interval (1 minute) (DONE BY PRETI)
 //    let lastActivityTime             - Track last user activity timestamp (DONE BY PRETI)
 //    let sessionWarningShown          - Flag for session warning modal state (DONE BY PRETI)
 //    let activityCheckInterval        - Interval timer for activity checks (DONE BY PRETI)
@@ -51,12 +51,14 @@
 //    let encryptedArchiveIds          - Array of encrypted archive IDs (current page) (DONE BY PRETI)
 //    let dataExportUnlocked           - Track data export session unlock status (DONE BY PRETI)
 //    let dataExportUnlockTime         - Track data export unlock timestamp (DONE BY PRETI)
+//    let preti_kioskMonitorInterval   - Timer for dashboard kiosk status monitoring (DONE BY PRETI)
+//    let preti_previousKioskState     - Track previous kiosk state for change detection (DONE BY PRETI)
 //    window.questionsDataMap          - Store question data for edit functions (DONE BY PRETI)
 //    function showNotification()      - Show notification message to user (DONE BY PRETI)
 //
 // 2. AUTHENTICATION & SESSION MANAGEMENT (DONE BY PRETI)
 //    async function handleLogin()     - Admin login with API authentication (DONE BY PRETI)
-//    function handleLogout()          - Log out admin user with audit logging (DONE BY PRETI)
+//    function handleLogout()          - Log out admin user with audit logging and cleanup (DONE BY PRETI)
 //    function updateUIForUser()       - Update UI based on user role (DONE BY PRETI)
 //    function formatRoleName()        - Format role names for display (DONE BY PRETI)
 //
@@ -83,10 +85,12 @@
 //    let visitorTrendsChart           - Visitor trends chart instance (DONE BY PRETI)
 //    let feedbackDistributionChart    - Feedback distribution chart instance (DONE BY PRETI)
 //    let currentChartRange            - Current chart time range (DONE BY PRETI)
-//    async function loadDashboardData() - Load dashboard statistics from API (DONE BY PRETI)
+//    async function loadDashboardData() - Load dashboard statistics and start kiosk monitoring (DONE BY PRETI)
 //    function updateEnhancedDashboardStats() - Update dashboard stat cards (DONE BY PRETI)
 //    async function updateSystemStatus() - Check and update System Status section (Kiosk, DB) (DONE BY PRETI)
-//    async function updateKioskStatus() - Update kiosk status metric card at top of dashboard (DONE BY PRETI)
+//    async function updateKioskStatus() - Update kiosk status metric card with real-time data (DONE BY PRETI)
+//    function preti_startDashboardKioskMonitoring() - Start continuous kiosk status monitoring (5s interval) (DONE BY PRETI)
+//    function preti_stopDashboardKioskMonitoring() - Stop kiosk status monitoring and cleanup (DONE BY PRETI)
 //    function animateValue()          - Animate number value changes (DONE BY PRETI)
 //    function updateLastUpdated()     - Update last updated timestamp (DONE BY PRETI)
 //    function getDefaultStats()       - Get fallback statistics for offline mode (DONE BY PRETI)
@@ -98,13 +102,6 @@
 //    function createEmptyVisitorTrendsChart() - Create empty placeholder chart (DONE BY PRETI)
 //    function createVisitorTrendsChartWithSampleData() - Create chart with sample data (DONE BY PRETI)
 //    function createFeedbackDistributionChart() - Create feedback distribution chart (DONE BY PRETI)
-//    function createEmptyFeedbackDistributionChart() - Create empty distribution chart (DONE BY PRETI)
-//    function createFeedbackDistributionChartWithSampleData() - Create chart with sample data (DONE BY PRETI)
-//    function updateChartRange()      - Update chart time range (DONE BY PRETI)
-//    function formatNumber()          - Format numbers for display (DONE BY PRETI)
-//    function calculatePercentage()   - Calculate percentage values (DONE BY PRETI)
-//    function formatDate()            - Format dates for UI display (DONE BY PRETI)
-//    function formatTime()            - Format times for UI display (DONE BY PRETI)
 
 // 5. FEEDBACK DATA MANAGEMENT (NOT_ARCHIVED) (DONE BY PRETI)
 //    async function loadFeedbackData() - Load ALL feedback data (not_archived) (DONE BY PRETI)
@@ -755,6 +752,9 @@ let encryptedArchiveIds = [];
 let dataExportUnlocked = false;
 let dataExportUnlockTime = null;
 
+let preti_kioskMonitorInterval = null;    // Timer for 5-second status checks
+let preti_previousKioskState = null;      // Track previous state to detect changes
+
 // Question management - store question data to avoid JSON.stringify issues in onclick
 window.questionsDataMap = new Map();
 
@@ -842,6 +842,9 @@ async function handleLogin(event) {
 // Handle logout
 function handleLogout() {
     const username = sessionStorage.getItem('loggedUser');
+    
+    // PRETI'S CODE - Stop monitoring on logout
+    preti_stopDashboardKioskMonitoring();
     
     // Log the logout
     fetch('/api/admin/logout-audit', {
@@ -1394,25 +1397,16 @@ async function downloadAuditExcel() {
 }
 
 // ==================== 4. DASHBOARD MANAGEMENT ====================
-/* ==================== IMPROVED DASHBOARD JAVASCRIPT - UPDATED VERSION ====================
- * Add this to your admin.js file or replace the existing dashboard functions
- * 
- * REQUIREMENTS:
- * - Add Chart.js to admin.html: 
- *   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
- */
-
 // Global chart instances
 let visitorTrendsChart = null;
 let feedbackDistributionChart = null;
 let currentChartRange = 'week';
 
 // ==================== ENHANCED DASHBOARD DATA LOADING ====================
-
 // Enhanced dashboard data loading with chart data
 async function loadDashboardData() {
     try {
-        console.log('📊 Loading enhanced dashboard data...');
+        console.log('📊 [PRETI] Loading enhanced dashboard data...');
         const response = await fetch('/api/admin/dashboard');
         
         if (!response.ok) {
@@ -1420,20 +1414,22 @@ async function loadDashboardData() {
         }
         
         const data = await response.json();
-        console.log('Dashboard API response:', data);
+        console.log('[PRETI] Dashboard API response:', data);
         
         if (data.success) {
             updateEnhancedDashboardStats(data.stats);
             await updateSystemStatus(data.recentActivity); // Check all system statuses (System Status section)
-            await updateKioskStatus(); // Update kiosk metric card
+            
+            preti_startDashboardKioskMonitoring();
+            
             await loadChartData(); // Load chart data separately
             updateLastUpdated();
         } else {
-            console.error('Failed to load dashboard data:', data.error);
+            console.error('[PRETI] Failed to load dashboard data:', data.error);
             showNotification('Error loading dashboard data', 'error');
         }
     } catch (error) {
-        console.error('❌ Error loading dashboard data:', error);
+        console.error('❌ [PRETI] Error loading dashboard data:', error);
         updateEnhancedDashboardStats(getDefaultStats());
         showNotification('Error connecting to server', 'error');
     }
@@ -1540,37 +1536,86 @@ async function updateSystemStatus(activity) {
 // Update kiosk server status on dashboard
 async function updateKioskStatus() {
     try {
-        const response = await fetch('/api/admin/server/status');
+        const response = await fetch('/api/admin/server/status', { 
+            cache: 'no-store',
+            headers: { 'X-Preti-Dashboard': 'true' } 
+        });
+        
         const data = await response.json();
         
+        // Dashboard metric card elements
         const statusValueEl = document.getElementById('kiosk-status-value');
         const statusSubtitleEl = document.getElementById('kiosk-status-subtitle');
         
-        if (!statusValueEl) return;
+        if (!statusValueEl) {
+            console.warn('⚠️ [PRETI] Dashboard kiosk status element not found');
+            return;
+        }
         
-        if (data.success && data.kiosk_running) {
-            // Kiosk is running
+        const isRunning = data.success && data.kiosk_running;
+        
+        if (isRunning) {
+            // Kiosk is running - show green
             statusValueEl.innerHTML = '<span class="status-running">🟢 Running</span>';
             if (statusSubtitleEl) {
                 statusSubtitleEl.textContent = 'Service is active';
             }
         } else {
-            // Kiosk is stopped
+            // Kiosk is stopped - show red
             statusValueEl.innerHTML = '<span class="status-stopped">🔴 Stopped</span>';
             if (statusSubtitleEl) {
                 statusSubtitleEl.textContent = 'Service is inactive';
             }
         }
         
-        console.log('✅ Kiosk status updated:', data.kiosk_running ? 'Running' : 'Stopped');
+        // Only log when state changes (reduce console spam)
+        if (preti_previousKioskState !== isRunning) {
+            console.log(`[PRETI] Dashboard kiosk status: ${isRunning ? 'Running' : 'Stopped'}`);
+            preti_previousKioskState = isRunning;
+        }
+        
     } catch (error) {
-        console.error('❌ Error checking kiosk status:', error);
+        console.error('❌ [PRETI] Error fetching kiosk status:', error);
+        
         const statusValueEl = document.getElementById('kiosk-status-value');
         if (statusValueEl) {
             statusValueEl.innerHTML = '<span class="status-badge" style="background: #ffc107; color: #000;">⚠️ Unknown</span>';
         }
+        
+        preti_previousKioskState = null;
     }
 }
+
+// ==================== MONITORING START FUNCTION ====================
+
+function preti_startDashboardKioskMonitoring() {
+    // Stop any existing monitoring first to prevent duplicates
+    preti_stopDashboardKioskMonitoring();
+    
+    console.log('🔄 [PRETI] Starting dashboard kiosk monitoring (updates every 5 seconds)');
+    
+    // Do initial update immediately
+    updateKioskStatus();
+    
+    // Then update every 5 seconds
+    preti_kioskMonitorInterval = setInterval(() => {
+        updateKioskStatus();
+    }, 5000); // 5 seconds (different from other team's 3 seconds)
+}
+
+// ==================== ADD MONITORING STOP FUNCTION ====================
+function preti_stopDashboardKioskMonitoring() {
+    if (preti_kioskMonitorInterval) {
+        clearInterval(preti_kioskMonitorInterval);
+        preti_kioskMonitorInterval = null;
+        console.log('⏹️ [PRETI] Stopped dashboard kiosk monitoring');
+    }
+    
+    // Reset state tracker
+    preti_previousKioskState = null;
+}
+
+
 
 
 // Animate number counting
@@ -5041,10 +5086,7 @@ function closeAddUserModal() {
     }
 }
 
-// Edit user - UPDATED to pass full_name
-// Find and replace the editUser function (around line 4960-5109)
 // This is the MODIFIED VERSION that allows systemadmin to edit their own password
-
 function editUser(userId, username, currentRole, fullName) {
     const currentUserRole = sessionStorage.getItem('userRole');
     if (currentUserRole !== 'system_admin') {
@@ -6749,6 +6791,12 @@ function closeDeleteModal() {
 
 // Show page with role-based access control
 function showPage(pageName) {
+
+        // ✨ PRETI'S CODE - Stop monitoring when leaving dashboard
+    if (pageName !== 'dashboard') {
+        preti_stopDashboardKioskMonitoring();
+    }
+    
     const userRole = sessionStorage.getItem('userRole');
     
     // Check if user is trying to access admin pages without system_admin role
@@ -9409,7 +9457,6 @@ function applyDefaultTheme() {
 }
 
 // Initialize saved themes section when theme settings page loads
-// Add this to your existing initThemeSettings() function
 function initSavedThemesSection() {
     console.log('🎨 Initializing saved themes section...');
     
@@ -10579,7 +10626,7 @@ function editSchedule(scheduleId) {
     }
 }
 
-// Add this function to validate times
+// function to validate times
 function validateTimes() {
     const startTime = document.getElementById('start-time').value;
     const endTime = document.getElementById('end-time').value;
