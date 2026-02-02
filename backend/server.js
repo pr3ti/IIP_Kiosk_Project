@@ -1,74 +1,73 @@
 // ============================================================
-// SERVER.JS - TABLE OF CONTENTS
+// SERVER.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
-// 1. IMPORTS & INITIALIZATION
-//    require('dotenv').config()        - Load environment variables (DONE BY PRETI)
-//    const express                     - Express framework (DONE BY PRETI)
-//    const https                       - HTTPS module (DONE BY PRETI)
-//    const fs                          - File system module (DONE BY PRETI)
-//    const path                        - Path module (DONE BY PRETI)
-//    const session                     - Session management (DONE BY PRETI)
-//    const db                          - Database connection (DONE BY PRETI)
-//    const feedbackRoutes              - Feedback API routes 
-//    const adminRoutes                 - Admin API routes (DONE BY PRETI)
-//    const dataExportRoutes            - Data export routes (DONE BY PRETI)
-//    const os                          - OS utilities (DONE BY PRETI)
-//    const emailService                - Email service
-//    const { router: treeRoutes, setDatabase: setTreeDatabase } - Tree routes with DB setter
-//    const dataRetentionCleanup        - Cleanup module (DONE BY PRETI)
-//    const QRCode                      - QR code generation (DONE BY PRETI)
-//    const app = express()             - Express app instance (DONE BY PRETI)
-//    const PORT = 3000                 - Server port (DONE BY PRETI)
+// 1. DEPENDENCIES & CONFIGURATION
+//    require('dotenv').config()       - Load environment variables (DONE BY PRETI)
+//    const express                    - Express framework import (DONE BY PRETI)
+//    const https                      - HTTPS server module (DONE BY PRETI)
+//    const fs                         - File system operations (DONE BY PRETI)
+//    const path                       - Path utilities (DONE BY PRETI)
+//    const session                    - Express session middleware (DONE BY PRETI)
+//    const db                         - Database connection (DONE BY PRETI)
+//    const feedbackRoutes             - Feedback routes module (DONE BY PRETI)
+//    const adminRoutes                - Admin routes module (DONE BY PRETI)
+//    const dataExportRoutes           - Data export routes module (DONE BY PRETI)
+//    const pledgeboardRoutes          - Pledgeboard routes module (DONE BY PRETI)
+//    const os                         - Operating system utilities (DONE BY PRETI)
+//    const emailService               - Email service utilities (DONE BY PRETI)
+//    const treeRoutes                 - Tree routes module (DONE BY PRETI)
+//    const dataRetentionCleanup       - Data retention cleanup module (DONE BY PRETI)
+//    const QRCode                     - QR code generation library (DONE BY PRETI)
+//    const app                        - Express application instance (DONE BY PRETI)
+//    const PORT                       - Server port number (3000) (DONE BY PRETI)
 //
 // 2. NETWORK INTERFACE FUNCTIONS
-//    function getAllNetworkIPs()       - Get all available network IPs (DONE BY PRETI)
-//    function getSelectedIP()          - Get selected IP with priority logic (DONE BY PRETI)
-//    function getInterfaceForIP()      - Get interface name for IP address (DONE BY PRETI)
-//    const localIP                     - Selected IP address (DONE BY PRETI)
-//    const interfaceName               - Interface name for selected IP (DONE BY PRETI)
+//    function getAllNetworkIPs()      - Get all available network IP addresses (DONE BY PRETI)
+//    function getSelectedIP()         - Determine which IP address to use for server (DONE BY PRETI)
+//    function getInterfaceForIP()     - Get network interface name for given IP (DONE BY PRETI)
+//    const localIP                    - Selected local IP address (DONE BY PRETI)
+//    const interfaceName              - Network interface name (DONE BY PRETI)
 //
 // 3. SSL CERTIFICATE CONFIGURATION
-//    const certsDir                    - SSL certificates directory (DONE BY PRETI)
-//    const certPath                    - Certificate file path (DONE BY PRETI)
-//    const keyPath                     - Key file path (DONE BY PRETI)
-//    let sslOptions                    - SSL options storage (DONE BY PRETI)
+//    const certsDir                   - SSL certificates directory path (DONE BY PRETI)
+//    const certPath                   - SSL certificate file path (DONE BY PRETI)
+//    const keyPath                    - SSL private key file path (DONE BY PRETI)
+//    let sslOptions                   - SSL configuration options (DONE BY PRETI)
 //
 // 4. MIDDLEWARE CONFIGURATION
-//    app.use(express.json())           - JSON body parser (DONE BY PRETI)
-//    app.use(express.urlencoded())     - URL-encoded body parser (DONE BY PRETI)
-//    app.use(session())                - Session middleware (DONE BY PRETI)
-//    app.use(express.static())         - Static file serving (DONE BY PRETI)
-//    setTreeDatabase(db)               - Wire shared DB into tree routes
+//    app.use(express.json())          - JSON body parser middleware (DONE BY PRETI)
+//    app.use(express.urlencoded())    - URL-encoded body parser middleware (DONE BY PRETI)
+//    app.use(session())               - Session middleware configuration (DONE BY PRETI)
+//    app.use(express.static())        - Static file serving for frontend (DONE BY PRETI)
+//    app.use('/uploads'               - Static file serving for uploads (DONE BY PRETI)
+//    app.use('/assets'                - Static file serving for assets (DONE BY PRETI)
 //
-// 5. API ROUTES
-//    app.use('/api/feedback', feedbackRoutes) - Feedback API routes (DONE BY PRETI)
-//    app.use('/api/admin', adminRoutes) - Admin API routes (DONE BY PRETI)
-//    app.use('/api/admin/data-export', dataExportRoutes) - Data export routes (DONE BY PRETI)
-//    app.use('/api/tree', treeRoutes)  - Tree API routes
-//    app.get('/api/network-interfaces') - Get all network interfaces (DONE BY PRETI)
-//    app.get('/api/server-info')       - Get server info (IP, protocol, QR) (DONE BY PRETI)
-//    app.get('/api/generate-qr')       - Generate QR code endpoint (DONE BY PRETI)
-//    app.get('/api/test-db')           - Test database connection (DONE BY PRETI)
-//    app.get('/api/test-email-service') - Test email service
+// 5. API ROUTES (COMBINED - KIOSK + ADMIN)
+//    app.use('/api/feedback'          - Feedback submission and management routes (DONE BY PRETI)
+//    app.use('/api/admin'             - Admin API routes (DONE BY PRETI)
+//    app.use('/api/admin/data-export' - Data export API routes (DONE BY PRETI)
+//    app.use('/api/pledgeboard'       - Pledgeboard data routes (DONE BY PRETI)
+//    app.use('/api/tree'              - Tree data fetching routes (DONE BY PRETI)
+//    app.get('/api/network-interfaces' - Get network interface information (DONE BY PRETI)
+//    app.get('/api/server-info'       - Get server configuration information (DONE BY PRETI)
+//    app.get('/api/generate-qr'       - Generate QR code for feedback URL (DONE BY PRETI)
+//    app.get('/api/test-db'           - Test database connection endpoint (DONE BY PRETI)
+//    app.get('/api/status'            - Server status for kiosk monitor (DONE BY PRETI)
+//    app.get('/api/test-email-service' - Test email service endpoint (DONE BY PRETI)
 //
-// 6. PAGE ROUTES
-//    app.get('/feedback')              - Serve feedback page 
-//    app.get('/admin')                 - Serve admin page (DONE BY PRETI)
-//    app.get('/tree')                  - Serve tree page
-//    app.get('/')                      - Default redirect to feedback 
+// 6. PAGE ROUTES (COMBINED - KIOSK + ADMIN)
+//    app.get('/feedback'              - Serve feedback HTML page (DONE BY PRETI)
+//    app.get('/admin'                 - Serve admin HTML page (DONE BY PRETI)
+//    app.get('/pledgeboard'           - Serve pledgeboard HTML page (DONE BY PRETI)
+//    app.get('/tree'                  - Serve tree HTML page (DONE BY PRETI)
+//    app.get('/'                      - Redirect root to /feedback (DONE BY PRETI)
 //
-// 7. CERTIFICATE & SERVER FUNCTIONS
-//    function generateSelfSignedCertificate() - Generate self-signed certificate (DONE BY PRETI)
-//    function startServer()            - Start HTTP/HTTPS server (DONE BY PRETI)
-//    function printServerInfo()        - Print server startup information (DONE BY PRETI)
-// 
-// 8. SERVER STARTUP & INITIALIZATION
-//    Email service initialization      - Initialize email service 
-//    Help command check                - Display help if --help flag present (DONE BY PRETI)
-//    startServer()                     - Start the server (DONE BY PRETI)
-//
-// server.js - Main server file with HTTPS and IP detection
+// 7. SERVER STARTUP FUNCTIONS
+//    function printServerInfo()       - Display server information on startup (DONE BY PRETI)
+//    function startServer()           - Start HTTPS or HTTP server (DONE BY PRETI)
+//    const emailInitialized           - Email service initialization status (DONE BY PRETI)
+
 
 // ==================== 1. IMPORTS & INITIALIZATION ====================
 
@@ -82,7 +81,7 @@ const db = require('./db');
 const feedbackRoutes = require('./feedbackRoutes');
 const adminRoutes = require('./adminRoutes');
 const dataExportRoutes = require('./dataExportRoutes');
-const leaderboardRoutes = require('./leaderboardRoutes');
+const pledgeboardRoutes = require('./pledgeboardRoutes');
 const os = require('os');
 const emailService = require('./emailService');
 
@@ -99,6 +98,9 @@ const app = express();
 const PORT = 3000;
 
 // ==================== 2. NETWORK INTERFACE FUNCTIONS ====================
+// CROSS-PLATFORM: os.networkInterfaces() works on Windows, Linux, and macOS
+// Automatically detects WiFi, Ethernet, and other network adapters
+// Perfect for QR code generation and mobile device access
 
 // Get all available network interfaces and their IPs
 function getAllNetworkIPs() {
@@ -281,7 +283,7 @@ setTreeDatabase(db);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/data-export', dataExportRoutes);
-app.use('/api/leaderboard', leaderboardRoutes); 
+app.use('/api/pledgeboard', pledgeboardRoutes);
 
 // Tree API for the leaves (names from feedback.db)
 app.use('/api/tree', treeRoutes);
@@ -322,7 +324,7 @@ app.get('/api/generate-qr', async (req, res) => {
         const protocol = sslOptions ? 'https' : 'http';
         const url = `${protocol}://${localIP}:${PORT}/feedback`;
         
-        // Generate QR code as SVG (maintaining similar size to your dummy QR)
+        
         const qrSvg = await QRCode.toString(url, {
             type: 'svg',
             errorCorrectionLevel: 'H',
@@ -369,6 +371,19 @@ app.get('/api/test-db', (req, res) => {
     );
 });
 
+// Status endpoint for kiosk status monitor
+// Returns online: true for standalone mode (Windows/testing without gateway)
+// In production with gateway, the gateway handles this endpoint
+app.get('/api/status', (req, res) => {
+    res.json({
+        online: true,
+        mode: 'standalone',
+        server: 'kiosk',
+        message: 'Server is running (standalone mode)',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // ==================== 6. PAGE ROUTES ====================
 
 app.get('/feedback', (req, res) => {
@@ -376,7 +391,7 @@ app.get('/feedback', (req, res) => {
 });
 
 app.get('/pledgeboard', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/Leaderboard/Leaderboard.html'));
+    res.sendFile(path.join(__dirname, '../frontend/Pledgeboard/Pledgeboard.html'));
 });
 
 app.get('/admin', (req, res) => {
@@ -447,10 +462,18 @@ function startServer() {
 function printServerInfo(isHttps) {
     const protocol = isHttps ? 'HTTPS' : 'HTTP';
     const availableIPs = getAllNetworkIPs();
+    const platform = os.platform();
+    const platformNames = {
+        'win32': 'Windows',
+        'linux': 'Linux',
+        'darwin': 'macOS',
+        'freebsd': 'FreeBSD'
+    };
     
     console.log('\n🌐 ============================================');
     console.log('   FEEDBACK KIOSK SERVER');
     console.log('============================================');
+    console.log(`💻 Platform: ${platformNames[platform] || platform}`);
     console.log(`📡 Selected Interface: ${interfaceName}`);
     console.log(`📡 Selected IP: ${localIP}`);
     console.log(`🚀 ${protocol}: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}`);
@@ -475,9 +498,24 @@ function printServerInfo(isHttps) {
         console.log('   No network interfaces found');
     }
     
-    console.log('\n📱 QR Code Information:');
-    console.log(`   Scan to access: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/feedback`);
+    console.log('\n📱 Mobile Access (QR Code URLs):');
+    console.log(`   Feedback: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/feedback`);
+    console.log(`   Pledgeboard: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/pledgeboard`);
     console.log(`   QR API: ${isHttps ? 'https' : 'http'}://${localIP}:${PORT}/api/generate-qr`);
+    
+    // Platform-specific tips
+    if (platform === 'win32') {
+        console.log('\n💡 Windows Tips:');
+        console.log('   • Use start-simple.bat for easy testing');
+        console.log('   • Check firewall for ports 3000-3002');
+        console.log('   • For production, use Linux with systemd');
+    } else if (platform === 'linux') {
+        console.log('\n💡 Linux Tips:');
+        console.log('   • Use systemctl for service management');
+        console.log('   • Check firewall: sudo ufw status');
+        console.log('   • For scheduling: Use kiosk-schedules.json');
+    }
+    
     console.log('============================================\n');
 
     // Initialize data retention cleanup system
@@ -554,3 +592,27 @@ if (args.includes('--help') || args.includes('-h')) {
 
 // Start the server
 startServer();
+
+// ==================== PLATFORM-SPECIFIC NOTES ====================
+// 
+// WINDOWS (Testing/Development):
+// - Use start-simple.bat to start all servers
+// - Run node find-ip.js to get network IP for QR codes
+// - Mobile devices must be on same WiFi network
+// - Accept self-signed certificate warning in browsers
+// - For firewall: netsh advfirewall firewall add rule name="Kiosk" dir=in action=allow protocol=TCP localport=3000-3002
+//
+// LINUX (Production):
+// - Use systemd services (gateway.service, admin.service, kiosk.service)
+// - Use scheduleRunner.js with cron for automated scheduling
+// - For firewall: sudo ufw allow 3000:3002/tcp
+// - SSL certificates in /certs/ directory
+//
+// BOTH PLATFORMS:
+// - Network IP detection works automatically
+// - QR codes use detected network IP
+// - Self-signed SSL certificates auto-generated
+// - Database connection via db.js (MySQL)
+// - Environment variables in .env file
+//
+// ============================================================
