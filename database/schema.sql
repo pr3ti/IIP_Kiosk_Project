@@ -1,4 +1,3 @@
-
 -- ============================================================
 -- KIOSK DATABASE SCHEMA (MySQL)
 -- ============================================================
@@ -41,7 +40,7 @@ CREATE TABLE feedback (
     metadata TEXT,
     photo_path VARCHAR(500),
     processed_photo_path VARCHAR(500),
-    data_retention VARCHAR(20) DEFAULT 'indefinite',
+    data_retention VARCHAR(20) DEFAULT 'longterm',
     email_sent TINYINT(1) DEFAULT 0,
     email_sent_at TIMESTAMP NULL,
     admin_notes TEXT,
@@ -179,9 +178,9 @@ CREATE TABLE saved_themes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- PLEDGE LIKES TABLE (LEADERBOARD FEATURE) (DONE BY PRETI)
+-- PLEDGE LIKES TABLE (PLEDGEBOARD FEATURE) (DONE BY PRETI)
 -- ============================================================
--- Tracks likes/hearts for pledges on the leaderboard
+-- Tracks likes/hearts for pledges on the pledgeboard
 CREATE TABLE pledge_likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     feedback_id INT NOT NULL,
@@ -196,7 +195,7 @@ CREATE TABLE pledge_likes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- COUNTDOWN MANAGEMENT TABLE (GLOBAL TIMER CONFIG)
+-- COUNTDOWN MANAGEMENT TABLE (GLOBAL TIMER CONFIG)  (DONE BY BERNISSA)
 -- ============================================================
 CREATE TABLE countdown_management (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -238,11 +237,11 @@ VALUES ('systemadmin', 'System Administrator', 'SystemAdmin123!', 'system_admin'
 
 -- Insert overlay themes
 INSERT INTO overlays (display_name, theme_id, desktop_filename, mobile_filename, display_order) VALUES
-('Nature Theme', 'nature', '/assets/overlays/DesktopOverlay/NatureThemeDesktop.png', '/assets/overlays/MobileOverlay/NatureThemeMobile.png', 1),
-('Ocean Theme', 'ocean', '/assets/overlays/DesktopOverlay/OceanThemeDesktop.png', '/assets/overlays/MobileOverlay/OceanThemeMobile.png', 2),
-('Energy Theme', 'energy', '/assets/overlays/DesktopOverlay/EnergyThemeDesktop.png', '/assets/overlays/MobileOverlay/EnergyThemeMobile.png', 3),
-('Recycle Theme', 'recycle', '/assets/overlays/DesktopOverlay/RecycleThemeDesktop.png', '/assets/overlays/MobileOverlay/RecycleThemeMobile.png', 4),
-('Tech Theme', 'tech', '/assets/overlays/DesktopOverlay/TechThemeDesktop.png', '/assets/overlays/MobileOverlay/TechThemeDesktop.png', 5),
+('Nature Theme', 'nature', '/assets/overlays/DesktopOverlay/natureThemeDesktop.png', '/assets/overlays/MobileOverlay/natureThemeMobile.png', 1),
+('Ocean Theme', 'ocean', '/assets/overlays/DesktopOverlay/oceanThemeDesktop.png', '/assets/overlays/MobileOverlay/oceanThemeMobile.png', 2),
+('Energy Theme', 'energy', '/assets/overlays/DesktopOverlay/energyThemeDesktop.png', '/assets/overlays/MobileOverlay/energyThemeMobile.png', 3),
+('Recycle Theme', 'recycle', '/assets/overlays/DesktopOverlay/recycleThemeDesktop.png', '/assets/overlays/MobileOverlay/recycleThemeMobile.png', 4),
+('Tech Theme', 'tech', '/assets/overlays/DesktopOverlay/techThemeDesktop.png', '/assets/overlays/MobileOverlay/techThemeDesktop.png', 5),
 ('Cute Theme', 'cute', '/assets/overlays/DesktopOverlay/cuteThemeDesktop.png', '/assets/overlays/MobileOverlay/cuteThemeMobile.png', 6);
 
 -- Insert sample questions
