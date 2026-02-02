@@ -1,22 +1,23 @@
 // ============================================================
-// FEEDBACK.JS - TABLE OF CONTENTS
+// FEEDBACK.JS - TABLE OF CONTENTS (CTRL+F SEARCHABLE)
 // ============================================================
 // 
 // 1. GLOBAL VARIABLES & CONSTANTS
 //    let selectedRetention            - Selected retention option (DONE BY PRETI)
 //    let selectedTheme                - Currently selected overlay theme (DONE BY PRETI)
 //    let userData                     - Object storing user input and answers (DONE BY PRETI)
-//    let stream                       - Camera video stream object
-//    let photoData                    - Base64 encoded photo data (DONE BY PRETI)
+//    let stream                       - Camera video stream object 
+//    let photoData                    - Base64 encoded photo data 
 //    let currentDevice                - 'desktop' or 'mobile' device type (DONE BY PRETI)
 //    let inactivityTimer              - Timer for inactivity timeout (DONE BY PRETI)
 //    const INACTIVITY_TIMEOUT         - 5 minutes timeout duration (DONE BY PRETI)
+//    let countdownSeconds             - Countdown seconds loaded from backend (DONE BY BERNISSA)
+//    let overlayData                  - Store full overlay data including file paths (DONE BY PRETI)
 //
 // 2. INITIALIZATION & SETUP FUNCTIONS
 //    async function loadDynamicQRCode() - Load dynamic QR code from server (DONE BY PRETI)
 //    function detectDeviceType()      - Detect mobile/desktop device (DONE BY PRETI)
-//    DOMContentLoaded                 - Application bootstrap
-
+//    DOMContentLoaded                 - Application bootstrap (DONE BY PRETI)
 //
 // 3. INACTIVITY TIMER FUNCTIONS
 //    function startInactivityTimer()  - Start 5-minute countdown (DONE BY PRETI)
@@ -36,16 +37,16 @@
 // 
 // 5. FORM SUBMISSION FUNCTIONS
 //    function submitFeedback()        - Submit feedback form (DONE BY PRETI)
-//    function submitDetails()         - Submit user details
-//    function submitPledge()          - Submit pledge and redirect
+//    function submitDetails()         - Submit user details (DONE BY PRETI)
+//    function submitPledge()          - Submit pledge and redirect (DONE BY PRETI)
 //
 // 6. PHOTO HANDLING FUNCTIONS
-//    function handlePhotoUpload()     - Handle file upload (mobile)
-//    function continueToStyleFromUpload() - Continue from upload to style
-//    function retakePhotoFromUpload() - Retake photo from upload page
-//    async function initializeCamera() - Initialize camera (desktop only)
-//    function capturePhoto()          - Capture with countdown/redirect
-//    function takePhoto()             - Take photo from camera stream 
+//    function handlePhotoUpload()     - Handle file upload (mobile) 
+//    function continueToStyleFromUpload() - Continue from upload to style (DONE BY PRETI)
+//    function retakePhotoFromUpload() - Retake photo from upload page (DONE BY PRETI)
+//    async function initializeCamera() - Initialize camera (desktop only) (DONE BY PRETI)
+//    async function capturePhoto()    - Capture with countdown/redirect (DONE BY PRETI)
+//    function takePhoto()             - Take photo from camera stream (DONE BY PRETI)
 //    function continueToStyle()       - Go to style page after photo (DONE BY PRETI)
 //    function saveOriginalPhoto()     - Save original to server (DONE BY PRETI)
 //    function saveProcessedPhoto()    - Save processed photo to server (DONE BY PRETI)
@@ -60,35 +61,37 @@
 //    function processFinalPhoto()     - Process final photo with overlay (DONE BY PRETI)
 //
 // 8. PAGE NAVIGATION FUNCTIONS
-//    function showConsentPage()       - Show consent page
+//    function showConsentPage()       - Show consent page (DONE BY PRETI)
 //    function selectOption()          - Select retention option (DONE BY PRETI)
-//    function showDetailsPage()       - Show details page
+//    function showDetailsPage()       - Show details page 
 //    function retakePhotoFromStyle()  - Retake photo from style page (DONE BY PRETI)
-//    function confirmStyle()          - Confirm and go to confirmation (DONE BY PRETI)
-//    function updateConfirmationDetails() - Update confirmation page
-//    function goBackToStyle()         - Go back to style page
+//    function confirmStyle()          - Confirm and go to confirmation 
+//    function updateConfirmationDetails() - Update confirmation page 
+//    function goBackToStyle()         - Go back to style page 
 //    function finalSubmit()           - Final submission with saving (DONE BY PRETI)
-//    function submitAnother()         - Reset and start new submission
+//    function submitAnother()         - Reset and start new submission 
 //
 // 9. BACK NAVIGATION FUNCTIONS
 //    function goBackToLanding()       - Consent to Landing (DONE BY PRETI)
 //    function goBackToConsent()       - Details to Consent 
-//    function goBackToDetails()       - Feedback to Details
-//    function goBackToFeedback()      - Pledge to Feedback
-//    function goBackToPledge()        - Photo/Upload to Pledge
-//    function goBackToPhoto()         - Style to Photo/Upload (DONE BY PRETI)
+//    function goBackToDetails()       - Feedback to Details 
+//    function goBackToFeedback()      - Pledge to Feedback 
+//    function goBackToPledge()        - Photo/Upload to Pledge 
 //
 // 10. EVENT LISTENERS & CLEANUP
-//     window.addEventListener('beforeunload') - Clean up camera and timers (DONE BY PRETI)
+//     window.addEventListener('beforeunload') - Clean up camera and timers 
 //     document.addEventListener('click') - Reset inactivity timer (DONE BY PRETI)
 //     document.addEventListener('keypress') - Reset inactivity timer (DONE BY PRETI)
 //     document.addEventListener('mousemove') - Reset inactivity timer (DONE BY PRETI)
 //     document.addEventListener('touchstart') - Reset inactivity timer (DONE BY PRETI)
 //
-// 11. LEADERBOARD NAVIGATION
+// 11. PLEDGEBOARD NAVIGATION
 //     function viewPledgeboard()       - Navigate to pledgeboard page (DONE BY PRETI)
-
 //
+// 12. FORM UI CONFIGURATION
+//     async function applyFormUIConfig() - Load and apply form UI settings from server (DONE BY NADH)
+//     async function loadCountdownTimer() - Load countdown timer setting from server (DONE BY BERNISSA)
+
 // ==================== 1. GLOBAL VARIABLES & CONSTANTS ====================
 let selectedRetention = null;
 let selectedTheme = 'nature';
@@ -99,7 +102,7 @@ let currentDevice = 'desktop'; // 'desktop' or 'mobile'
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 300000; // 5 minutes (300,000 milliseconds)
 let countdownSeconds = null; // Loaded from backend when needed (DONE BY BERNISSA)
-
+let overlayData = {}; // Store full overlay data including file paths from database 
 
 // ==================== 2. INITIALIZATION & SETUP FUNCTIONS ====================
 
@@ -999,6 +1002,17 @@ async function loadOverlayOptions() {
             // Clear existing options
             overlayOptions.innerHTML = '';
             
+            // Store overlay data including file paths for later use 
+            overlayData = {};
+            data.overlays.forEach(overlay => {
+                overlayData[overlay.theme_id] = {
+                    desktop_filename: overlay.desktop_filename,
+                    mobile_filename: overlay.mobile_filename,
+                    display_name: overlay.display_name
+                };
+            });
+            console.log('Loaded overlay data from database:', overlayData);
+            
             // Create theme options from database data
             data.overlays.forEach(overlay => {
                 const themeOption = document.createElement('div');
@@ -1112,15 +1126,34 @@ function selectTheme(theme, element) {
     resetInactivityTimer();
 }
 
-// Update theme preview with correct file paths
+// Update theme preview with correct file paths from database 
 function updateThemePreview() {
     const overlayImage = document.getElementById('selected-overlay');
     
-    // correct path based on file structure
-    const overlayPath = `/assets/overlays/${currentDevice === 'mobile' ? 'MobileOverlay' : 'DesktopOverlay'}/${selectedTheme}Theme${currentDevice === 'mobile' ? 'Mobile' : 'Desktop'}.png`;
+    // Get the correct path from overlayData (from database)
+    let overlayPath;
+    if (overlayData[selectedTheme]) {
+        // Use the path from database - this works on both Windows and Linux
+        overlayPath = currentDevice === 'mobile' 
+            ? overlayData[selectedTheme].mobile_filename
+            : overlayData[selectedTheme].desktop_filename;
+        console.log('Using database path for theme:', selectedTheme, '| Path:', overlayPath);
+    } else {
+        // Fallback to constructed path for default themes
+        overlayPath = `/assets/overlays/${currentDevice === 'mobile' ? 'MobileOverlay' : 'DesktopOverlay'}/${selectedTheme}Theme${currentDevice === 'mobile' ? 'Mobile' : 'Desktop'}.png`;
+        console.log('Using constructed path (fallback) for theme:', selectedTheme, '| Path:', overlayPath);
+    }
     
     console.log('Loading overlay from:', overlayPath);
     overlayImage.src = overlayPath;
+    
+    // Add error handler to help debug
+    overlayImage.onerror = function() {
+        console.error('❌ Failed to load overlay:', overlayPath);
+        console.error('Current device:', currentDevice);
+        console.error('Selected theme:', selectedTheme);
+        console.error('Available overlay data:', overlayData);
+    };
     
     // Also update the preview photo if it exists
     updatePreviewWithCutout();
@@ -1251,7 +1284,7 @@ function processFinalPhoto() {
             const scaledWidth = img.width * scale;
             const scaledHeight = img.height * scale;
             
-            // Center the scaled image in the cutout
+            // Centre the scaled image in the cutout
             const x = cutout.cutoutX + (cutout.cutoutWidth - scaledWidth) / 2;
             const y = cutout.cutoutY + (cutout.cutoutHeight - scaledHeight) / 2;
             
@@ -1271,13 +1304,28 @@ function processFinalPhoto() {
                 resolve();
             };
             
-            const overlayPath = `/assets/overlays/${currentDevice === 'mobile' ? 'MobileOverlay' : 'DesktopOverlay'}/${selectedTheme}Theme${currentDevice === 'mobile' ? 'Mobile' : 'Desktop'}.png`;
+            // Get the correct path from overlayData (from database) 
+            let overlayPath;
+            if (overlayData[selectedTheme]) {
+                // Use the path from database - this works on both Windows and Linux
+                overlayPath = currentDevice === 'mobile' 
+                    ? overlayData[selectedTheme].mobile_filename
+                    : overlayData[selectedTheme].desktop_filename;
+                console.log('Processing final photo with database path for theme:', selectedTheme, '| Path:', overlayPath);
+            } else {
+                // Fallback to constructed path for default themes
+                overlayPath = `/assets/overlays/${currentDevice === 'mobile' ? 'MobileOverlay' : 'DesktopOverlay'}/${selectedTheme}Theme${currentDevice === 'mobile' ? 'Mobile' : 'Desktop'}.png`;
+                console.log('Processing final photo with constructed path (fallback) for theme:', selectedTheme, '| Path:', overlayPath);
+            }
             console.log('Processing final photo with overlay:', overlayPath);
             overlayImg.src = overlayPath;
             
             // If overlay fails to load, still proceed with the base photo
             overlayImg.onerror = function() {
-                console.error('Failed to load overlay:', overlayPath);
+                console.error('❌ Failed to load overlay for final processing:', overlayPath);
+                console.error('Current device:', currentDevice);
+                console.error('Selected theme:', selectedTheme);
+                console.error('Available overlay data:', overlayData);
                 userData.processedPhoto = canvas.toDataURL('image/png');
                 resolve();
             };
@@ -1356,7 +1404,7 @@ function updateConfirmationDetails() {
     document.getElementById('confirm-email').textContent = userData.email || 'Not provided';
     document.getElementById('confirm-pledge').textContent = userData.pledge || 'Not provided';
     document.getElementById('confirm-theme').textContent = selectedTheme;
-    document.getElementById('confirm-retention').textContent = selectedRetention === 'indefinite' ? 'Indefinite' : '7 Days';
+    document.getElementById('confirm-retention').textContent = selectedRetention === 'longterm' ? 'Long-Term' : '7 Days';
     
     // Show how many questions were answered
     const answeredCount = Object.keys(userData.answers || {}).length;
@@ -1510,22 +1558,22 @@ function goBackToPledge() {
     resetInactivityTimer();
 }
 
-// From Style to Photo/Upload
-function goBackToPhoto() {
-    // Hide style page
-    document.getElementById('style-page').style.display = 'none';
+// // From Style to Photo/Upload
+// function goBackToPhoto() {
+//     // Hide style page
+//     document.getElementById('style-page').style.display = 'none';
     
-    // Show appropriate photo page based on device
-    if (currentDevice === 'mobile') {
-        document.getElementById('file-upload-page').style.display = 'flex';
-    } else {
-        document.getElementById('photo-page').style.display = 'flex';
-        // Reinitialize camera for desktop
-        initializeCamera();
-    }
+//     // Show appropriate photo page based on device
+//     if (currentDevice === 'mobile') {
+//         document.getElementById('file-upload-page').style.display = 'flex';
+//     } else {
+//         document.getElementById('photo-page').style.display = 'flex';
+//         // Reinitialize camera for desktop
+//         initializeCamera();
+//     }
     
-    resetInactivityTimer();
-}
+//     resetInactivityTimer();
+// }
 
 
 // ==================== 10. EVENT LISTENERS & CLEANUP ====================
@@ -1546,9 +1594,9 @@ document.addEventListener('keypress', resetInactivityTimer);
 document.addEventListener('mousemove', resetInactivityTimer);
 document.addEventListener('touchstart', resetInactivityTimer);
 
-// ==================== 11. LEADERBOARD NAVIGATION ====================
+// ==================== 11. PLEDGEBOARD NAVIGATION ====================
 
-// Navigate to leaderboard page
+// Navigate to PLEDGEBOARD page
 function viewPledgeboard() {
     window.location.href = '/pledgeboard';
 }
@@ -1601,5 +1649,3 @@ async function loadCountdownTimer() {
         countdownSeconds = 3; // Fallback to default 3 seconds
     }
 }
-
-//—-//
